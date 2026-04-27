@@ -42,9 +42,6 @@ RUN pnpm install --prod
 COPY --from=backend-builder /app/packages/nvwax-server/dist ./packages/nvwax-server/dist
 COPY --from=backend-builder /app/packages/nvwax-server/migrations ./packages/nvwax-server/migrations
 
-# Copy environment file template
-COPY packages/nvwax-server/.env.example ./packages/nvwax-server/.env.example
-
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nvwax -u 1001
