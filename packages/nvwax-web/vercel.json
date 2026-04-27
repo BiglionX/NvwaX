@@ -1,8 +1,8 @@
 {
-  "buildCommand": "cd ../.. && pnpm install && pnpm --filter nvwax-web build",
-  "outputDirectory": "packages/nvwax-web/.next",
+  "buildCommand": "cd ../.. && pnpm install --no-frozen-lockfile && cd packages/nvwax-web && pnpm run build",
+  "outputDirectory": ".next",
   "devCommand": "npm run dev",
-  "installCommand": "cd ../.. && pnpm install",
+  "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile",
   "framework": "nextjs",
   "regions": ["sin1"],
   "env": {
