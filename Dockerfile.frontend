@@ -3,15 +3,20 @@ FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app
 
-# Copy package files
-COPY packages/nvwax-web/package*.json ./
-COPY pnpm-lock.yaml ./
+# Install pnpm
+RUN npm install -g pnpm
 
-# Install dependencies
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+# Copy monorepo package files
+COPY package.json pnpm-workspace.yaml .npmrc ./
+COPY packages/nvwax-web/package*.json ./packages/nvwax-web/
+COPY packages/nvwax-sdk/package*.json ./packages/nvwax-sdk/
+
+# Install dependencies (without frozen-lockfile since we don't have lock file yet)
+RUN pnpm install
 
 # Copy source code
 COPY packages/nvwax-web/ ./packages/nvwax-web/
+COPY packages/nvwax-sdk/ ./packages/nvwax-sdk/
 
 # Build Next.js app
 WORKDIR /app/packages/nvwax-web
@@ -22,20 +27,28 @@ FROM node:20-alpine AS frontend-production
 
 WORKDIR /app
 
-# Copy package files and install production dependencies
-COPY packages/nvwax-web/package*.json ./
-RUN npm install -g pnpm && pnpm install --prod --frozen-lockfile
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy monorepo package files
+COPY package.json pnpm-workspace.yaml .npmrc ./
+COPY packages/nvwax-web/package*.json ./packages/nvwax-web/
+
+# Install production dependencies
+RUN pnpm install --prod
 
 # Copy built files
-COPY --from=frontend-builder /app/packages/nvwax-web/.next ./.next
-COPY --from=frontend-builder /app/packages/nvwax-web/public ./public
-COPY --from=frontend-builder /app/packages/nvwax-web/next.config.js ./next.config.js
+COPY --from=frontend-builder /app/packages/nvwax-web/.next ./packages/nvwax-web/.next
+COPY --from=frontend-builder /app/packages/nvwax-web/public ./packages/nvwax-web/public
+COPY --from=frontend-builder /app/packages/nvwax-web/next.config.ts ./packages/nvwax-web/next.config.ts
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nvwax -u 1001
 
 USER nvwax
+
+WORKDIR /app/packages/nvwax-web
 
 EXPOSE 3000
 

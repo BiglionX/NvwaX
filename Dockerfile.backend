@@ -3,12 +3,15 @@ FROM node:20-alpine AS backend-builder
 
 WORKDIR /app
 
-# Copy package files
-COPY packages/nvwax-server/package*.json ./
-COPY pnpm-lock.yaml ./
+# Install pnpm
+RUN npm install -g pnpm
 
-# Install dependencies
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+# Copy monorepo package files
+COPY package.json pnpm-workspace.yaml .npmrc ./
+COPY packages/nvwax-server/package*.json ./packages/nvwax-server/
+
+# Install dependencies (without frozen-lockfile since we don't have lock file yet)
+RUN pnpm install
 
 # Copy source code
 COPY packages/nvwax-server/ ./packages/nvwax-server/
@@ -22,22 +25,30 @@ FROM node:20-alpine AS backend-production
 
 WORKDIR /app
 
-# Install production dependencies only
-COPY packages/nvwax-server/package*.json ./
-RUN npm install -g pnpm && pnpm install --prod --frozen-lockfile
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy monorepo package files
+COPY package.json pnpm-workspace.yaml .npmrc ./
+COPY packages/nvwax-server/package*.json ./packages/nvwax-server/
+
+# Install production dependencies
+RUN pnpm install --prod
 
 # Copy built files
-COPY --from=backend-builder /app/packages/nvwax-server/dist ./dist
-COPY --from=backend-builder /app/packages/nvwax-server/migrations ./migrations
+COPY --from=backend-builder /app/packages/nvwax-server/dist ./packages/nvwax-server/dist
+COPY --from=backend-builder /app/packages/nvwax-server/migrations ./packages/nvwax-server/migrations
 
 # Copy environment file template
-COPY packages/nvwax-server/.env.example ./.env.example
+COPY packages/nvwax-server/.env.example ./packages/nvwax-server/.env.example
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nvwax -u 1001
 
 USER nvwax
+
+WORKDIR /app/packages/nvwax-server
 
 EXPOSE 3001
 

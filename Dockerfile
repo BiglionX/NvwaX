@@ -8,13 +8,14 @@ RUN npm install -g pnpm@8
 FROM base AS deps
 WORKDIR /app
 
-# 复制 package.json
-COPY package.json pnpm-lock.yaml* ./
+# 复制 monorepo 配置文件
+COPY package.json pnpm-workspace.yaml .npmrc ./
 COPY packages/nvwax-web/package.json ./packages/nvwax-web/
 COPY packages/nvwax-server/package.json ./packages/nvwax-server/
+COPY packages/nvwax-sdk/package.json ./packages/nvwax-sdk/
 
-# 安装依赖
-RUN pnpm install --frozen-lockfile
+# 安装依赖（不使用 frozen-lockfile，因为我们还没有 lock 文件）
+RUN pnpm install
 
 # ==================== 构建阶段 ====================
 FROM base AS builder
