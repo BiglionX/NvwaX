@@ -30,6 +30,7 @@
     "express": "^5.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
     "pg": "^8.20.0",
     "uuid": "^14.0.0"
   },
@@ -41,7 +42,6 @@
     "@types/node": "^25.6.0",
     "@types/uuid": "^11.0.0",
     "better-sqlite3": "^12.9.0",
-    "morgan": "^1.10.1",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
