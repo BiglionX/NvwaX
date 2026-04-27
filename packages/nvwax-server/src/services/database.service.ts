@@ -7,16 +7,26 @@ class DatabaseService {
   private pool: Pool | null = null;
 
   constructor() {
-    this.initializePool();
+    // 延迟初始化，等待显式调用 initializePool()
+    // 这样可以确保在 Railway 等部署环境中环境变量已经准备好
   }
 
-  private initializePool() {
+  async initializePool() {
+    if (this.pool) {
+      console.log('Database pool already initialized');
+      return;
+    }
+
     const databaseUrl = process.env.DATABASE_URL;
     
     if (!databaseUrl) {
       console.error('DATABASE_URL is not set in environment variables');
+      console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('DATABASE') || k.includes('DB') || k.includes('POSTGRES')));
       throw new Error('DATABASE_URL is required');
     }
+
+    console.log('Initializing PostgreSQL connection pool...');
+    console.log('DATABASE_URL found:', databaseUrl.substring(0, 20) + '...');
 
     this.pool = new Pool({
       connectionString: databaseUrl,
@@ -34,10 +44,13 @@ class DatabaseService {
       process.exit(-1);
     });
 
-    console.log('PostgreSQL connection pool initialized');
+    console.log('✓ PostgreSQL connection pool initialized');
   }
 
-  getPool(): Pool {
+  async getPool(): Promise<Pool> {
+    if (!this.pool) {
+      await this.initializePool();
+    }
     if (!this.pool) {
       throw new Error('Database pool not initialized');
     }
@@ -45,7 +58,8 @@ class DatabaseService {
   }
 
   async initializeDatabase() {
-    const client = await this.getPool().connect();
+    const pool = await this.getPool();
+    const client = await pool.connect();
     
     try {
       console.log('Initializing database schema...');
