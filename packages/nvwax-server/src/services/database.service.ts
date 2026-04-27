@@ -7,50 +7,42 @@ class DatabaseService {
   private pool: Pool | null = null;
 
   constructor() {
-    // 延迟初始化，等待显式调用 initializePool()
-    // 这样可以确保在 Railway 等部署环境中环境变量已经准备好
+    // 立即初始化数据库连接池
+    // 在 Railway 等环境中，环境变量在进程启动时已经注入
+    this.initializePool();
   }
 
-  async initializePool() {
-    if (this.pool) {
-      console.log('Database pool already initialized');
-      return;
-    }
-
+  private initializePool() {
     const databaseUrl = process.env.DATABASE_URL;
     
     if (!databaseUrl) {
-      console.error('DATABASE_URL is not set in environment variables');
-      console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('DATABASE') || k.includes('DB') || k.includes('POSTGRES')));
-      throw new Error('DATABASE_URL is required');
+      console.error('❌ DATABASE_URL is not set in environment variables');
+      console.error('💡 Available environment variables:', Object.keys(process.env).sort().join(', '));
+      throw new Error('DATABASE_URL is required. Please set it in Railway Variables.');
     }
 
+    console.log('✅ DATABASE_URL found:', databaseUrl.substring(0, 30) + '...');
     console.log('Initializing PostgreSQL connection pool...');
-    console.log('DATABASE_URL found:', databaseUrl.substring(0, 20) + '...');
 
     this.pool = new Pool({
       connectionString: databaseUrl,
       ssl: {
         rejectUnauthorized: false // Neon requires SSL
       },
-      max: 20, // Maximum number of clients in the pool
-      idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-      connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection could not be established
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
     });
 
-    // Handle pool errors
     this.pool.on('error', (err) => {
       console.error('Unexpected error on idle client', err);
       process.exit(-1);
     });
 
-    console.log('✓ PostgreSQL connection pool initialized');
+    console.log('✓ PostgreSQL connection pool initialized successfully');
   }
 
-  async getPool(): Promise<Pool> {
-    if (!this.pool) {
-      await this.initializePool();
-    }
+  getPool(): Pool {
     if (!this.pool) {
       throw new Error('Database pool not initialized');
     }
@@ -58,8 +50,7 @@ class DatabaseService {
   }
 
   async initializeDatabase() {
-    const pool = await this.getPool();
-    const client = await pool.connect();
+    const client = await this.getPool().connect();
     
     try {
       console.log('Initializing database schema...');
