@@ -3,17 +3,17 @@ FROM node:20-alpine AS backend-builder
 
 WORKDIR /app
 
-# 强制清除缓存标记
-ARG CACHE_BUST=1
+# 强制清除缓存标记 - 版本 20260427-v3
+ARG CACHE_BUST=3
 
 # Install pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8.15.0
 
 # Copy monorepo package files
 COPY package.json pnpm-workspace.yaml .npmrc ./
 COPY packages/nvwax-server/package*.json ./packages/nvwax-server/
 
-# Install dependencies (explicitly disable frozen-lockfile)
+# Install dependencies (explicitly disable frozen-lockfile to fix Railway build)
 RUN pnpm install --no-frozen-lockfile
 
 # Copy source code
