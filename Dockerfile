@@ -4,6 +4,9 @@ FROM node:20-alpine AS base
 # 安装 pnpm
 RUN npm install -g pnpm@8
 
+# 强制清除缓存标记（用于解决 Docker 缓存问题）
+ARG CACHE_BUST=1
+
 # ==================== 依赖安装阶段 ====================
 FROM base AS deps
 WORKDIR /app
@@ -15,7 +18,7 @@ COPY packages/nvwax-server/package.json ./packages/nvwax-server/
 COPY packages/nvwax-sdk/package.json ./packages/nvwax-sdk/
 
 # 安装依赖（不使用 frozen-lockfile，因为我们还没有 lock 文件）
-RUN pnpm install
+RUN pnpm install --no-frozen-lockfile
 
 # ==================== 构建阶段 ====================
 FROM base AS builder

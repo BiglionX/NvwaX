@@ -3,6 +3,9 @@ FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app
 
+# 强制清除缓存标记
+ARG CACHE_BUST=1
+
 # Install pnpm
 RUN npm install -g pnpm
 
@@ -11,8 +14,8 @@ COPY package.json pnpm-workspace.yaml .npmrc ./
 COPY packages/nvwax-web/package*.json ./packages/nvwax-web/
 COPY packages/nvwax-sdk/package*.json ./packages/nvwax-sdk/
 
-# Install dependencies (without frozen-lockfile since we don't have lock file yet)
-RUN pnpm install
+# Install dependencies (explicitly disable frozen-lockfile)
+RUN pnpm install --no-frozen-lockfile
 
 # Copy source code
 COPY packages/nvwax-web/ ./packages/nvwax-web/
