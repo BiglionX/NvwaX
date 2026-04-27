@@ -5,7 +5,7 @@ FROM node:20-alpine AS base
 RUN npm install -g pnpm@8
 
 # 强制清除缓存标记（用于解决 Docker 缓存问题）
-ARG CACHE_BUST=1
+ARG CACHE_BUST=2
 
 # ==================== 依赖安装阶段 ====================
 FROM base AS deps

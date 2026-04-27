@@ -1,6 +1,6 @@
 {
   "buildCommand": "cd ../.. && pnpm install && pnpm --filter nvwax-web build",
-  "outputDirectory": ".next",
+  "outputDirectory": "packages/nvwax-web/.next",
   "devCommand": "npm run dev",
   "installCommand": "cd ../.. && pnpm install",
   "framework": "nextjs",
