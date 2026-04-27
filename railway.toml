@@ -1,0 +1,8 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.backend"
+
+[deploy]
+startCommand = "node packages/nvwax-server/dist/index.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 100
