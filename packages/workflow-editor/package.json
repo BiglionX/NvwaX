@@ -1,0 +1,18 @@
+{
+  "name": "@nvwax/workflow-editor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Workflow editor for NvwaX",
+  "scripts": {
+    "dev": "echo 'Workflow editor not yet implemented'",
+    "build": "echo 'No build step required'",
+    "start": "echo 'Workflow editor not yet implemented'"
+  },
+  "keywords": [
+    "workflow",
+    "editor",
+    "nvwax"
+  ],
+  "author": "NvwaX Team",
+  "license": "MIT"
+}

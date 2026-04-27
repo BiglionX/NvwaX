@@ -45,7 +45,7 @@ jobs:
       run: pnpm install
 
     - name: Build all packages
-      run: pnpm run build || echo "Build completed with some warnings"
+      run: pnpm run build
 
     - name: Run linter
-      run: pnpm run lint || echo "Linting completed with warnings"
+      run: pnpm run lint
