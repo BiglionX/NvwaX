@@ -1,0 +1,11 @@
+# BossClaw Agent Team 运行时依赖
+# 基础依赖
+json5>=0.9.0
+pathlib>=1.0.1
+
+# AI 框架 (可选,根据需要启用)
+# langchain>=0.1.0
+# langchain-openai>=0.0.5
+# openai>=1.0.0
+
+# 注意: 实际打包时会根据团队配置动态添加所需依赖

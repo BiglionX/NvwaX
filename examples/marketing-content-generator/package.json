@@ -1,0 +1,16 @@
+{
+  "name": "@nvwax/example-marketing-content-generator",
+  "version": "1.0.0",
+  "description": "Marketing content generator using NvwaX SDK",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@nvwax/sdk": "^1.0.0",
+    "next": "14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

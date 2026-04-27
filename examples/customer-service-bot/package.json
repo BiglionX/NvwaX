@@ -1,0 +1,18 @@
+{
+  "name": "@nvwax/example-customer-service-bot",
+  "version": "1.0.0",
+  "description": "Customer service bot example using NvwaX SDK",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "@nvwax/sdk": "^1.0.0",
+    "express": "^4.18.0",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}

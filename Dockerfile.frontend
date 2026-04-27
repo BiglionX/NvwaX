@@ -1,0 +1,48 @@
+# Build stage for frontend
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /app
+
+# Copy package files
+COPY packages/nvwax-web/package*.json ./
+COPY pnpm-lock.yaml ./
+
+# Install dependencies
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
+
+# Copy source code
+COPY packages/nvwax-web/ ./packages/nvwax-web/
+
+# Build Next.js app
+WORKDIR /app/packages/nvwax-web
+RUN pnpm build
+
+# Production stage for frontend
+FROM node:20-alpine AS frontend-production
+
+WORKDIR /app
+
+# Copy package files and install production dependencies
+COPY packages/nvwax-web/package*.json ./
+RUN npm install -g pnpm && pnpm install --prod --frozen-lockfile
+
+# Copy built files
+COPY --from=frontend-builder /app/packages/nvwax-web/.next ./.next
+COPY --from=frontend-builder /app/packages/nvwax-web/public ./public
+COPY --from=frontend-builder /app/packages/nvwax-web/next.config.js ./next.config.js
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nvwax -u 1001
+
+USER nvwax
+
+EXPOSE 3000
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+
+CMD ["pnpm", "start"]

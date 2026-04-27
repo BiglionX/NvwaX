@@ -46,7 +46,8 @@ tmp/
 temp/
 *.tmp
 
-# Flowise specific
+# Flowise specific (external dependency - not tracked)
+packages/flowise/
 api.key
 database.sqlite
 flowise.db
@@ -63,3 +64,5 @@ ENV/
 
 # Reports (keep markdown files, ignore generated reports)
 # *.md  <-- We want to keep our markdown docs!
+
+# Note: docs-archive/ is tracked for historical reference

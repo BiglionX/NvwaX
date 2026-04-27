@@ -1,0 +1,54 @@
+{
+  "name": "@nvwax/sdk",
+  "version": "1.0.0",
+  "description": "Official NvwaX SDK for Node.js and browsers",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "jest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "nvwax",
+    "ai",
+    "sdk",
+    "agent",
+    "chat"
+  ],
+  "author": "NvwaX Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@types/jest": "^29.0.0",
+    "jest": "^29.0.0",
+    "rollup": "^4.0.0",
+    "rollup-plugin-dts": "^6.0.0",
+    "ts-jest": "^29.0.0",
+    "tslib": "^2.6.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BigLionX/NvwaX.git",
+    "directory": "packages/nvwax-sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/BigLionX/NvwaX/issues"
+  },
+  "homepage": "https://github.com/BigLionX/NvwaX/tree/main/packages/nvwax-sdk#readme"
+}

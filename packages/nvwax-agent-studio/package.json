@@ -1,0 +1,37 @@
+{
+  "name": "@nvwax/agent-studio",
+  "version": "1.0.0",
+  "description": "Embeddable Agent Studio for building AI agents with low-code",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "agent-studio",
+    "low-code",
+    "ai-builder",
+    "nvwax",
+    "workflow"
+  ],
+  "author": "NvwaX Team",
+  "license": "MIT",
+  "dependencies": {
+    "lit": "^3.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "rollup": "^4.0.0",
+    "rollup-plugin-dts": "^6.0.0",
+    "tslib": "^2.6.0",
+    "typescript": "^5.0.0"
+  }
+}
