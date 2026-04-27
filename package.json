@@ -1,0 +1,24 @@
+{
+  "name": "nvwax-monorepo",
+  "version": "1.3.0",
+  "private": true,
+  "description": "NvwaX - AI Agent Platform Monorepo",
+  "scripts": {
+    "dev": "pnpm --parallel dev",
+    "build": "pnpm --recursive --filter './packages/**' build",
+    "build:web": "pnpm --filter nvwax-web build",
+    "build:server": "pnpm --filter nvwax-server build",
+    "build:sdk": "pnpm --filter @nvwax/sdk build",
+    "lint": "pnpm --recursive lint",
+    "test": "pnpm --recursive test",
+    "clean": "pnpm --recursive clean"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
