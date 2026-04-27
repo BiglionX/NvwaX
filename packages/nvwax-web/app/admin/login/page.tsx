@@ -1,14 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { adminApi } from '@/lib/api/admin';
 import { Shield, Lock, User, Eye, EyeOff } from 'lucide-react';
 
 // 注意：权限检查和重定向逻辑已由 ProtectedAdminRoute 统一处理
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

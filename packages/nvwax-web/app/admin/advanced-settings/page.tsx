@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
 import { 
   Activity, 
@@ -9,7 +9,6 @@ import {
   Trash2, 
   Download,
   Server,
-  HardDrive,
   Cpu,
   CheckCircle,
   AlertCircle,
@@ -18,7 +17,6 @@ import {
 } from 'lucide-react';
 
 export default function AdminAdvancedSettingsPage() {
-  const queryClient = useQueryClient();
   const [showBackupConfirm, setShowBackupConfirm] = useState(false);
   const [showCacheConfirm, setShowCacheConfirm] = useState(false);
 

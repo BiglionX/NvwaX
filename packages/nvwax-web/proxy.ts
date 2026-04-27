@@ -12,14 +12,6 @@ const protectedRoutes = [
   '/projects',
 ];
 
-// Admin 专属路由
-const adminRoutes = [
-  '/admin/dashboard',
-  '/admin/crawler',
-  '/admin/admins',
-  '/admin/settings',
-];
-
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 

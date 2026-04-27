@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
 import { RefreshCw, Shield, Key, Activity, Database, Trash2, Download, CheckCircle, AlertCircle, Loader2, Server, Cpu, HardDrive } from 'lucide-react';
 
 export default function SettingsPage() {
-  const queryClient = useQueryClient();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showBackupConfirm, setShowBackupConfirm] = useState(false);
   const [showCacheConfirm, setShowCacheConfirm] = useState(false);
