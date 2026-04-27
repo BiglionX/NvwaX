@@ -16,8 +16,10 @@ COPY packages/nvwax-server/package*.json ./packages/nvwax-server/
 # Install dependencies (explicitly disable frozen-lockfile to fix Railway build)
 RUN pnpm install --no-frozen-lockfile
 
-# Copy source code
-COPY packages/nvwax-server/ ./packages/nvwax-server/
+# Copy source code (exclude node_modules)
+COPY packages/nvwax-server/src ./packages/nvwax-server/src
+COPY packages/nvwax-server/tsconfig.json ./packages/nvwax-server/tsconfig.json
+COPY packages/nvwax-server/migrations ./packages/nvwax-server/migrations
 
 # Build TypeScript
 WORKDIR /app/packages/nvwax-server
@@ -29,7 +31,7 @@ FROM node:20-alpine AS backend-production
 WORKDIR /app
 
 # Install pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8.15.0
 
 # Copy monorepo package files
 COPY package.json pnpm-workspace.yaml .npmrc ./
