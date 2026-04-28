@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Send, Bot, Sparkles, Loader, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -209,7 +209,7 @@ export default function NvwaPage() {
         }
         break;
 
-      case 6.6: // 选择具体项目
+      case 6.6: { // 选择具体项目
         // 模拟保存到项目
         const selectedProject = input === '4' ? '新项目' : 
                                input === '1' ? '电商网站项目' :
@@ -217,10 +217,25 @@ export default function NvwaPage() {
                                input === '3' ? '内容管理系统' : input;
         
         addAssistantMessage(
-          `🎉 **智能体创建成功并已保存到项目！**\n\n✨ **${formData.description || '客服智能体'}** 已经创建完成！\n\n📦 **保存位置：** ${selectedProject}\n👥 **团队配置：** 将自动生成对应的 AiTeam 和 Agent Teams\n🔗 **访问链接：** /projects/[projectId]/teams/[teamId]\n\n下一步：\n1. 查看项目中的团队配置\n2. 启动团队执行\n3. 监控执行过程\n4. 继续创建新的智能体\n\n还需要我帮您做什么吗？`
+          ` **智能体创建成功并已保存到项目！**
+
+✨ **${formData.description || '客服智能体'}** 已经创建完成！
+
+ **保存位置：** ${selectedProject}
+ **团队配置：** 将自动生成对应的 AiTeam 和 Agent Teams
+ **访问链接：** /projects/[projectId]/teams/[teamId]
+
+下一步：
+1. 查看项目中的团队配置
+2. 启动团队执行
+3. 监控执行过程
+4. 继续创建新的智能体
+
+还需要我帮您做什么吗？`
         );
         setCurrentStep(7);
         break;
+      }
 
       default:
         addAssistantMessage(

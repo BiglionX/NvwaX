@@ -3,13 +3,12 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { projectApi, Project } from '@/lib/api/projects';
-import { teamSkillApi, TeamSkill, TeamSkillSearchResult } from '@/lib/api/team-skills';
+import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
 import { 
   Folder, 
   Users, 
   Bot, 
   Plus, 
-  Search, 
   TrendingUp,
   ArrowRight,
   Sparkles,

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Plus, Filter, Search } from 'lucide-react';
+import { Plus, Filter } from 'lucide-react';
 import { bountyApi } from '@/lib/api/bounty';
 import BountyCard from '@/components/Bounty/BountyCard';
 import SearchHistory from '@/components/Bounty/SearchHistory';
@@ -31,7 +31,10 @@ export default function BountiesPage() {
         if (saved) {
           try {
             history = JSON.parse(saved);
-          } catch {}
+          } catch {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // Ignore parse errors
+          }
         }
         const trimmed = searchQuery.trim();
         const newHistory = [trimmed, ...history.filter(h => h !== trimmed)].slice(0, 10);
