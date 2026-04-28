@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Send, Bot, Sparkles, Loader, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
