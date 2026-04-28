@@ -27,6 +27,7 @@ export default function CreateAgentModal({
   const [agentName, setAgentName] = useState('');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;

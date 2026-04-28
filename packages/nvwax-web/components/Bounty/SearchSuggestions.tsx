@@ -11,6 +11,7 @@ interface SearchSuggestionsProps {
 }
 
 export default function SearchSuggestions({ query, onSelect }: SearchSuggestionsProps) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const wrapperRef = useRef<HTMLDivElement>(null);

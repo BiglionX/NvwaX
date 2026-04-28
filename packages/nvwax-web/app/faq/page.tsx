@@ -200,7 +200,7 @@ export default function FAQPage() {
             </h2>
             
             <div className="space-y-3">
-              {categoryFaqs.map((faq, idx) => {
+              {categoryFaqs.map((faq) => {
                 const globalIdx = faqs.findIndex(f => f === faq);
                 const isOpen = openIndex === globalIdx;
                 

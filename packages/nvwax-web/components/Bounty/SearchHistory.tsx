@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { History, X } from 'lucide-react';
 
 interface SearchHistoryProps {
@@ -25,7 +25,8 @@ export default function SearchHistory({ onSearch }: SearchHistoryProps) {
     return [];
   });
 
-  // 添加搜索记录
+  // 添加搜索记录（保留函数定义以备将来使用）
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const addToHistory = (query: string) => {
     if (!query.trim()) return;
     

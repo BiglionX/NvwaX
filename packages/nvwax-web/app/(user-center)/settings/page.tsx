@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { Shield, Lock, Mail, Phone, Bell, Trash2, AlertTriangle } from 'lucide-react';
+import { Shield, Lock, Mail, Bell, Trash2, AlertTriangle } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
