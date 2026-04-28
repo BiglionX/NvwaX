@@ -2,7 +2,7 @@
   "buildCommand": "cd ../.. && pnpm install --no-frozen-lockfile && cd packages/nvwax-web && pnpm run build",
   "outputDirectory": ".next",
   "devCommand": "npm run dev",
-  "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile",
+  "installCommand": "cd ../.. && npm install -g pnpm@8.15.6 && pnpm install --no-frozen-lockfile",
   "framework": "nextjs",
   "regions": ["sin1"]
 }
