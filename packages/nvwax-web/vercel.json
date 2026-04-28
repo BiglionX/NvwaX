@@ -1,8 +1,8 @@
 {
-  "buildCommand": "cd ../.. && npm install && cd packages/nvwax-web && npm run build",
+  "buildCommand": "npm install && npm run build",
   "outputDirectory": ".next",
   "devCommand": "npm run dev",
-  "installCommand": "cd ../.. && npm install",
+  "installCommand": "npm install",
   "framework": null,
   "regions": ["sin1"],
   "env": {
