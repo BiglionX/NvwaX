@@ -3,7 +3,7 @@
   "outputDirectory": ".next",
   "devCommand": "npm run dev",
   "installCommand": "cd ../.. && npm install",
-  "framework": "nextjs",
+  "framework": null,
   "regions": ["sin1"],
   "env": {
     "NODE_VERSION": "20"
