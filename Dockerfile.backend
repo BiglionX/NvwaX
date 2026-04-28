@@ -44,20 +44,7 @@ RUN pnpm install --prod
 COPY --from=backend-builder /app/packages/nvwax-server/dist ./packages/nvwax-server/dist
 COPY --from=backend-builder /app/packages/nvwax-server/migrations ./packages/nvwax-server/migrations
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nvwax -u 1001
-
-USER nvwax
-
-WORKDIR /app/packages/nvwax-server
-
-EXPOSE 3001
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
-
-# Add startup script for better debugging
+# Create startup script before switching to non-root user
 COPY <<'EOF' /app/start.sh
 #!/bin/sh
 set -e
@@ -74,5 +61,18 @@ exec node dist/app.js
 EOF
 
 RUN chmod +x /app/start.sh
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nvwax -u 1001
+
+USER nvwax
+
+WORKDIR /app/packages/nvwax-server
+
+EXPOSE 3001
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
 CMD ["/app/start.sh"]
