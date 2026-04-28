@@ -1,8 +1,11 @@
 {
-  "buildCommand": "cd ../.. && pnpm install --no-frozen-lockfile && cd packages/nvwax-web && pnpm run build",
+  "buildCommand": "cd ../.. && npm install && cd packages/nvwax-web && npm run build",
   "outputDirectory": ".next",
   "devCommand": "npm run dev",
-  "installCommand": "cd ../.. && corepack enable && corepack prepare pnpm@8.15.6 --activate && pnpm install --no-frozen-lockfile",
+  "installCommand": "cd ../.. && npm install",
   "framework": "nextjs",
-  "regions": ["sin1"]
+  "regions": ["sin1"],
+  "env": {
+    "NODE_VERSION": "20"
+  }
 }
