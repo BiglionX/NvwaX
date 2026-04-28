@@ -156,7 +156,7 @@ export default function TeamSkillDetailPage() {
                 <ul className="space-y-2">
                   {skill.leaderConfig?.responsibilities?.map((resp: string, idx: number) => (
                     <li key={idx} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
-                      <CheckCircle size={16} className="text-blue-500 mt-1 flex-shrink-0" />
+                      <CheckCircle size={16} className="text-blue-500 mt-1 shrink-0" />
                       <span>{resp}</span>
                     </li>
                   ))}
@@ -197,7 +197,7 @@ export default function TeamSkillDetailPage() {
                       <ul className="space-y-1">
                         {role.responsibilities.map((resp: string, rIdx: number) => (
                           <li key={rIdx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                            <CheckCircle size={14} className="text-purple-500 mt-0.5 flex-shrink-0" />
+                            <CheckCircle size={14} className="text-purple-500 mt-0.5 shrink-0" />
                             <span>{resp}</span>
                           </li>
                         ))}
@@ -224,7 +224,7 @@ export default function TeamSkillDetailPage() {
                   )}
                   
                   <div className="flex gap-4">
-                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center shrink-0">
                       <span className="text-lg font-bold text-orange-600 dark:text-orange-400">
                         {step.step}
                       </span>
@@ -332,7 +332,7 @@ export default function TeamSkillDetailPage() {
           </div>
 
           {/* CTA */}
-          <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl p-6 text-white">
+          <div className="bg-linear-to-br from-blue-600 to-purple-600 rounded-xl p-6 text-white">
             <h3 className="text-xl font-bold mb-3">
               准备好开始了吗？
             </h3>

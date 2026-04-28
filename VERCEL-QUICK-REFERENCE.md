@@ -23,6 +23,52 @@
 
 ## 🚀 快速部署步骤
 
+### ⚠️ 重要提示：Monorepo 部署配置
+
+由于 NvwaX 是 monorepo 项目，在 Vercel 部署时需要特殊配置：
+
+**方法一：通过 Vercel Dashboard（推荐）**
+
+1. 访问 https://vercel.com
+2. 点击 "Add New Project"
+3. 导入您的 GitHub 仓库
+4. **关键配置**：
+   - Framework Preset: `Next.js`
+   - Root Directory: `packages/nvwax-web` ← **必须设置**
+   - Build Command: `npm run build`
+   - Output Directory: `.next`
+   - Install Command: `npm install`
+
+5. 配置环境变量：
+   ```
+   NEXT_PUBLIC_API_URL=https://your-backend-api.com
+   ```
+
+6. 点击 "Deploy"
+
+**方法二：使用 Vercel CLI**
+
+```bash
+# 1. 安装 Vercel CLI
+npm install -g vercel
+
+# 2. 登录
+vercel login
+
+# 3. 进入前端目录
+cd packages/nvwax-web
+
+# 4. 首次部署
+vercel --project-name nvwax-web
+
+# 5. 设置环境变量
+vercel env add NEXT_PUBLIC_API_URL production
+# 输入您的后端 API URL
+
+# 6. 生产部署
+vercel --prod
+```
+
 ### 第 1 步：部署后端到 Railway（5 分钟）
 
 1. **访问 Railway**
