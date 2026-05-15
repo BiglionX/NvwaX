@@ -29,7 +29,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen fixed left-0 top-0 overflow-y-auto flex flex-col">
+    <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 min-h-screen fixed left-0 top-0 overflow-y-auto flex flex-col">
       <div className="p-6">
         <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">NvwaX</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">AI Agent Platform</p>
