@@ -1,9 +1,11 @@
 /**
  * 通知服务
- * 处理通知的创建、查询、标记已读等操作
+ * 
+ * 管理用户通知的 CRUD 操作和业务逻辑
  */
 
 import { Pool } from 'pg';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface Notification {
   id: string;
@@ -11,7 +13,7 @@ export interface Notification {
   type: string;
   title: string;
   message: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   isRead: boolean;
   priority: 'low' | 'normal' | 'high' | 'urgent';
   expiresAt?: Date;
@@ -24,78 +26,92 @@ export interface CreateNotificationInput {
   type: string;
   title: string;
   message: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   priority?: 'low' | 'normal' | 'high' | 'urgent';
   expiresAt?: Date;
 }
 
 export class NotificationService {
-  constructor(private pool: Pool) {}
+  private pool: Pool;
+
+  constructor(pool: Pool) {
+    this.pool = pool;
+  }
 
   /**
    * 创建通知
    */
   async createNotification(input: CreateNotificationInput): Promise<Notification> {
-    const { userId, type, title, message, data = {}, priority = 'normal', expiresAt } = input;
+    const notificationId = uuidv4();
     
     const result = await this.pool.query(
-      `INSERT INTO notifications (user_id, type, title, message, data, priority, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [userId, type, title, message, JSON.stringify(data), priority, expiresAt]
+      `INSERT INTO notifications (
+        id, user_id, type, title, message, data, priority, expires_at,
+        created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      RETURNING *`,
+      [
+        notificationId,
+        input.userId,
+        input.type,
+        input.title,
+        input.message,
+        JSON.stringify(input.data || {}),
+        input.priority || 'normal',
+        input.expiresAt || null
+      ]
     );
-    
+
     return this.mapRowToNotification(result.rows[0]);
   }
 
   /**
-   * 获取用户通知列表
+   * 获取用户的通知列表
    */
-  async getUserNotifications(userId: string, options: {
+  async getUserNotifications(userId: string, options?: {
     isRead?: boolean;
     type?: string;
     page?: number;
     limit?: number;
-  } = {}): Promise<{ notifications: Notification[]; total: number }> {
-    const { isRead, type, page = 1, limit = 20 } = options;
+  }): Promise<{ notifications: Notification[]; total: number }> {
+    const { isRead, type, page = 1, limit = 20 } = options || {};
     
     const conditions: string[] = ['user_id = $1'];
     const params: any[] = [userId];
     let paramIndex = 2;
-    
+
     if (isRead !== undefined) {
       conditions.push(`is_read = $${paramIndex++}`);
       params.push(isRead);
     }
-    
+
     if (type) {
       conditions.push(`type = $${paramIndex++}`);
       params.push(type);
     }
-    
-    const whereClause = `WHERE ${conditions.join(' AND ')}`;
-    
-    // 获取总数
+
+    // 过滤已过期的通知
+    conditions.push('(expires_at IS NULL OR expires_at > NOW())');
+
+    const whereClause = conditions.join(' AND ');
+
+    // 查询总数
     const countResult = await this.pool.query(
-      `SELECT COUNT(*) FROM notifications ${whereClause}`,
+      `SELECT COUNT(*) FROM notifications WHERE ${whereClause}`,
       params
     );
     const total = parseInt(countResult.rows[0].count);
-    
-    // 获取数据
+
+    // 查询数据
     const offset = (page - 1) * limit;
-    const result = await this.pool.query(
-      `SELECT * FROM notifications 
-       ${whereClause}
-       ORDER BY created_at DESC
-       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+    const dataResult = await this.pool.query(
+      `SELECT * FROM notifications WHERE ${whereClause} ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
       [...params, limit, offset]
     );
-    
-    return {
-      notifications: result.rows.map(row => this.mapRowToNotification(row)),
-      total,
-    };
+
+    const notifications = dataResult.rows.map(row => this.mapRowToNotification(row));
+
+    return { notifications, total };
   }
 
   /**
@@ -103,7 +119,7 @@ export class NotificationService {
    */
   async getUnreadCount(userId: string): Promise<number> {
     const result = await this.pool.query(
-      'SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = FALSE',
+      `SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = false AND (expires_at IS NULL OR expires_at > NOW())`,
       [userId]
     );
     
@@ -115,28 +131,23 @@ export class NotificationService {
    */
   async markAsRead(notificationId: string, userId: string): Promise<Notification> {
     const result = await this.pool.query(
-      `UPDATE notifications 
-       SET is_read = TRUE, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $1 AND user_id = $2
-       RETURNING *`,
+      `UPDATE notifications SET is_read = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2 RETURNING *`,
       [notificationId, userId]
     );
-    
+
     if (result.rows.length === 0) {
-      throw new Error('NOTIFICATION_NOT_FOUND');
+      throw new Error('NOTIFICATION_NOT_FOUND: 通知不存在或无权访问');
     }
-    
+
     return this.mapRowToNotification(result.rows[0]);
   }
 
   /**
-   * 标记所有通知为已读
+   * 批量标记所有通知为已读
    */
   async markAllAsRead(userId: string): Promise<void> {
     await this.pool.query(
-      `UPDATE notifications 
-       SET is_read = TRUE, updated_at = CURRENT_TIMESTAMP
-       WHERE user_id = $1 AND is_read = FALSE`,
+      `UPDATE notifications SET is_read = true, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND is_read = false`,
       [userId]
     );
   }
@@ -146,12 +157,12 @@ export class NotificationService {
    */
   async deleteNotification(notificationId: string, userId: string): Promise<void> {
     const result = await this.pool.query(
-      'DELETE FROM notifications WHERE id = $1 AND user_id = $2',
+      `DELETE FROM notifications WHERE id = $1 AND user_id = $2 RETURNING id`,
       [notificationId, userId]
     );
-    
-    if (result.rowCount === 0) {
-      throw new Error('NOTIFICATION_NOT_FOUND');
+
+    if (result.rows.length === 0) {
+      throw new Error('NOTIFICATION_NOT_FOUND: 通知不存在或无权访问');
     }
   }
 
@@ -160,8 +171,7 @@ export class NotificationService {
    */
   async cleanupExpiredNotifications(): Promise<number> {
     const result = await this.pool.query(
-      `DELETE FROM notifications 
-       WHERE expires_at IS NOT NULL AND expires_at < CURRENT_TIMESTAMP`
+      `DELETE FROM notifications WHERE expires_at IS NOT NULL AND expires_at < NOW()`
     );
     
     return result.rowCount || 0;

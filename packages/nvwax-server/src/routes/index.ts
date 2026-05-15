@@ -15,6 +15,8 @@ import rbacRouter from './rbac.routes.js';
 import v1Router from './v1.routes.js';
 import webhookRouter from './webhook.routes.js';
 import billingRouter from './billing.routes.js';
+import agentRouter from './agent.routes.js';
+import notificationRouter from './notification.routes.js';
 
 const router = Router();
 
@@ -101,6 +103,12 @@ router.use('/sdk', webhookRouter);
 
 // Billing routes
 router.use('/sdk', billingRouter);
+
+// Agent routes (Nvwa 智能体工厂)
+router.use('/agents', agentRouter);
+
+// Notification routes (通知系统)
+router.use('/notifications', notificationRouter);
 
 // V1 API routes (OpenAI-compatible)
 router.use('/v1', v1Router);

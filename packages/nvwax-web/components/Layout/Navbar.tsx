@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Home, FileText, User, LogIn, LogOut, Menu, X, Award, ClipboardList, Sparkles, Store } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
+import NotificationDropdown from '../notification-dropdown';
 
 const navItems = [
   { label: '首页', icon: Home, path: '/' },
@@ -76,6 +77,9 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {isLoggedIn ? (
               <>
+                {/* 通知下拉组件 */}
+                <NotificationDropdown />
+                
                 <Link
                   href="/my-bounties"
                   className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
