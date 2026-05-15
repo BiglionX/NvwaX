@@ -272,9 +272,9 @@ export default function NvwaPage() {
 
       {/* 主要内容区域 - 左右分栏 */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" style={{ height: 'calc(100vh - 180px)' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" style={{ minHeight: 'calc(100vh - 200px)' }}>
           {/* 左侧面板 - 需求信息和技能 */}
-          <div className="lg:col-span-1 space-y-4 overflow-y-auto">
+          <div className="lg:col-span-1 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
             {/* 需求卡片 */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-4">
@@ -416,7 +416,7 @@ export default function NvwaPage() {
           {/* 右侧面板 - 对话区域 */}
           <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
             {/* Messages Area */}
-            <div className="h-[calc(100vh-280px)] overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {messages.map((message) => (
               <div
                 key={message.id}
