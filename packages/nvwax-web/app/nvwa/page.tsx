@@ -22,18 +22,10 @@ interface AgentFormData {
 
 export default function NvwaPage() {
   const { isLoggedIn, userInfo } = useAuth();
-  const [messages, setMessages] = useState<Message[]>(() => {
-    // 初始化欢迎消息
-    return [{
-      id: 'welcome',
-      role: 'assistant',
-      content: '你好！我是 Nvwa，智能体之母 🌟\n\n我可以通过对话帮您创建专属的智能体。让我们开始吧！\n\n**第一步：您需要什么样的智能体？**\n\n请描述它的用途，例如：\n- "需要一个能自动回复客户咨询的客服智能体"\n- "想要一个分析股票数据的助手"\n- "创建一个生成营销文案的工具"',
-      timestamp: new Date(),
-    }];
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState<number>(0);
   const [formData, setFormData] = useState<AgentFormData>({
     name: '',
     description: '',
@@ -43,6 +35,17 @@ export default function NvwaPage() {
     skills: [],
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 客户端初始化欢迎消息（避免 hydration 错误）
+  useEffect(() => {
+    const welcomeMessage: Message = {
+      id: 'welcome',
+      role: 'assistant',
+      content: '你好！我是 Nvwa，智能体之母 🌟\n\n我可以通过对话帮您创建专属的智能体。让我们开始吧！\n\n**第一步：您需要什么样的智能体？**\n\n请描述它的用途，例如：\n- "需要一个能自动回复客户咨询的客服智能体"\n- "想要一个分析股票数据的助手"\n- "创建一个生成营销文案的工具"',
+      timestamp: new Date(),
+    };
+    setMessages([welcomeMessage]);
+  }, []);
 
   // 添加助手消息
   const addAssistantMessage = (content: string) => {
@@ -217,21 +220,7 @@ export default function NvwaPage() {
                                input === '3' ? '内容管理系统' : input;
         
         addAssistantMessage(
-          ` **智能体创建成功并已保存到项目！**
-
-✨ **${formData.description || '客服智能体'}** 已经创建完成！
-
- **保存位置：** ${selectedProject}
- **团队配置：** 将自动生成对应的 AiTeam 和 Agent Teams
- **访问链接：** /projects/[projectId]/teams/[teamId]
-
-下一步：
-1. 查看项目中的团队配置
-2. 启动团队执行
-3. 监控执行过程
-4. 继续创建新的智能体
-
-还需要我帮您做什么吗？`
+          `🎉 **智能体创建成功并已保存到项目！**\n\n✨ **${formData.description || '客服智能体'}** 已经创建完成！\n\n📂 **保存位置：** ${selectedProject}\n🤖 **团队配置：** 将自动生成对应的 AiTeam 和 Agent Teams\n🔗 **访问链接：** /projects/[projectId]/teams/[teamId]\n\n下一步：\n1. 查看项目中的团队配置\n2. 启动团队执行\n3. 监控执行过程\n4. 继续创建新的智能体\n\n还需要我帮您做什么吗？`
         );
         setCurrentStep(7);
         break;
@@ -252,29 +241,27 @@ export default function NvwaPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900 dark:to-pink-900">
-      {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-16 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <Sparkles size={24} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Nvwa
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">轻松创建专属智能体</p>
-            </div>
+    <div className="flex flex-col min-h-[calc(100vh-120px)] -m-4 sm:-m-6 lg:-m-8">
+      {/* Header - 负 margin 突破 MainLayout 的 padding 限制 */}
+      <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-4" role="banner">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+            <Sparkles size={24} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Nvwa
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">轻松创建专属智能体</p>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* 主要内容区域 - 左右分栏 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" style={{ minHeight: 'calc(100vh - 200px)' }}>
+      <main className="flex-1 overflow-hidden px-4 sm:px-6 lg:px-8 py-6" role="main">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
           {/* 左侧面板 - 需求信息和技能 */}
-          <div className="lg:col-span-1 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+          <aside className="lg:col-span-1 space-y-4 overflow-y-auto pr-2 max-h-[calc(100vh-200px)] scroll-smooth" aria-label="智能体信息面板">
             {/* 需求卡片 */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-4">
@@ -411,12 +398,17 @@ export default function NvwaPage() {
                 ))}
               </div>
             </div>
-          </div>
+          </aside>
 
           {/* 右侧面板 - 对话区域 */}
-          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+          <section className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden" aria-label="对话区域">
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div 
+              className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth"
+              role="log"
+              aria-live="polite"
+              aria-label="聊天记录"
+            >
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -429,7 +421,7 @@ export default function NvwaPage() {
                 )}
                 
                 <div
-                  className={`max-w-[70%] rounded-2xl px-5 py-3 ${
+                  className={`max-w-[85%] md:max-w-[75%] lg:max-w-[70%] rounded-2xl px-5 py-3 ${
                     message.role === 'user'
                       ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
@@ -487,14 +479,16 @@ export default function NvwaPage() {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder={currentStep === 0 ? "描述您想要的智能体..." : "输入您的回答..."}
-                  className="flex-1 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm"
+                  aria-label="消息输入框"
+                  className="flex-1 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm transition-all duration-200 focus:shadow-md"
                   rows={2}
                   disabled={isTyping}
                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim() || isTyping}
-                  className="px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all duration-200 flex items-center gap-2"
+                  aria-label="发送消息"
+                  className="px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all duration-200 flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
                 >
                   <Send size={18} />
                   <span>发送</span>
@@ -509,7 +503,8 @@ export default function NvwaPage() {
                         window.location.reload();
                       }
                     }}
-                    className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    className="flex items-center gap-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus:outline-none focus:underline"
+                    aria-label="重新开始对话"
                   >
                     <RotateCcw size={12} />
                     重新开始
@@ -517,9 +512,9 @@ export default function NvwaPage() {
                 )}
               </div>
             </div>
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
