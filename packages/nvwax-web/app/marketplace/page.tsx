@@ -1,48 +1,72 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { searchApi, Agent } from '@/lib/api/search';
 import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
-import { Star, Download, ExternalLink, Users } from 'lucide-react';
+import { Star, Download, ExternalLink, Users, Search, X } from 'lucide-react';
 import Link from 'next/link';
 
-type Category = 'all' | 'agents' | 'virtual-company' | 'development' | 'analysis' | 'content';
+type Category = 'all' | 'agents' | 'virtual-company';
 
 export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // 搜索防抖
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // 查询 Agents（单个智能体）
-  const { data: agentsData } = useQuery({
-    queryKey: ['agents', 'popular', 1],
-    queryFn: () => searchApi.searchAgents('ai agent', 1, 30),
+  const { data: agentsData, isLoading: loadingAgents } = useQuery({
+    queryKey: ['agents', debouncedSearch, 1],
+    queryFn: () => {
+      if (debouncedSearch) {
+        return searchApi.searchAgents(debouncedSearch, 1, 30);
+      }
+      return searchApi.searchAgents('ai agent', 1, 30);
+    },
     enabled: selectedCategory === 'all' || selectedCategory === 'agents'
   });
 
-  // 查询 Team Skills（包括虚拟公司）
+  // 查询 Team Skills（虚拟公司）
   const { data: teamSkillsData, isLoading: loadingTeamSkills } = useQuery({
-    queryKey: ['team-skills', selectedCategory],
+    queryKey: ['team-skills', selectedCategory, debouncedSearch],
     queryFn: () => {
-      if (selectedCategory === 'all' || selectedCategory === 'agents') {
+      if (debouncedSearch) {
+        // 有搜索关键词时，使用搜索 API
+        return teamSkillApi.searchTeamSkills({
+          query: debouncedSearch,
+          category: selectedCategory === 'virtual-company' ? 'virtual-company' : undefined,
+          isPublic: true,
+          page: 1,
+          limit: 30
+        });
+      } else if (selectedCategory === 'all' || selectedCategory === 'agents') {
         return teamSkillApi.getMarketplaceTeamSkills(1, 30);
       } else {
-        return teamSkillApi.getTeamSkillsByCategory(selectedCategory, 1, 30);
+        // 只查询虚拟公司类型
+        return teamSkillApi.getTeamSkillsByCategory('virtual-company', 1, 30);
       }
     },
     enabled: selectedCategory !== 'agents'
   });
 
-  // 分类选项
+  // 分类选项 - 只保留产品类型分类
   const categories: { value: Category; label: string; icon?: React.ElementType }[] = [
     { value: 'all', label: '全部' },
     { value: 'agents', label: '智能体' },
     { value: 'virtual-company', label: '虚拟公司', icon: Users },
-    { value: 'development', label: '开发团队' },
-    { value: 'analysis', label: '数据分析' },
-    { value: 'content', label: '内容创作' },
   ];
 
-  if (loadingTeamSkills) {
+  const isLoading = loadingAgents || loadingTeamSkills;
+
+  if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto">
         <div className="text-center py-12 text-gray-500">加载中...</div>
@@ -52,9 +76,48 @@ export default function MarketplacePage() {
 
   return (
     <div className="max-w-6xl mx-auto">
+      {/* 页面标题和搜索 */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Agent 广场</h1>
-        <p className="text-gray-600 dark:text-gray-300">发现和探索优秀的 AI Agent 和虚拟公司</p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Agent 广场</h1>
+            <p className="text-gray-600 dark:text-gray-300">发现和探索优秀的 AI Agent 和虚拟公司</p>
+          </div>
+          
+          {/* 搜索框 */}
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="搜索智能体或虚拟公司..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* 搜索提示 */}
+        {debouncedSearch && (
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <span>搜索结果：</span>
+            <span className="font-medium text-blue-600 dark:text-blue-400">{debouncedSearch}</span>
+            <button
+              onClick={() => setSearchQuery('')}
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              清除搜索
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 分类筛选器 */}
@@ -155,16 +218,18 @@ export default function MarketplacePage() {
         </>
       )}
 
-      {/* Team Skills Grid */}
-      {(selectedCategory === 'all' || selectedCategory === 'virtual-company' || selectedCategory === 'development' || selectedCategory === 'analysis' || selectedCategory === 'content') && teamSkillsData?.data?.data && (
+      {/* Team Skills Grid - 只显示虚拟公司 */}
+      {(selectedCategory === 'all' || selectedCategory === 'virtual-company') && teamSkillsData?.data?.data && (
         <>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="text-2xl">👥</span>
-            团队技能
-            <span className="text-sm font-normal text-gray-500 dark:text-gray-400">({teamSkillsData.data.data.length} 个)</span>
+            <span className="text-2xl"></span>
+            虚拟公司
+            <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+              ({teamSkillsData.data.data?.length || 0} 个)
+            </span>
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {teamSkillsData.data.data.map((skill: TeamSkill) => (
+            {teamSkillsData.data.data?.map((skill: TeamSkill) => (
               <Link
                 key={skill.id}
                 href={`/marketplace/team-skills/${skill.id}`}
@@ -212,9 +277,18 @@ export default function MarketplacePage() {
         </>
       )}
 
-      {!agentsData?.data?.length && !teamSkillsData?.data?.data?.length && (
+      {/* 空状态 */}
+      {(() => {
+        if (selectedCategory === 'all') {
+          return !agentsData?.data?.length && !teamSkillsData?.data?.data?.length;
+        }
+        if (selectedCategory === 'agents') {
+          return !agentsData?.data?.length;
+        }
+        return !teamSkillsData?.data?.data?.length;
+      })() && (
         <div className="text-center py-12 text-gray-500">
-          暂无数据
+          {debouncedSearch ? '未找到匹配的 Agent 或虚拟公司' : '暂无数据'}
         </div>
       )}
     </div>

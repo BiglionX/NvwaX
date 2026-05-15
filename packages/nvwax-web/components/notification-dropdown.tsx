@@ -148,7 +148,7 @@ export default function NotificationDropdown() {
           />
           
           {/* 下拉内容 */}
-          <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-gray-200 dark:border-gray-700 z-50 max-h-[600px] flex flex-col">
+          <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-gray-200 dark:border-gray-700 z-50 max-h-150 flex flex-col">
             {/* 头部 */}
             <div className="p-4 border-b-2 border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <h3 className="font-semibold text-gray-900 dark:text-white">

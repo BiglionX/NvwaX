@@ -73,7 +73,7 @@ export default function TeamExecutionPage() {
           value={requirement}
           onChange={(e) => setRequirement(e.target.value)}
           placeholder="例如：创建一个电商客服智能体，能够自动回复客户咨询并查询订单状态..."
-          className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white min-h-[120px] focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+          className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 dark:text-white min-h-30 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
           disabled={isExecuting}
         />
         
