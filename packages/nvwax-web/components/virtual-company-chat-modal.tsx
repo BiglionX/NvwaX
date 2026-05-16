@@ -43,6 +43,16 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
 
   // 初始化会话
   useEffect(() => {
+    // 先检查登录状态
+    const token = localStorage.getItem('user_token');
+    const userInfo = localStorage.getItem('user_info');
+    
+    if (!token || !userInfo) {
+      addSystemMessage('请先登录以使用虚拟公司功能。\n\n💡 提示：点击右上角的"登录"按钮进行登录。');
+      console.warn('User not logged in, skipping session creation');
+      return;
+    }
+    
     createSession();
   }, []);
 
@@ -76,8 +86,21 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
 
       const data = await response.json();
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || '创建会话失败');
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Token 过期或无效，提示重新登录
+          addSystemMessage('登录已过期，请重新登录后再试。\n\n💡 提示：请刷新页面并重新登录。');
+          console.warn('Token expired or invalid');
+          // 清除过期 token
+          localStorage.removeItem('user_token');
+          localStorage.removeItem('user_info');
+          return;
+        }
+        throw new Error(data.error?.message || data.error || '创建会话失败');
+      }
+      
+      if (!data.success) {
+        throw new Error(data.error?.message || data.error || '创建会话失败');
       }
 
       setSessionId(data.data.id);
