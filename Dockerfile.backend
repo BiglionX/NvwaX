@@ -6,6 +6,9 @@ WORKDIR /app
 # 强制清除缓存标记 - 版本 20260427-v3
 ARG CACHE_BUST=3
 
+# 安装 Python 和构建工具（用于编译 better-sqlite3 等原生模块）
+RUN apk add --no-cache python3 py3-pip make g++
+
 # Install pnpm
 RUN npm install -g pnpm@8.15.0
 
@@ -32,6 +35,9 @@ WORKDIR /app
 
 # Install pnpm
 RUN npm install -g pnpm@8.15.0
+
+# 安装 Python 和构建工具（用于编译 better-sqlite3 等原生模块）
+RUN apk add --no-cache python3 py3-pip make g++
 
 # Copy monorepo package files
 COPY package.json pnpm-workspace.yaml .npmrc ./
