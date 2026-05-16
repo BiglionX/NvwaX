@@ -8,6 +8,7 @@ import { teamSkillController } from '../controllers/team-skill.controller.js';
 import { userAuthMiddleware } from '../middleware/user-auth.middleware.js';
 import teamSkillRouter from './team-skill.routes.js';
 import nvwaLeaderRouter from './nvwa-leader.routes.js';
+import virtualCompanyRouter from './virtual-company.routes.js';
 import teamExecutionRouter from './team-execution.routes.js';
 import adminRouter from './admin.routes.js';
 import sdkRouter from './sdk.routes.js';
@@ -56,6 +57,9 @@ router.get('/agent-teams/:id/package-info', projectController.getPackageInfo);
 router.post('/agent-teams/:id/build-package', projectController.buildPackage);
 router.get('/package-builds/:jobId', projectController.getBuildStatus);
 
+// ProClaw Export routes
+router.post('/team-skills/:id/export-to-proclaw', projectController.exportToProClaw);
+
 // User routes
 router.get('/user/profile', userController.getProfile);
 router.put('/user/:userId', userController.updateProfile);
@@ -85,6 +89,9 @@ router.get('/team-skill-builds/:jobId', teamSkillController.getBuildStatus);
 
 // Nvwa Leader routes
 router.use('/nvwa', nvwaLeaderRouter);
+
+// Virtual Company Creation routes
+router.use('/virtual-company', virtualCompanyRouter);
 
 // Team Execution routes
 router.use('/', teamExecutionRouter);

@@ -1,18 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { searchApi, Agent } from '@/lib/api/search';
 import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
 import { Star, Download, ExternalLink, Users, Search, X } from 'lucide-react';
 import Link from 'next/link';
+import VirtualCompanyChatModal from '@/components/virtual-company-chat-modal';
 
 type Category = 'all' | 'agents' | 'virtual-company';
 
 export default function MarketplacePage() {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // 搜索防抖
   useEffect(() => {
@@ -142,7 +146,13 @@ export default function MarketplacePage() {
       {selectedCategory === 'virtual-company' && (
         <div className="mb-8 p-6 bg-linear-to-r from-purple-500 to-pink-500 rounded-xl text-white">
           <h2 className="text-2xl font-bold mb-2">🏢 虚拟公司</h2>
-          <p>组建你的 AI 团队，像真实公司一样协作工作</p>
+          <p className="mb-4">组建你的 AI 团队，像真实公司一样协作工作</p>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+          >
+            ✨ 创建虚拟公司
+          </button>
         </div>
       )}
 
@@ -290,6 +300,17 @@ export default function MarketplacePage() {
         <div className="text-center py-12 text-gray-500">
           {debouncedSearch ? '未找到匹配的 Agent 或虚拟公司' : '暂无数据'}
         </div>
+      )}
+
+      {/* 虚拟公司创建弹窗（对话式） */}
+      {showCreateModal && (
+        <VirtualCompanyChatModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={(teamSkillId) => {
+            setShowCreateModal(false);
+            router.push(`/team-skills/${teamSkillId}`);
+          }}
+        />
       )}
     </div>
   );

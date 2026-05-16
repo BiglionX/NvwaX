@@ -221,6 +221,14 @@ export const teamSkillApi = {
   getBuildStatus: async (jobId: string) => {
     const response = await apiClient.get(`/team-skill-builds/${jobId}`);
     return response.data.data;
+  },
+
+  /**
+   * 导出到 ProClaw
+   */
+  exportToProClaw: async (id: string, token: string) => {
+    const response = await apiClient.post(`/team-skills/${id}/export-to-proclaw`, { token });
+    return response.data;
   }
 };
 

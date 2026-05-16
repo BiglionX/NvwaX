@@ -570,7 +570,7 @@ export default function MarketplacePage() {
 
       {/* Featured Section for Virtual Companies */}
       {selectedCategory === 'virtual-company' && (
-        <div className="mb-8 p-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white">
+        <div className="mb-8 p-6 bg-linear-to-r from-purple-500 to-pink-500 rounded-xl text-white">
           <h2 className="text-2xl font-bold mb-2">🏢 虚拟公司</h2>
           <p>组建你的 AI 团队，像真实公司一样协作工作</p>
         </div>

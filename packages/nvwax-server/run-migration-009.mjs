@@ -1,6 +1,12 @@
-import pkg from 'pg';
-const { Pool } = pkg;
-import dotenv from 'dotenv';
+#!/usr/bin/env node
+/**
+ * 执行虚拟公司会话系统数据库迁移
+ * 
+ * 用法:
+ *   node run-migration-009.mjs
+ */
+
+import { Pool } from 'pg';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -8,67 +14,70 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-dotenv.config();
-
+// 数据库配置
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  database: process.env.DB_NAME || 'nvwax',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'postgres'
 });
 
-(async () => {
-  console.log('\n🚀 开始优化全栈开发团队配置...\n');
+async function runMigration() {
+  console.log('🚀 开始执行虚拟公司会话系统迁移...\n');
   
   try {
-    // 读取 SQL 文件
-    const sqlPath = join(__dirname, 'migrations', '009_optimize_fullstack_team.sql');
-    const sql = readFileSync(sqlPath, 'utf-8');
+    // 读取迁移脚本
+    const migrationPath = join(__dirname, 'migrations', '009_virtual_company_sessions.sql');
+    const sql = readFileSync(migrationPath, 'utf-8');
+    
+    console.log('📄 执行 SQL 迁移脚本...');
     
     // 执行迁移
     await pool.query(sql);
     
-    console.log('✅ 全栈开发团队优化完成!\n');
-    console.log('主要改进:');
-    console.log('  1. 技术总监 → 产品经理 (product-manager-agent)');
-    console.log('  2. 新增测试工程师角色 (testing-agent)');
-    console.log('  3. 工作流程从 7 步扩展到 11 步');
-    console.log('  4. 质量标准提升到 90% 代码覆盖率\n');
+    console.log('✅ 迁移成功完成！\n');
     
-    // 验证更新
-    const result = await pool.query(
-      `SELECT id, name, version, 
-              jsonb_array_length(roles) as role_count,
-              jsonb_array_length(workflow->'steps') as step_count
-       FROM team_skills 
-       WHERE id = 'team-skill-dev-001'`
-    );
+    // 验证表是否创建成功
+    const result = await pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+        AND table_name = 'virtual_company_sessions'
+    `);
     
-    if (result.rows[0]) {
-      const team = result.rows[0];
-      console.log('当前配置:');
-      console.log(`  ID: ${team.id}`);
-      console.log(`  名称: ${team.name}`);
-      console.log(`  版本: ${team.version}`);
-      console.log(`  角色数量: ${team.role_count}`);
-      console.log(`  工作流步骤: ${team.step_count}\n`);
+    if (result.rows.length > 0) {
+      console.log('✅ 验证通过: virtual_company_sessions 表已创建\n');
       
-      // 显示角色列表
-      const rolesResult = await pool.query(
-        `SELECT roles FROM team_skills WHERE id = 'team-skill-dev-001'`
-      );
-      const roles = rolesResult.rows[0].roles;
-      console.log('团队成员:');
-      roles.forEach((role, index) => {
-        console.log(`  ${index + 1}. ${role.role} (${role.specialty})`);
-        console.log(`     Agent: ${role.agent_type}`);
-        console.log(`     职责: ${role.responsibilities.join(', ')}`);
+      // 显示表结构
+      const columns = await pool.query(`
+        SELECT column_name, data_type, is_nullable
+        FROM information_schema.columns
+        WHERE table_name = 'virtual_company_sessions'
+        ORDER BY ordinal_position
+      `);
+      
+      console.log('📋 表结构:');
+      console.log('─'.repeat(60));
+      columns.rows.forEach(col => {
+        console.log(`  ${col.column_name.padEnd(30)} ${col.data_type.padEnd(20)} ${col.is_nullable}`);
       });
+      console.log('─'.repeat(60));
+    } else {
+      console.error('❌ 验证失败: virtual_company_sessions 表未找到');
+      process.exit(1);
     }
-    
-    console.log('\n✨ 优化完成!请访问 http://localhost:3000/marketplace/team-skills/team-skill-dev-001 查看\n');
     
   } catch (error) {
     console.error('❌ 迁移失败:', error.message);
+    console.error('\n错误详情:', error);
     process.exit(1);
   } finally {
     await pool.end();
   }
-})();
+  
+  console.log('\n✨ 迁移完成！可以开始使用虚拟公司创建功能了。\n');
+}
+
+// 运行迁移
+runMigration();

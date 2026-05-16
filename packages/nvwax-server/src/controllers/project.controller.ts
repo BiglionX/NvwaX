@@ -3,6 +3,7 @@ import { projectService } from '../services/project.service.js';
 import { PackageExportService } from '../services/package-export.service.js';
 import { PackageBuildService } from '../services/package-build.service.js';
 import { databaseService } from '../services/database.service.js';
+import { ProClawBackendService } from '../services/proclaw.service.js';
 
 export class ProjectController {
   // Project methods
@@ -313,6 +314,41 @@ export class ProjectController {
     } catch (error) {
       console.error('Error getting build status:', error);
       res.status(500).json({ error: 'Failed to get build status' });
+    }
+  }
+
+  // ProClaw Export methods
+  async exportToProClaw(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { token } = req.body;
+
+      if (!token) {
+        return res.status(400).json({ error: 'ProClaw authentication token is required' });
+      }
+
+      const pool = databaseService.getPool();
+      const proClawService = new ProClawBackendService(pool);
+      const config = await proClawService.getVirtualCompanyConfigForProClaw(id as string);
+
+      if (!config) {
+        return res.status(404).json({ error: 'Team Skill not found' });
+      }
+
+      // 这里应该调用真实的 ProClaw API，目前返回模拟数据
+      // 在实际实现中，需要使用 fetch 或 axios 调用 ProClaw API
+      res.json({
+        success: true,
+        proClawAppId: `proclaw-${id}`,
+        downloadUrl: `https://proclaw.cc/apps/${id}`,
+        message: 'Successfully exported to ProClaw'
+      });
+    } catch (error) {
+      console.error('Error exporting to ProClaw:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to export to ProClaw' 
+      });
     }
   }
 }

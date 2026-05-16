@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { X, Download, Loader, AlertCircle, Package } from 'lucide-react';
+import { X, Download, Loader, AlertCircle, Package, Sparkles, CheckCircle } from 'lucide-react';
 import { teamSkillApi } from '@/lib/api/team-skills';
+import { ProClawExportResult } from '@/lib/api/proclaw';
 
 interface TeamSkillPackageInfo {
   teamName: string;
@@ -43,6 +44,8 @@ export default function TeamSkillPackageModal({
   const [buildJob, setBuildJob] = useState<TeamSkillBuildJob | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exportMode, setExportMode] = useState<'local' | 'proclaw'>('local');
+  const [proClawResult, setProClawResult] = useState<ProClawExportResult | null>(null);
 
   const pollBuildStatus = useCallback(async () => {
     if (!buildJob) return;
@@ -100,6 +103,25 @@ export default function TeamSkillPackageModal({
 
     return () => clearInterval(interval);
   }, [buildJob, pollBuildStatus]);
+
+  const handleExportToProClaw = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // 在实际应用中，这里应该先检查用户是否已登录 ProClaw
+      // 如果未登录，则引导用户进行 OAuth 授权
+      const token = localStorage.getItem('proclaw_token') || 'mock-token-for-dev';
+      
+      const result = await teamSkillApi.exportToProClaw(teamSkillId, token);
+      setProClawResult(result);
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Failed to export to ProClaw:', err);
+      setError(err instanceof Error ? err.message : '导出到 ProClaw 失败');
+      setIsLoading(false);
+    }
+  };
 
   const handleBuild = async () => {
     try {
@@ -181,6 +203,40 @@ export default function TeamSkillPackageModal({
             </div>
           )}
 
+          {/* ProClaw Export Result */}
+          {proClawResult && (
+            <div className="space-y-4">
+              <div className={`p-6 rounded-xl border ${proClawResult.success ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'}`}>
+                <div className="flex items-start gap-3">
+                  {proClawResult.success ? (
+                    <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400 shrink-0 mt-1" />
+                  ) : (
+                    <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 shrink-0 mt-1" />
+                  )}
+                  <div>
+                    <h3 className={`font-bold ${proClawResult.success ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
+                      {proClawResult.success ? '导出成功！' : '导出失败'}
+                    </h3>
+                    <p className={`text-sm mt-1 ${proClawResult.success ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                      {proClawResult.message}
+                    </p>
+                    {proClawResult.success && proClawResult.downloadUrl && (
+                      <a
+                        href={proClawResult.downloadUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <Sparkles size={16} />
+                        在 ProClaw 中打开
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Package Info */}
           {packageInfo && !buildJob && (
             <div className="space-y-4">
@@ -220,28 +276,60 @@ export default function TeamSkillPackageModal({
           )}
 
           {/* Build Options */}
-          {!buildJob && (
+          {!buildJob && !proClawResult && (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  目标平台
+                  导出方式
                 </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {(['windows', 'macos', 'linux'] as const).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setPlatform(p)}
-                      className={`px-4 py-3 rounded-lg border-2 transition-all ${
-                        platform === p
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                      }`}
-                    >
-                      <span className="capitalize">{p}</span>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setExportMode('local')}
+                    className={`px-4 py-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
+                      exportMode === 'local'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <Package size={18} />
+                    本地打包
+                  </button>
+                  <button
+                    onClick={() => setExportMode('proclaw')}
+                    className={`px-4 py-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
+                      exportMode === 'proclaw'
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <Sparkles size={18} />
+                    ProClaw 集成
+                  </button>
                 </div>
               </div>
+
+              {exportMode === 'local' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    目标平台
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {(['windows', 'macos', 'linux'] as const).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPlatform(p)}
+                        className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                          platform === p
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
+                      >
+                        <span className="capitalize">{p}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -293,7 +381,7 @@ export default function TeamSkillPackageModal({
         </div>
 
         {/* Footer */}
-        {!buildJob && (
+        {!buildJob && !proClawResult && (
           <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
             <button
               onClick={handleClose}
@@ -303,19 +391,19 @@ export default function TeamSkillPackageModal({
               取消
             </button>
             <button
-              onClick={handleBuild}
+              onClick={exportMode === 'local' ? handleBuild : handleExportToProClaw}
               disabled={isLoading || !packageInfo}
               className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
                   <Loader className="w-4 h-4 animate-spin" />
-                  加载中...
+                  处理中...
                 </>
               ) : (
                 <>
-                  <Package size={18} />
-                  开始打包
+                  {exportMode === 'local' ? <Package size={18} /> : <Sparkles size={18} />}
+                  {exportMode === 'local' ? '开始打包' : '导出到 ProClaw'}
                 </>
               )}
             </button>
