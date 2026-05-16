@@ -99,8 +99,9 @@ export function useVirtualCompanyProgress(
     try {
       console.log(`🔌 Connecting to SSE stream for session: ${sessionId}`);
       
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
       const eventSource = new EventSource(
-        `/api/virtual-company/sessions/${sessionId}/stream`
+        `${API_URL}/virtual-company/sessions/${sessionId}/stream`
       );
       
       eventSourceRef.current = eventSource;

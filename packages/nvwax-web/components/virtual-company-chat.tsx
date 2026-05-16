@@ -40,7 +40,8 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
 
   const loadSessionHistory = async () => {
     try {
-      const response = await fetch(`/api/virtual-company/sessions/${sessionId}`);
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/virtual-company/sessions/${sessionId}`);
       const data = await response.json();
       
       if (data.success) {
@@ -74,7 +75,8 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
     setMessages(prev => [...prev, newUserMessage]);
 
     try {
-      const response = await fetch(`/api/virtual-company/sessions/${sessionId}/message`, {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/virtual-company/sessions/${sessionId}/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

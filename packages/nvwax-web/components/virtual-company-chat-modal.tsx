@@ -53,7 +53,8 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
 
   const createSession = async () => {
     try {
-      const response = await fetch('/api/virtual-company/sessions', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/virtual-company/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +115,8 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
     setIsSending(true);
 
     try {
-      const response = await fetch(`/api/virtual-company/sessions/${sessionId}/message`, {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/virtual-company/sessions/${sessionId}/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
