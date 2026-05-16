@@ -54,7 +54,8 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
         isPublic: true
       };
 
-      const response = await fetch('/api/nvwa/create-virtual-company', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/nvwa/create-virtual-company`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
