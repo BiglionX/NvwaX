@@ -53,12 +53,25 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
 
   const createSession = async () => {
     try {
+      // 检查用户是否登录
+      const token = localStorage.getItem('user_token');
+      const userInfo = localStorage.getItem('user_info');
+      
+      if (!token || !userInfo) {
+        addSystemMessage('请先登录以创建虚拟公司会话。');
+        console.warn('User not logged in');
+        return;
+      }
+      
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      };
+      
       const response = await fetch(`${API_URL}/virtual-company/sessions`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
       });
 
       const data = await response.json();

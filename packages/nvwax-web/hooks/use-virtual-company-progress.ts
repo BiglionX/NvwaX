@@ -100,9 +100,14 @@ export function useVirtualCompanyProgress(
       console.log(`🔌 Connecting to SSE stream for session: ${sessionId}`);
       
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const eventSource = new EventSource(
-        `${API_URL}/virtual-company/sessions/${sessionId}/stream`
-      );
+      const token = typeof window !== 'undefined' ? localStorage.getItem('user_token') : null;
+      
+      // SSE EventSource 不支持自定义 header，通过 URL 参数传递 token
+      const url = token 
+        ? `${API_URL}/virtual-company/sessions/${sessionId}/stream?token=${encodeURIComponent(token)}`
+        : `${API_URL}/virtual-company/sessions/${sessionId}/stream`;
+      
+      const eventSource = new EventSource(url);
       
       eventSourceRef.current = eventSource;
 
