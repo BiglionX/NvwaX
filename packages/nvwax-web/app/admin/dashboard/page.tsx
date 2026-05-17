@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
 import { Users, Folder, Shield, Activity, TrendingUp, Clock } from 'lucide-react';
+import LoadingState from '@/components/Layout/LoadingState';
 
 // 注意：权限验证已由 ProtectedAdminRoute 在 layout 层面处理，无需在此重复检查
 
@@ -66,16 +67,14 @@ export default function AdminDashboardPage() {
   ];
 
   if (isLoading) {
-    return (
-      <div className="text-center py-12 text-gray-500">加载中...</div>
-    );
+    return <LoadingState />;
   }
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">数据看板</h1>
-        <p className="text-gray-600 dark:text-gray-300">系统运行概况和实时统计</p>
+        <p className="text-gray-600 dark:text-gray-400">系统运行概况和实时统计</p>
       </div>
 
       {/* Stats Grid */}
@@ -83,7 +82,7 @@ export default function AdminDashboardPage() {
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
+            <div key={stat.label} className="bg-white dark:bg-gray-800 rounded-xl shadow-md border-2 border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
                   <Icon className={stat.color.replace('bg-', 'text-')} size={24} />

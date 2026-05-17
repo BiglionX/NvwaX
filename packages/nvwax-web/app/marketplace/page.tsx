@@ -8,6 +8,7 @@ import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
 import { Star, Download, ExternalLink, Users, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import VirtualCompanyChatModal from '@/components/virtual-company-chat-modal';
+import LoadingState from '@/components/Layout/LoadingState';
 
 type Category = 'all' | 'agents' | 'virtual-company';
 
@@ -71,39 +72,35 @@ export default function MarketplacePage() {
   const isLoading = loadingAgents || loadingTeamSkills;
 
   if (isLoading) {
-    return (
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center py-12 text-gray-500">加载中...</div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* 页面标题和搜索 */}
       <div className="mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Agent 广场</h1>
-            <p className="text-gray-600 dark:text-gray-300">发现和探索优秀的 AI Agent 和虚拟公司</p>
+            <p className="text-gray-600 dark:text-gray-400">发现和探索优秀的 AI Agent 和虚拟公司</p>
           </div>
           
           {/* 搜索框 */}
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
               placeholder="搜索智能体或虚拟公司..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500"
+              className="w-full pl-12 pr-12 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white placeholder-gray-500"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             )}
           </div>
@@ -112,11 +109,12 @@ export default function MarketplacePage() {
         {/* 搜索提示 */}
         {debouncedSearch && (
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <Search size={16} />
             <span>搜索结果：</span>
             <span className="font-medium text-blue-600 dark:text-blue-400">{debouncedSearch}</span>
             <button
               onClick={() => setSearchQuery('')}
-              className="text-blue-600 dark:text-blue-400 hover:underline"
+              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
               清除搜索
             </button>
@@ -130,10 +128,10 @@ export default function MarketplacePage() {
           <button
             key={cat.value}
             onClick={() => setSelectedCategory(cat.value)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium whitespace-nowrap transition-all ${
               selectedCategory === cat.value
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-gray-200 dark:border-gray-700'
             }`}
           >
             {cat.icon && <cat.icon size={18} />}
@@ -144,12 +142,12 @@ export default function MarketplacePage() {
 
       {/* Featured Section for Virtual Companies */}
       {selectedCategory === 'virtual-company' && (
-        <div className="mb-8 p-6 bg-linear-to-r from-purple-500 to-pink-500 rounded-xl text-white">
+        <div className="mb-8 p-6 bg-linear-to-r from-purple-600 to-pink-600 rounded-xl text-white shadow-lg">
           <h2 className="text-2xl font-bold mb-2">🏢 虚拟公司</h2>
           <p className="mb-4">组建你的 AI 团队，像真实公司一样协作工作</p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+            className="px-6 py-2.5 bg-white text-purple-600 rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-md hover:shadow-lg"
           >
             ✨ 创建虚拟公司
           </button>
@@ -158,7 +156,7 @@ export default function MarketplacePage() {
 
       {/* Featured Section for Agents */}
       {selectedCategory === 'agents' && (
-        <div className="mb-8 p-6 bg-linear-to-r from-blue-500 to-cyan-500 rounded-xl text-white">
+        <div className="mb-8 p-6 bg-linear-to-r from-blue-600 to-cyan-600 rounded-xl text-white shadow-lg">
           <h2 className="text-2xl font-bold mb-2">🤖 智能体</h2>
           <p>发现和探索优秀的单个 AI Agent</p>
         </div>
@@ -174,18 +172,18 @@ export default function MarketplacePage() {
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {agentsData.data.map((agent: Agent) => (
-              <div key={agent.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div key={agent.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all border-2 border-gray-200 dark:border-gray-700 hover:-translate-y-1 overflow-hidden group">
                 <div className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1">{agent.name}</h3>
-                    <span className={`px-2 py-1 text-xs rounded-full shrink-0 ${
-                      agent.source === 'github' ? 'bg-gray-100 text-gray-700' : 'bg-yellow-100 text-yellow-700'
+                  <div className="flex items-start justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{agent.name}</h3>
+                    <span className={`px-3 py-1.5 text-xs font-medium rounded-lg shrink-0 ${
+                      agent.source === 'github' ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
                     }`}>
                       {agent.source}
                     </span>
                   </div>
                   
-                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3 h-12">{agent.description}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">{agent.description}</p>
                   
                   <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
                     {agent.stars !== undefined && (
@@ -216,7 +214,7 @@ export default function MarketplacePage() {
                     href={agent.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center w-full gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+                    className="inline-flex items-center justify-center w-full gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg text-sm font-medium"
                   >
                     <ExternalLink size={16} />
                     查看详情
@@ -243,21 +241,21 @@ export default function MarketplacePage() {
               <Link
                 key={skill.id}
                 href={`/marketplace/team-skills/${skill.id}`}
-                className="block bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700 overflow-hidden"
+                className="block bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all border-2 border-gray-200 dark:border-gray-700 hover:-translate-y-1 overflow-hidden group"
               >
                 <div className="p-6">
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {skill.name}
                     </h3>
                     {skill.category === 'virtual-company' && (
-                      <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                      <span className="px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                         虚拟公司
                       </span>
                     )}
                   </div>
                   
-                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3 h-12">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
                     {skill.description}
                   </p>
                   
@@ -271,13 +269,13 @@ export default function MarketplacePage() {
 
                   {skill.category && (
                     <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs rounded">
+                      <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg">
                         {skill.category}
                       </span>
                     </div>
                   )}
 
-                  <div className="inline-flex items-center justify-center w-full gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium">
+                  <div className="inline-flex items-center justify-center w-full gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg text-sm font-medium">
                     查看详情
                   </div>
                 </div>
@@ -297,8 +295,16 @@ export default function MarketplacePage() {
         }
         return !teamSkillsData?.data?.data?.length;
       })() && (
-        <div className="text-center py-12 text-gray-500">
-          {debouncedSearch ? '未找到匹配的 Agent 或虚拟公司' : '暂无数据'}
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-md">
+          <div className="w-20 h-20 bg-linear-to-br from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Search size={40} className="text-gray-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            {debouncedSearch ? '未找到匹配的结果' : '暂无数据'}
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400">
+            {debouncedSearch ? '请尝试其他关键词' : 'Agent 广场数据正在加载中'}
+          </p>
         </div>
       )}
 
