@@ -48,12 +48,12 @@ export const notificationApi = {
   getUnreadCount: async (): Promise<{ success: boolean; data: { count: number } }> => {
     try {
       const response = await apiClient.get('/notifications/unread-count', {
-        timeout: 5000 // 缩短超时时间到 5 秒，避免长时间等待
+        timeout: 3000 // 缩短超时时间到 3 秒，快速失败
       });
       return response.data;
-    } catch (error) {
-      // 静默失败，不影响页面渲染
-      console.warn('Failed to fetch unread count:', error);
+    } catch {
+      // 静默失败，不打印日志，避免干扰开发体验
+      // 通知功能是可选的，失败不影响核心功能
       return { success: false, data: { count: 0 } };
     }
   },

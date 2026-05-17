@@ -19,8 +19,8 @@ export default function NotificationDropdown() {
     try {
       const result = await notificationApi.getUnreadCount();
       setUnreadCount(result.data.count);
-    } catch (error) {
-      console.error('Failed to fetch unread count:', error);
+    } catch {
+      // 静默失败，通知功能是可选的
     }
   };
 
