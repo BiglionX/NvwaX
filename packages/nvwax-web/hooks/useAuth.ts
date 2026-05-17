@@ -16,8 +16,8 @@ export function useAuth() {
     // 检查登录状态
     const checkAuth = () => {
       try {
-        const token = localStorage.getItem('user_token');
-        const userInfoStr = localStorage.getItem('user_info');
+        const token = localStorage.getItem('token');
+        const userInfoStr = localStorage.getItem('userInfo');
         
         console.log('useAuth checkAuth - token exists:', !!token, 'userInfo exists:', !!userInfoStr);
         
@@ -60,23 +60,23 @@ export function useAuth() {
 
   // 登录
   const login = (token: string, user: UserInfo) => {
-    localStorage.setItem('user_token', token);
-    localStorage.setItem('user_info', JSON.stringify(user));
+    localStorage.setItem('token', token);
+    localStorage.setItem('userInfo', JSON.stringify(user));
     setIsLoggedIn(true);
     setUserInfo(user);
   };
 
   // 登出
   const logout = () => {
-    localStorage.removeItem('user_token');
-    localStorage.removeItem('user_info');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userInfo');
     setIsLoggedIn(false);
     setUserInfo(null);
   };
 
   // 获取 Token
   const getToken = () => {
-    return localStorage.getItem('user_token');
+    return localStorage.getItem('token');
   };
 
   return {

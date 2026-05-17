@@ -60,8 +60,8 @@ export default function ProfilePage() {
   useEffect(() => {
     if (hasCheckedAuth.current) return;
     
-    const token = typeof window !== 'undefined' ? localStorage.getItem('user_token') : null;
-    const userInfoStr = typeof window !== 'undefined' ? localStorage.getItem('user_info') : null;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const userInfoStr = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
     
     console.log('ProfilePage immediate check - token exists:', !!token, 'userInfo exists:', !!userInfoStr);
     
