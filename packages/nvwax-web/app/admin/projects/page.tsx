@@ -313,7 +313,7 @@ export default function AdminProjectsPage() {
                         <button
                           onClick={() => handleRestore(project.id)}
                           disabled={restoreMutation.isPending}
-                          className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 text-sm"
+                          className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm"
                         >
                           <CheckCircle size={16} />
                           恢复
@@ -323,7 +323,7 @@ export default function AdminProjectsPage() {
                           <button
                             onClick={() => handleReviewClick(project, 'approve')}
                             disabled={reviewMutation.isPending}
-                            className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 text-sm"
+                            className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm"
                           >
                             <CheckCircle size={16} />
                             通过
@@ -339,7 +339,7 @@ export default function AdminProjectsPage() {
                           <button
                             onClick={() => handleSuspend(project)}
                             disabled={suspendMutation.isPending}
-                            className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 text-sm"
+                            className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm"
                           >
                             <XCircle size={16} />
                             下架

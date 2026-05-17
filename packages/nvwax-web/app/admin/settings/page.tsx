@@ -116,7 +116,7 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={() => setShowPasswordModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
               >
                 <Key size={18} />
                 修改密码
@@ -170,7 +170,7 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={() => refetchHealth()}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
             >
               <RefreshCw size={18} />
               刷新
@@ -271,7 +271,7 @@ export default function SettingsPage() {
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* 清理缓存 */}
-            <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
                   <Trash2 className="text-orange-500" size={20} />
@@ -284,7 +284,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => setShowCacheConfirm(true)}
                 disabled={clearCacheMutation.isPending}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors disabled:opacity-50 text-sm"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm"
               >
                 {clearCacheMutation.isPending ? (
                   <>
@@ -301,7 +301,7 @@ export default function SettingsPage() {
             </div>
 
             {/* 数据库备份 */}
-            <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
                   <Download className="text-green-500" size={20} />
@@ -314,7 +314,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => setShowBackupConfirm(true)}
                 disabled={backupMutation.isPending}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 text-sm"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm"
               >
                 {backupMutation.isPending ? (
                   <>
@@ -392,7 +392,7 @@ export default function SettingsPage() {
                 <button
                   type="submit"
                   disabled={changePasswordMutation.isPending}
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors disabled:opacity-50"
                 >
                   {changePasswordMutation.isPending ? '修改中...' : '确认修改'}
                 </button>
@@ -426,7 +426,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => clearCacheMutation.mutate()}
                 disabled={clearCacheMutation.isPending}
-                className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl transition-colors disabled:opacity-50"
               >
                 {clearCacheMutation.isPending ? '清理中...' : '确认清理'}
               </button>
@@ -459,7 +459,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => backupMutation.mutate()}
                 disabled={backupMutation.isPending}
-                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors disabled:opacity-50"
               >
                 {backupMutation.isPending ? '备份中...' : '确认备份'}
               </button>

@@ -236,7 +236,7 @@ export default function AdminUsersPage() {
                         <button
                           onClick={() => handleUnban(user.id)}
                           disabled={unbanMutation.isPending}
-                          className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 text-sm"
+                          className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm"
                         >
                           <CheckCircle size={16} />
                           解封
@@ -244,7 +244,7 @@ export default function AdminUsersPage() {
                       ) : (
                         <button
                           onClick={() => handleBanClick(user)}
-                          className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
+                          className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors text-sm"
                         >
                           <Ban size={16} />
                           封禁
@@ -332,7 +332,7 @@ export default function AdminUsersPage() {
               <button
                 onClick={handleConfirmBan}
                 disabled={banMutation.isPending}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors disabled:opacity-50"
               >
                 {banMutation.isPending ? '封禁中...' : '确认封禁'}
               </button>

@@ -94,7 +94,7 @@ export default function AdminAdvancedSettingsPage() {
           </div>
           <button
             onClick={() => refetchHealth()}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
           >
             <RefreshCw size={18} />
             刷新
@@ -203,7 +203,7 @@ export default function AdminAdvancedSettingsPage() {
           <button
             onClick={() => setShowCacheConfirm(true)}
             disabled={clearCacheMutation.isPending}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl transition-colors disabled:opacity-50"
           >
             {clearCacheMutation.isPending ? (
               <>
@@ -243,7 +243,7 @@ export default function AdminAdvancedSettingsPage() {
           <button
             onClick={() => setShowBackupConfirm(true)}
             disabled={backupMutation.isPending}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors disabled:opacity-50"
           >
             {backupMutation.isPending ? (
               <>
@@ -284,7 +284,7 @@ export default function AdminAdvancedSettingsPage() {
               <button
                 onClick={() => clearCacheMutation.mutate()}
                 disabled={clearCacheMutation.isPending}
-                className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl transition-colors disabled:opacity-50"
               >
                 {clearCacheMutation.isPending ? '清理中...' : '确认清理'}
               </button>
@@ -317,7 +317,7 @@ export default function AdminAdvancedSettingsPage() {
               <button
                 onClick={() => backupMutation.mutate()}
                 disabled={backupMutation.isPending}
-                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors disabled:opacity-50"
               >
                 {backupMutation.isPending ? '备份中...' : '确认备份'}
               </button>

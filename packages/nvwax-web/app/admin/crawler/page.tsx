@@ -243,7 +243,7 @@ export default function AdminCrawlerPage() {
             <button
               onClick={handleUpdateConfig}
               disabled={updateConfigMutation.isPending}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+              className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50"
             >
               {updateConfigMutation.isPending ? '更新中...' : '确认更新'}
             </button>
@@ -289,7 +289,7 @@ export default function AdminCrawlerPage() {
             <button
               onClick={handleCleanData}
               disabled={cleanDataMutation.isPending}
-              className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+              className="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50"
             >
               {cleanDataMutation.isPending ? '清理中...' : '确认删除'}
             </button>
