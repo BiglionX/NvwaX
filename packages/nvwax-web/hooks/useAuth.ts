@@ -24,7 +24,7 @@ export function useAuth() {
         if (token && userInfoStr) {
           const user = JSON.parse(userInfoStr);
           console.log('useAuth: User logged in:', user.email || user.name);
-          // 先设置用户信息，再设置登录状态，确保顺序正确
+          // 同时更新两个状态，React 会批处理
           setUserInfo(user);
           setIsLoggedIn(true);
         } else {

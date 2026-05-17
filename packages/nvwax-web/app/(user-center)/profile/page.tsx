@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '@/lib/api/users';
@@ -48,15 +48,22 @@ interface StatsCardsProps {
 export default function ProfilePage() {
   const router = useRouter();
   const { isLoggedIn, loading, userInfo } = useAuth();
+  const hasCheckedAuth = useRef(false);
 
   console.log('=== ProfilePage Render ===');
   console.log('isLoggedIn:', isLoggedIn);
   console.log('loading:', loading);
 
   useEffect(() => {
+    // 避免重复执行
+    if (hasCheckedAuth.current) return;
+    
     console.log('ProfilePage useEffect - isLoggedIn:', isLoggedIn, 'loading:', loading);
-    // 只在加载完成后才检查登录状态，避免竞态条件
+    
+    // 只在加载完成后才检查登录状态
     if (!loading) {
+      hasCheckedAuth.current = true;
+      
       if (!isLoggedIn) {
         console.log('Not logged in, redirecting to login...');
         router.replace('/login?redirect=/profile');
@@ -71,11 +78,10 @@ export default function ProfilePage() {
         if (isAdmin) {
           console.log('Admin user detected, redirecting to admin dashboard...');
           router.replace('/admin/dashboard');
-          return;
         }
       }
     }
-  }, [isLoggedIn, loading, router, userInfo]);
+  }, [loading]); // 只依赖 loading，避免无限循环
 
   if (loading) {
     console.log('ProfilePage: Loading...');
