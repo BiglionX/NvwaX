@@ -67,52 +67,59 @@ export default function MyBountiesPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-2 rounded-xl border-2 border-gray-200 dark:border-gray-700">
-        <button
-          onClick={() => setActiveTab('published')}
-          className={`flex-1 px-4 py-2.5 font-medium transition-all rounded-lg flex items-center justify-center gap-2 ${
-            activeTab === 'published'
-              ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-md'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
-          }`}
-        >
-          <FileText size={18} />
-          我发布的
-        </button>
-        <button
-          onClick={() => setActiveTab('claimed')}
-          className={`flex-1 px-4 py-2.5 font-medium transition-all rounded-lg flex items-center justify-center gap-2 ${
-            activeTab === 'claimed'
-              ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-md'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
-          }`}
-        >
-          <CheckCircle size={18} />
-          我领取的
-        </button>
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* 左侧 - 筛选区域 */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Tabs */}
+          <div className="bg-white dark:bg-gray-800 p-2 rounded-xl border-2 border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => setActiveTab('published')}
+              className={`w-full px-4 py-2.5 font-medium transition-all rounded-lg flex items-center justify-center gap-2 mb-2 ${
+                activeTab === 'published'
+                  ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              <FileText size={18} />
+              我发布的
+            </button>
+            <button
+              onClick={() => setActiveTab('claimed')}
+              className={`w-full px-4 py-2.5 font-medium transition-all rounded-lg flex items-center justify-center gap-2 ${
+                activeTab === 'claimed'
+                  ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              <CheckCircle size={18} />
+              我领取的
+            </button>
+          </div>
 
-      {/* Filter */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border-2 border-gray-200 dark:border-gray-700 mb-6">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            状态筛选：
-          </span>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-          >
-            <option value="all">全部</option>
-            <option value="open">开放中</option>
-            <option value="claimed">已领取</option>
-            <option value="submitted">待验证</option>
-            <option value="completed">已完成</option>
-            <option value="cancelled">已取消</option>
-          </select>
+          {/* Filter */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border-2 border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col gap-3">
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                状态筛选：
+              </span>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+              >
+                <option value="all">全部</option>
+                <option value="open">开放中</option>
+                <option value="claimed">已领取</option>
+                <option value="submitted">待验证</option>
+                <option value="completed">已完成</option>
+                <option value="cancelled">已取消</option>
+              </select>
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* 右侧 - 悬赏列表 */}
+        <div className="lg:col-span-8">
 
       {/* Bounty List */}
       {currentLoading ? (
@@ -154,7 +161,9 @@ export default function MyBountiesPage() {
             <BountyCard key={bounty.id} bounty={bounty} />
           ))}
         </div>
-      )}
+          )}
+        </div>
+      </div>
     </div>
   );
 }

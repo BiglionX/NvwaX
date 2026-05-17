@@ -16,7 +16,26 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* 左侧 - 账号信息 */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Shield className="text-blue-600" size={20} />
+              账号设置
+            </h3>
+            <div className="space-y-3">
+              <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-2 border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">邮箱</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{userInfo?.email || '未设置'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 右侧 - 设置内容 */}
+        <div className="lg:col-span-8 space-y-6">
       {/* 安全设置 */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -146,6 +165,8 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }
