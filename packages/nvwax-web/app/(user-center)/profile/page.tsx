@@ -47,41 +47,61 @@ interface StatsCardsProps {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { isLoggedIn, loading, userInfo } = useAuth();
+  const { isLoggedIn, loading } = useAuth();
   const hasCheckedAuth = useRef(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   console.log('=== ProfilePage Render ===');
   console.log('isLoggedIn:', isLoggedIn);
   console.log('loading:', loading);
 
+  // 在组件挂载时立即检查 localStorage，不等待 useAuth
   useEffect(() => {
-    // 避免重复执行
     if (hasCheckedAuth.current) return;
     
-    console.log('ProfilePage useEffect - isLoggedIn:', isLoggedIn, 'loading:', loading);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('user_token') : null;
+    const userInfoStr = typeof window !== 'undefined' ? localStorage.getItem('user_info') : null;
     
-    // 只在加载完成后才检查登录状态
-    if (!loading) {
-      hasCheckedAuth.current = true;
-      
-      if (!isLoggedIn) {
-        console.log('Not logged in, redirecting to login...');
-        router.replace('/login?redirect=/profile');
-      } else {
-        console.log('User is logged in, showing profile');
-        
-        // 检查是否为管理员用户，如果是则重定向到管理后台
-        const adminEmails = ['1055603323@qq.com', 'admin'];
-        const userEmail = userInfo?.email?.toLowerCase();
-        const isAdmin = userEmail && (adminEmails.includes(userEmail) || userEmail.endsWith('@admin.com'));
-        
-        if (isAdmin) {
-          console.log('Admin user detected, redirecting to admin dashboard...');
-          router.replace('/admin/dashboard');
-        }
-      }
+    console.log('ProfilePage immediate check - token exists:', !!token, 'userInfo exists:', !!userInfoStr);
+    
+    if (!token || !userInfoStr) {
+      // 确实未登录，重定向到 login
+      console.log('No auth found, redirecting to login...');
+      setShouldRedirect(true);
+      router.replace('/login?redirect=/profile');
+      return;
     }
-  }, [loading]); // 只依赖 loading，避免无限循环
+    
+    // 有 token，标记为已检查
+    hasCheckedAuth.current = true;
+    
+    // 检查是否为管理员
+    try {
+      const user = JSON.parse(userInfoStr);
+      const adminEmails = ['1055603323@qq.com', 'admin'];
+      const userEmail = user.email?.toLowerCase();
+      const isAdmin = userEmail && (adminEmails.includes(userEmail) || userEmail.endsWith('@admin.com'));
+      
+      if (isAdmin) {
+        console.log('Admin user detected, redirecting to admin dashboard...');
+        router.replace('/admin/dashboard');
+      }
+    } catch (e) {
+      console.error('Failed to parse user info:', e);
+    }
+  }, []); // 只在挂载时执行一次
+
+  // 如果 shouldRedirect 为 true，显示加载中
+  if (shouldRedirect) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">跳转中...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     console.log('ProfilePage: Loading...');
