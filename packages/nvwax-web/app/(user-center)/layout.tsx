@@ -4,7 +4,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { User as UserIcon, Folder, Award, Users, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import Footer from '@/components/Layout/Footer';
 
 export default function UserCenterLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -83,9 +82,6 @@ export default function UserCenterLayout({ children }: { children: React.ReactNo
           {children}
         </main>
       </div>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }
