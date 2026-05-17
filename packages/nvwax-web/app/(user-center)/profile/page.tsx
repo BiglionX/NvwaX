@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { User as UserIcon, Mail, Calendar, Edit2, Save, X, Folder, Users, Bot, Clock, Star, Award, Settings, Shield, Activity } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import LoadingState from '@/components/Layout/LoadingState';
 
 interface User {
   id: string;
@@ -91,28 +92,14 @@ export default function ProfilePage() {
     }
   }, []); // 只在挂载时执行一次
 
-  // 如果 shouldRedirect 为 true，显示加载中
+  // 如果 shouldRedirect 为 true，显示跳转中
   if (shouldRedirect) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">跳转中...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState text="跳转中..." />;
   }
 
   if (loading) {
     console.log('ProfilePage: Loading...');
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">加载中...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (!isLoggedIn) {
@@ -170,9 +157,7 @@ function ProfileContent() {
   };
 
   if (loadingUser || loadingStats) {
-    return (
-      <div className="text-center py-12 text-gray-500">加载中...</div>
-    );
+    return <LoadingState />;
   }
 
   return (

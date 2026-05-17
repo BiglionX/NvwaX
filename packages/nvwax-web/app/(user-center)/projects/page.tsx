@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectApi, Project } from '@/lib/api/projects';
 import { Folder, Plus, Calendar } from 'lucide-react';
 import Link from 'next/link';
+import LoadingState from '@/components/Layout/LoadingState';
 
 export default function ProjectsPage() {
   const queryClient = useQueryClient();
@@ -38,14 +39,7 @@ export default function ProjectsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">加载中...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   return (

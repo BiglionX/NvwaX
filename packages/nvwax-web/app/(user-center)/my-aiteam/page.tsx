@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import VirtualCompanyChatModal from '@/components/virtual-company-chat-modal';
+import LoadingState from '@/components/Layout/LoadingState';
 
 export default function MyAiTeamPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -61,12 +62,7 @@ export default function MyAiTeamPage() {
   };
 
   if (projectsLoading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-3"></div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">加载中...</p>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   return (
@@ -246,10 +242,7 @@ export default function MyAiTeamPage() {
         </div>
 
         {marketplaceLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">加载中...</p>
-          </div>
+          <LoadingState fullScreen={false} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {marketplaceData?.data?.data?.slice(0, 3).map((skill: TeamSkill) => (
