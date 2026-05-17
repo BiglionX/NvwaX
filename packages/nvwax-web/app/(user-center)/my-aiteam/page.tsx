@@ -10,7 +10,6 @@ import {
   Bot, 
   Plus, 
   TrendingUp,
-  ArrowRight,
   Building2
 } from 'lucide-react';
 import Link from 'next/link';
@@ -67,81 +66,75 @@ export default function MyAiTeamPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-blue-600 rounded-lg p-5 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-xs mb-1">项目总数</p>
-              <p className="text-3xl font-semibold">{stats.projects}</p>
-            </div>
-            <Folder size={32} className="text-blue-200" />
-          </div>
-        </div>
-
-        <div className="bg-purple-600 rounded-lg p-5 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-xs mb-1">团队总数</p>
-              <p className="text-3xl font-semibold">{stats.teams}</p>
-            </div>
-            <Users size={32} className="text-purple-200" />
-          </div>
-        </div>
-
-        <div className="bg-green-600 rounded-lg p-5 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-xs mb-1">Agent 总数</p>
-              <p className="text-3xl font-semibold">{stats.agents}</p>
-            </div>
-            <Bot size={32} className="text-green-200" />
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <button
-          onClick={() => setShowVirtualCompanyModal(true)}
-          className="group bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md hover:shadow-xl transition-all border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 hover:-translate-y-1 text-left"
-        >
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 bg-linear-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
-              <Building2 className="text-white" size={28} />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              虚拟公司
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* 左侧 - 操作区域 */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* 快速操作 */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Building2 className="text-blue-600" size={20} />
+              快速操作
             </h3>
-          </div>
-          <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed">
-            与 CEO Agent 对话，快速创建您的 AI 团队和虚拟公司配置
-          </p>
-          <div className="flex items-center text-blue-600 dark:text-blue-400 font-medium group-hover:gap-3 gap-2 transition-all">
-            开始创建 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-          </div>
-        </button>
+            <button
+              onClick={() => setShowVirtualCompanyModal(true)}
+              className="w-full group bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 hover:-translate-y-0.5 transition-all text-left"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                  <Building2 className="text-white" size={20} />
+                </div>
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">虚拟公司</h4>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                与 CEO Agent 对话，快速创建 AI 团队
+              </p>
+            </button>
 
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="group bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md hover:shadow-xl transition-all border-2 border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700 hover:-translate-y-1 text-left"
-        >
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 bg-linear-to-br from-green-500 to-teal-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
-              <Plus className="text-white" size={28} />
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="w-full group bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700 hover:-translate-y-0.5 transition-all text-left"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-linear-to-br from-green-500 to-teal-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                  <Plus className="text-white" size={20} />
+                </div>
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">新建项目</h4>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                创建新项目，构建智能体团队
+              </p>
+            </button>
+          </div>
+
+          {/* 统计数据 */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">统计概览</h3>
+            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+              <div className="flex items-center gap-2">
+                <Folder className="text-blue-600 dark:text-blue-400" size={18} />
+                <span className="text-sm text-gray-700 dark:text-gray-300">项目</span>
+              </div>
+              <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">{stats.projects}</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              新建项目
-            </h3>
+            <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-800">
+              <div className="flex items-center gap-2">
+                <Users className="text-purple-600 dark:text-purple-400" size={18} />
+                <span className="text-sm text-gray-700 dark:text-gray-300">团队</span>
+              </div>
+              <span className="text-lg font-semibold text-purple-600 dark:text-purple-400">{stats.teams}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border-2 border-green-200 dark:border-green-800">
+              <div className="flex items-center gap-2">
+                <Bot className="text-green-600 dark:text-green-400" size={18} />
+                <span className="text-sm text-gray-700 dark:text-gray-300">Agent</span>
+              </div>
+              <span className="text-lg font-semibold text-green-600 dark:text-green-400">{stats.agents}</span>
+            </div>
           </div>
-          <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed">
-            创建新项目，开始构建您的智能体团队
-          </p>
-          <div className="flex items-center text-green-600 dark:text-green-400 font-medium group-hover:gap-3 gap-2 transition-all">
-            立即创建 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-          </div>
-        </button>
-      </div>
+        </div>
+
+        {/* 右侧 - 项目列表和市场 */}
+        <div className="lg:col-span-8 space-y-6">
 
       {/* Projects Section */}
       <div className="mb-12">
@@ -277,6 +270,8 @@ export default function MyAiTeamPage() {
             ))}
           </div>
         )}
+      </div>
+        </div>
       </div>
 
       {/* Virtual Company Modal */}
