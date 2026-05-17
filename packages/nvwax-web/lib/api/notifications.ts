@@ -46,8 +46,16 @@ export const notificationApi = {
    * 获取未读通知数量
    */
   getUnreadCount: async (): Promise<{ success: boolean; data: { count: number } }> => {
-    const response = await apiClient.get('/notifications/unread-count');
-    return response.data;
+    try {
+      const response = await apiClient.get('/notifications/unread-count', {
+        timeout: 5000 // 缩短超时时间到 5 秒，避免长时间等待
+      });
+      return response.data;
+    } catch (error) {
+      // 静默失败，不影响页面渲染
+      console.warn('Failed to fetch unread count:', error);
+      return { success: false, data: { count: 0 } };
+    }
   },
 
   /**

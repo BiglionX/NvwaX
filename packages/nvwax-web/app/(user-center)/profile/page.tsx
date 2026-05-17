@@ -382,6 +382,7 @@ function QuickActions() {
             <Link
               key={index}
               href={action.href}
+              prefetch={false} // 禁用预取，避免 404 错误
               className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 hover:-translate-y-1 hover:shadow-lg transition-all group"
             >
               <div className={`w-12 h-12 bg-linear-to-r ${action.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md`}>
@@ -415,7 +416,7 @@ function RecentActivity() {
           <Activity className="text-blue-600" size={20} />
           最近活动
         </h3>
-        <Link href="/activity" className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium">
+        <Link href="/activity" prefetch={false} className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium">
           查看全部
         </Link>
       </div>
