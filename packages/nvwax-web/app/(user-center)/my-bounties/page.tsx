@@ -47,60 +47,62 @@ export default function MyBountiesPage() {
 
   if (!isLoggedIn) {
     return (
-      <div className="text-center py-12">
-        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-4">
-          <span className="text-3xl">🔒</span>
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-linear-to-br from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="text-4xl">🔒</span>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">请先登录</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">登录后才能查看您的悬赏</p>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 px-8 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all"
+          >
+            去登录
+          </Link>
         </div>
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">请先登录</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">登录后才能查看您的悬赏</p>
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors text-sm"
-        >
-          去登录
-        </Link>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-1.5 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-2 rounded-xl border-2 border-gray-200 dark:border-gray-700">
         <button
           onClick={() => setActiveTab('published')}
-          className={`flex-1 px-4 py-2 font-medium transition-colors rounded-md flex items-center justify-center gap-2 text-sm ${
+          className={`flex-1 px-4 py-2.5 font-medium transition-all rounded-lg flex items-center justify-center gap-2 ${
             activeTab === 'published'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-md'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
           }`}
         >
-          <FileText size={16} />
+          <FileText size={18} />
           我发布的
         </button>
         <button
           onClick={() => setActiveTab('claimed')}
-          className={`flex-1 px-4 py-2 font-medium transition-colors rounded-md flex items-center justify-center gap-2 text-sm ${
+          className={`flex-1 px-4 py-2.5 font-medium transition-all rounded-lg flex items-center justify-center gap-2 ${
             activeTab === 'claimed'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-md'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
           }`}
         >
-          <CheckCircle size={16} />
+          <CheckCircle size={18} />
           我领取的
         </button>
       </div>
 
       {/* Filter */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border-2 border-gray-200 dark:border-gray-700 mb-6">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             状态筛选：
           </span>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors text-sm"
+            className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
           >
             <option value="all">全部</option>
             <option value="open">开放中</option>
@@ -114,9 +116,9 @@ export default function MyBountiesPage() {
 
       {/* Bounty List */}
       {currentLoading ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700 animate-pulse">
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-700 animate-pulse">
               <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
@@ -124,30 +126,30 @@ export default function MyBountiesPage() {
           ))}
         </div>
       ) : bounties.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-md">
+          <div className="w-20 h-20 bg-linear-to-br from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="text-4xl">
               {activeTab === 'published' ? '📝' : '🎯'}
             </span>
           </div>
-          <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             {activeTab === 'published' ? '还没有发布过悬赏' : '还没有领取过悬赏'}
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             {activeTab === 'published' 
               ? '去发布一个悬赏，寻找优秀的开发者吧！' 
               : '去悬赏市场看看有什么有趣的任务！'}
           </p>
           <Link
             href={activeTab === 'published' ? '/bounties/create' : '/bounties'}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors text-sm"
+            className="inline-flex items-center gap-2 px-8 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all"
           >
-            <Award size={16} />
+            <Award size={18} />
             {activeTab === 'published' ? '发布悬赏' : '浏览悬赏'}
           </Link>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {bounties.map((bounty) => (
             <BountyCard key={bounty.id} bounty={bounty} />
           ))}

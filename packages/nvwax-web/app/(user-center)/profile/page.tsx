@@ -150,7 +150,7 @@ function ProfileContent() {
   }
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Header - 移除，因为 layout 中已有用户中心标题 */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* 左侧 - 个人信息卡片 */}
@@ -189,7 +189,7 @@ function ProfileContent() {
 // 个人信息卡片组件
 function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, handleSave, handleCancel, updateMutation }: ProfileCardProps) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="p-5">
         {/* 头像 */}
         <div className="flex justify-center mb-4">
@@ -255,17 +255,17 @@ function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, han
           <div className="flex gap-2">
             <button
               onClick={handleCancel}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
             >
-              <X size={14} />
+              <X size={16} />
               取消
             </button>
             <button
               onClick={handleSave}
               disabled={updateMutation.isPending}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-medium"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 font-medium"
             >
-              <Save size={14} />
+              <Save size={16} />
               {updateMutation.isPending ? '保存中...' : '保存'}
             </button>
           </div>
@@ -275,9 +275,9 @@ function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, han
               setEditForm({ name: user?.name || '', bio: user?.bio || '' });
               setIsEditing(true);
             }}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
           >
-            <Edit2 size={14} />
+            <Edit2 size={16} />
             编辑资料
           </button>
         )}
@@ -320,7 +320,7 @@ function StatsCards({ stats }: StatsCardsProps) {
       {statsData.map((stat, index) => {
         const Icon = stat.icon;
         return (
-          <div key={index} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+          <div key={index} className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 hover:border-blue-300 dark:hover:border-blue-700 transition-all">
             <div className="flex items-center justify-between mb-3">
               <div className={`w-10 h-10 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
                 <Icon className={stat.iconColor} size={20} />
@@ -345,24 +345,24 @@ function QuickActions() {
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
-      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         快捷操作
       </h3>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {actions.map((action, index) => {
           const Icon = action.icon;
           return (
             <Link
               key={index}
               href={action.href}
-              className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
+              className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 hover:-translate-y-1 hover:shadow-lg transition-all group"
             >
-              <div className={`w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center`}>
-                <Icon className="text-white" size={20} />
+              <div className={`w-12 h-12 bg-linear-to-r ${action.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md`}>
+                <Icon className="text-white" size={24} />
               </div>
               <div className="text-center">
-                <span className="text-sm font-medium text-gray-900 dark:text-white block">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white block">
                   {action.label}
                 </span>
               </div>
@@ -383,10 +383,10 @@ function RecentActivity() {
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <Activity className="text-blue-600" size={18} />
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <Activity className="text-blue-600" size={20} />
           最近活动
         </h3>
         <Link href="/activity" className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium">
@@ -398,8 +398,8 @@ function RecentActivity() {
           const Icon = activity.icon;
           return (
             <div key={index} className="flex items-start gap-3 pb-3 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0">
-              <div className={`w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0`}>
-                <Icon className={activity.color} size={18} />
+              <div className={`w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0`}>
+                <Icon className={activity.color} size={20} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-900 dark:text-white truncate">{activity.message}</p>
@@ -419,32 +419,32 @@ function RecentActivity() {
 // 账号安全组件
 function AccountSecurity() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <Shield className="text-green-600" size={18} />
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <Shield className="text-green-600" size={20} />
           账号安全
         </h3>
-        <div className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded text-xs font-medium">
+        <div className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg text-xs font-medium">
           安全
         </div>
       </div>
       <div className="space-y-2">
-        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
             <span className="text-sm text-gray-700 dark:text-gray-300">邮箱已验证</span>
           </div>
-          <span className="text-xs text-green-600 px-2 py-0.5 bg-green-50 dark:bg-green-900/20 rounded">已验证</span>
+          <span className="text-xs text-green-600 px-2 py-1 bg-green-50 dark:bg-green-900/20 rounded-lg font-medium">已验证</span>
         </div>
-        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
             <span className="text-sm text-gray-700 dark:text-gray-300">密码强度</span>
           </div>
-          <span className="text-xs text-green-600 px-2 py-0.5 bg-green-50 dark:bg-green-900/20 rounded">强</span>
+          <span className="text-xs text-green-600 px-2 py-1 bg-green-50 dark:bg-green-900/20 rounded-lg font-medium">强</span>
         </div>
-        <button className="w-full mt-3 px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium">
+        <button className="w-full mt-3 px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium">
           修改密码
         </button>
       </div>
