@@ -11,13 +11,14 @@ import {
   Plus, 
   TrendingUp,
   ArrowRight,
-  Sparkles,
-  LayoutGrid
+  Building2
 } from 'lucide-react';
 import Link from 'next/link';
+import VirtualCompanyChatModal from '@/components/virtual-company-chat-modal';
 
 export default function MyAiTeamPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showVirtualCompanyModal, setShowVirtualCompanyModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDesc, setNewProjectDesc] = useState('');
 
@@ -104,46 +105,26 @@ export default function MyAiTeamPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Link
-          href="/nvwa"
-          className="group bg-white dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-500 transition-colors"
-        >
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <Sparkles className="text-white" size={20} />
-            </div>
-            <h3 className="text-base font-medium text-gray-900 dark:text-white">
-              Nvwa 智能体工厂
-            </h3>
-          </div>
-          <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed">
-            通过对话式需求分析，快速创建智能体和团队配置
-          </p>
-          <div className="flex items-center text-indigo-600 dark:text-indigo-400 font-medium group-hover:gap-3 gap-2 transition-all">
-            开始创建 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-          </div>
-        </Link>
-
-        <Link
-          href="/team-skills"
-          className="group bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md hover:shadow-xl transition-all border-2 border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-700 hover:-translate-y-1"
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <button
+          onClick={() => setShowVirtualCompanyModal(true)}
+          className="group bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md hover:shadow-xl transition-all border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 hover:-translate-y-1 text-left"
         >
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 bg-linear-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
-              <LayoutGrid className="text-white" size={28} />
+            <div className="w-14 h-14 bg-linear-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md">
+              <Building2 className="text-white" size={28} />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              浏览 Team Skills
+              虚拟公司
             </h3>
           </div>
           <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed">
-            探索可复用的团队协作模板，一键应用到您的项目
+            与 CEO Agent 对话，快速创建您的 AI 团队和虚拟公司配置
           </p>
-          <div className="flex items-center text-orange-600 dark:text-orange-400 font-medium group-hover:gap-3 gap-2 transition-all">
-            浏览模板 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+          <div className="flex items-center text-blue-600 dark:text-blue-400 font-medium group-hover:gap-3 gap-2 transition-all">
+            开始创建 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </div>
-        </Link>
+        </button>
 
         <button
           onClick={() => setShowCreateModal(true)}
@@ -304,6 +285,17 @@ export default function MyAiTeamPage() {
           </div>
         )}
       </div>
+
+      {/* Virtual Company Modal */}
+      {showVirtualCompanyModal && (
+        <VirtualCompanyChatModal 
+          onClose={() => setShowVirtualCompanyModal(false)}
+          onSuccess={() => {
+            setShowVirtualCompanyModal(false);
+            // 可以添加成功后的处理逻辑，比如刷新页面或跳转
+          }}
+        />
+      )}
 
       {/* Create Project Modal */}
       {showCreateModal && (

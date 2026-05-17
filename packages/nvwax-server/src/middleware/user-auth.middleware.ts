@@ -11,17 +11,24 @@ declare global {
 }
 
 export function userAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+  let token: string | undefined;
+
+  // 优先从 Authorization header 获取 token
   const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.slice(7);
+  } else if (req.query.token) {
+    // 支持从 URL 参数获取 token（用于 SSE EventSource）
+    token = req.query.token as string;
+  }
   
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!token) {
     return res.status(401).json({ 
       success: false,
       error: { code: 'UNAUTHORIZED', message: '需要登录' } 
     });
   }
 
-  const token = authHeader.slice(7);
-  
   // 验证 JWT token
   const decoded = userService.verifyToken(token);
   
