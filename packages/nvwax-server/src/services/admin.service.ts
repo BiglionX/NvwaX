@@ -43,9 +43,13 @@ export class AdminService {
     return this.formatAdmin(result.rows[0]);
   }
 
-  // 根据用户名获取管理员
+  // 根据用户名或邮箱获取管理员
   async getAdminByUsername(username: string): Promise<Admin | null> {
-    const result = await this.pool.query('SELECT * FROM admins WHERE username = $1', [username]);
+    // 同时支持 username 和 email 登录
+    const result = await this.pool.query(
+      'SELECT * FROM admins WHERE username = $1 OR email = $1',
+      [username]
+    );
     if (result.rows.length === 0) return null;
     
     return this.formatAdmin(result.rows[0]);
