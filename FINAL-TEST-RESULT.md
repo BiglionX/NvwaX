@@ -89,7 +89,7 @@ Route (app)
 ├ ○ /login          ← 修复成功
 ├ ○ /marketplace
 ├ ƒ /marketplace/team-skills/[id]
-├ ○ /my-aiteam
+├ ○ /my-aiteam (已删除，功能整合到Agent仓库)
 ├ ○ /my-bounties
 ├ ○ /nvwa
 ├ ○ /profile

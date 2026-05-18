@@ -320,7 +320,7 @@
 
 - [ ] **路由与布局调整**
   
-  - [ ] 重命名路由：`/my-aiteam` → `/virtual-company`
+  - [ ] 重命名路由：`/my-aiteam` → `/virtual-company` (已整合到Agent仓库)
   - [ ] 更新左侧导航菜单
   - [ ] 页面标题改为"虚拟公司"或"CEO 工作室"
 

@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Folder, Users, Plus, Search, Filter, Download, Eye, Edit, Trash2, Send } from 'lucide-react';
+import { Folder, Users, Plus, Search, Filter, Download, Eye, Edit, Trash2, Send, Building2 } from 'lucide-react';
 import LoadingState from '@/components/Layout/LoadingState';
 import ExportModal from '@/components/ExportModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -12,6 +12,7 @@ import { agentApi } from '@/lib/api/agents';
 import { aiteamApi } from '@/lib/api/aiteams';
 import type { Agent } from '@/lib/api/agents';
 import type { AiTeam } from '@/lib/api/aiteams';
+import VirtualCompanyChatModal from '@/components/virtual-company-chat-modal';
 
 type TabType = 'agents' | 'aiteams';
 
@@ -19,6 +20,7 @@ export default function AgentRepositoryPage() {
   const [activeTab, setActiveTab] = useState<TabType>('agents');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showVirtualCompanyModal, setShowVirtualCompanyModal] = useState(false);
   const [createForm, setCreateForm] = useState({
     name: '',
     description: '',
@@ -180,13 +182,22 @@ export default function AgentRepositoryPage() {
           <Folder className="text-blue-600" size={24} />
           我的Agent仓库
         </h2>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
-        >
-          <Plus size={18} />
-          创建新资源
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowVirtualCompanyModal(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
+          >
+            <Building2 size={18} />
+            虚拟公司
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
+          >
+            <Plus size={18} />
+            创建新资源
+          </button>
+        </div>
       </div>
 
       {/* 标签页导航 */}
@@ -276,6 +287,18 @@ export default function AgentRepositoryPage() {
           onEditClick={(resource) => {
             setEditResource({ resource, type: 'aiteam' });
             setShowEditModal(true);
+          }}
+        />
+      )}
+
+      {/* 虚拟公司模态框 */}
+      {showVirtualCompanyModal && (
+        <VirtualCompanyChatModal 
+          onClose={() => setShowVirtualCompanyModal(false)}
+          onSuccess={() => {
+            setShowVirtualCompanyModal(false);
+            // 刷新数据
+            queryClient.invalidateQueries({ queryKey: ['aiteams', userId] });
           }}
         />
       )}

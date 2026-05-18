@@ -137,8 +137,10 @@
 
 ---
 
-### ✅ 4. `/my-aiteam` - 我的 AiTeam
-**文件**: `packages/nvwax-web/app/my-aiteam/page.tsx`
+### ✅ 4. `/my-aiteam` - 我的 AiTeam (已整合)
+**文件**: `packages/nvwax-web/app/(user-center)/my-aiteam/page.tsx` (已删除)
+
+> **注意**: 此页面功能已整合到 `/agent-repository` 页面中，通过"虚拟公司"按钮访问
 
 #### 优化内容
 
@@ -439,7 +441,7 @@ dark:from-gray-900 dark:via-gray-900 dark:to-gray-800
 - ✅ `/profile` - 用户中心主页
 - ✅ `/projects` - 我的项目
 - ✅ `/my-bounties` - 我的悬赏
-- ✅ `/my-aiteam` - 我的 AiTeam
+- ✅ `/my-aiteam` - 我的 AiTeam (已整合到Agent仓库)
 
 所有页面现在具有：
 1. **统一的视觉风格**: 渐变背景、双像素边框、一致的圆角和阴影

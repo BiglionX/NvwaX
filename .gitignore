@@ -41,6 +41,11 @@ logs/
 coverage/
 .nyc_output/
 
+# Screenshots and test artifacts
+screenshot-*.png
+test-*.png
+test-result-*.json
+
 # Temporary files
 tmp/
 temp/
