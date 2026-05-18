@@ -16,6 +16,18 @@ export interface Agent {
   status: 'draft' | 'active' | 'archived' | 'deleted';
   templateId?: string;
   version: string;
+  
+  // 新增字段（Agent 仓库重构）
+  type: 'single' | 'team_member';
+  publishStatus: 'draft' | 'published' | 'private';
+  downloadCount: number;
+  exportFormat: string[];
+  tags: string[];
+  category?: string;
+  thumbnailUrl?: string;
+  rating: number;
+  reviewCount: number;
+  
   createdAt: string;
   updatedAt: string;
 }
@@ -96,5 +108,82 @@ export const agentApi = {
   deleteAgent: async (id: string) => {
     const response = await apiClient.delete(`/agents/${id}`);
     return response.data;
+  },
+
+  /**
+   * 发布智能体到市场
+   */
+  publishAgent: async (id: string) => {
+    const response = await apiClient.post(`/agents/${id}/publish`);
+    return response.data.data as Agent;
+  },
+
+  /**
+   * 取消发布智能体
+   */
+  unpublishAgent: async (id: string) => {
+    const response = await apiClient.post(`/agents/${id}/unpublish`);
+    return response.data.data as Agent;
+  },
+
+  /**
+   * 搜索公开市场的智能体
+   */
+  searchPublishedAgents: async (params?: {
+    q?: string;
+    category?: string;
+    tags?: string[];
+    page?: number;
+    limit?: number;
+  }): Promise<{ success: boolean; data: AgentSearchResult }> => {
+    const response = await apiClient.get('/agents/search', { 
+      params: {
+        ...params,
+        tags: params?.tags?.join(',')
+      }
+    });
+    return response.data;
+  },
+
+  /**
+   * 获取用户统计信息
+   */
+  getUserStats: async (): Promise<{ 
+    success: boolean; 
+    data: {
+      total: number;
+      draft: number;
+      published: number;
+      private: number;
+      totalDownloads: number;
+    }
+  }> => {
+    const response = await apiClient.get('/agents/stats');
+    return response.data;
+  },
+
+  /**
+   * 导出智能体
+   */
+  exportAgent: async (
+    id: string,
+    format: 'json' | 'yaml' | 'proclaw' = 'json',
+    includeMetadata: boolean = true,
+    includeImplementation: boolean = false
+  ) => {
+    const response = await apiClient.post(`/agents/${id}/export`, {
+      format,
+      includeMetadata,
+      includeImplementation
+    });
+    return response.data.data;
+  },
+
+  /**
+   * 获取导出历史
+   */
+  getExportHistory: async (limit: number = 20) => {
+    const response = await apiClient.get('/agents/exports', { params: { limit } });
+    return response.data.data;
   }
 };

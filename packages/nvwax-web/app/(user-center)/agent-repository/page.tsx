@@ -1,45 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, FormEvent } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Folder, Users, Plus, Search, Filter, Download, Eye, Edit, Trash2 } from 'lucide-react';
 import LoadingState from '@/components/Layout/LoadingState';
-
-// 类型定义
-interface Agent {
-  id: string;
-  name: string;
-  description?: string;
-  type: 'single' | 'team_member';
-  publishStatus: 'draft' | 'published' | 'private';
-  tags: string[];
-  category?: string;
-  version: string;
-  downloadCount: number;
-  rating: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface AiTeam {
-  id: string;
-  name: string;
-  description?: string;
-  members: Array<{
-    agentId: string;
-    role: string;
-    responsibilities?: string;
-  }>;
-  publishStatus: 'draft' | 'published' | 'private';
-  tags: string[];
-  category?: string;
-  version: string;
-  downloadCount: number;
-  executionCount: number;
-  successRate: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { agentApi } from '@/lib/api/agents';
+import { aiteamApi } from '@/lib/api/aiteams';
+import type { Agent } from '@/lib/api/agents';
+import type { AiTeam } from '@/lib/api/aiteams';
 
 type TabType = 'agents' | 'aiteams';
 
@@ -53,29 +21,46 @@ export default function AgentRepositoryPage() {
     type: 'agent' as 'agent' | 'aiteam'
   });
 
+  const queryClient = useQueryClient();
+
   // Mock user ID - in production, get from auth context
   const userId = 'user-123';
 
   // 获取 Agents 列表
   const { data: agentsData, isLoading: agentsLoading } = useQuery({
     queryKey: ['agents', userId],
-    queryFn: async () => {
-      // TODO: Replace with actual API call
-      // return fetch(`/api/agents?userId=${userId}`).then(res => res.json());
-      return { data: [], total: 0 };
-    },
+    queryFn: () => agentApi.getUserAgents(),
     enabled: activeTab === 'agents'
   });
 
   // 获取 AiTeams 列表
   const { data: aiteamsData, isLoading: aiteamsLoading } = useQuery({
     queryKey: ['aiteams', userId],
-    queryFn: async () => {
-      // TODO: Replace with actual API call
-      // return fetch(`/api/aiteams?userId=${userId}`).then(res => res.json());
-      return { data: [], total: 0 };
-    },
+    queryFn: () => aiteamApi.getUserAiTeams(),
     enabled: activeTab === 'aiteams'
+  });
+
+  // 创建资源 mutation
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof createForm) => {
+      if (data.type === 'agent') {
+        return agentApi.createAgent({
+          name: data.name,
+          description: data.description
+        });
+      } else {
+        return aiteamApi.createAiTeam({
+          name: data.name,
+          description: data.description
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents', userId] });
+      queryClient.invalidateQueries({ queryKey: ['aiteams', userId] });
+      setShowCreateModal(false);
+      setCreateForm({ name: '', description: '', type: 'agent' });
+    }
   });
 
   const isLoading = activeTab === 'agents' ? agentsLoading : aiteamsLoading;
@@ -113,7 +98,7 @@ export default function AgentRepositoryPage() {
             }`}
           >
             <Folder size={18} />
-            <span>Agents ({agentsData?.total || 0})</span>
+            <span>Agents ({agentsData?.data?.total || 0})</span>
           </button>
           <button
             onClick={() => setActiveTab('aiteams')}
@@ -124,7 +109,7 @@ export default function AgentRepositoryPage() {
             }`}
           >
             <Users size={18} />
-            <span>AiTeams ({aiteamsData?.total || 0})</span>
+            <span>AiTeams ({aiteamsData?.data?.total || 0})</span>
           </button>
         </div>
       </div>
@@ -149,9 +134,9 @@ export default function AgentRepositoryPage() {
 
       {/* 内容区域 */}
       {activeTab === 'agents' ? (
-        <AgentsList agents={agentsData?.data || []} />
+        <AgentsList agents={agentsData?.data?.agents || []} />
       ) : (
-        <AiTeamsList aiteams={aiteamsData?.data || []} />
+        <AiTeamsList aiteams={aiteamsData?.data?.aiteams || []} />
       )}
 
       {/* 创建资源模态框 */}
@@ -160,6 +145,8 @@ export default function AgentRepositoryPage() {
           onClose={() => setShowCreateModal(false)}
           form={createForm}
           setForm={setCreateForm}
+          onSubmit={(data) => createMutation.mutate(data)}
+          isPending={createMutation.isPending}
         />
       )}
     </div>
@@ -384,17 +371,19 @@ function AiTeamCard({ aiteam }: { aiteam: AiTeam }) {
 function CreateResourceModal({
   onClose,
   form,
-  setForm
+  setForm,
+  onSubmit,
+  isPending
 }: {
   onClose: () => void;
   form: { name: string; description: string; type: 'agent' | 'aiteam' };
   setForm: React.Dispatch<React.SetStateAction<{ name: string; description: string; type: 'agent' | 'aiteam' }>>;
+  onSubmit: (data: { name: string; description: string; type: 'agent' | 'aiteam' }) => void;
+  isPending: boolean;
 }) {
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // TODO: Implement create logic
-    console.log('Creating:', form);
-    onClose();
+    onSubmit(form);
   };
 
   return (
@@ -481,9 +470,10 @@ function CreateResourceModal({
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
+              disabled={isPending}
+              className="flex-1 px-4 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium disabled:opacity-50"
             >
-              创建
+              {isPending ? '创建中...' : '创建'}
             </button>
           </div>
         </form>
