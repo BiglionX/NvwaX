@@ -128,8 +128,6 @@ export default function MyAiTeamPage() {
               <span className="text-lg font-semibold text-green-600 dark:text-green-400">{stats.agents}</span>
             </div>
           </div>
-      </div>
-
       {/* Projects Section */}
       <div className="mb-12">
         <div className="flex items-center justify-between mb-6">
