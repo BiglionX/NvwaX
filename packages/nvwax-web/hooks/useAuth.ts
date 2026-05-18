@@ -16,8 +16,9 @@ export function useAuth() {
     // 检查登录状态
     const checkAuth = () => {
       try {
-        const token = localStorage.getItem('token');
-        const userInfoStr = localStorage.getItem('userInfo');
+        // 兼容两种 key 名称（新版 user_token / 旧版 token）
+        const token = localStorage.getItem('user_token') || localStorage.getItem('token');
+        const userInfoStr = localStorage.getItem('user_info') || localStorage.getItem('userInfo');
         
         console.log('useAuth checkAuth - token exists:', !!token, 'userInfo exists:', !!userInfoStr);
         
@@ -46,7 +47,7 @@ export function useAuth() {
 
     // 监听 storage 变化（跨标签页）
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'user_token' || e.key === 'user_info') {
+      if (e.key === 'user_token' || e.key === 'token' || e.key === 'user_info' || e.key === 'userInfo') {
         checkAuth();
       }
     };
@@ -68,10 +69,10 @@ export function useAuth() {
 
   // 登出
   const logout = () => {
-    // 清除所有认证状态（用户 + 管理员）
+    // 清除所有认证状态（用户 + 管理员，兼容新旧 key 名称）
     localStorage.removeItem('token');
-    localStorage.removeItem('userInfo');
     localStorage.removeItem('user_token');
+    localStorage.removeItem('userInfo');
     localStorage.removeItem('user_info');
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_info');
