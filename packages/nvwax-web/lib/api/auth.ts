@@ -18,6 +18,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// 添加响应拦截器，处理 401 错误
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // 普通用户 401，清除用户 token 并跳转到用户登录页
+      localStorage.removeItem('user_token');
+      localStorage.removeItem('user_info');
+      localStorage.removeItem('token');
+      localStorage.removeItem('userInfo');
+      // 只有在不在登录页时才跳转，避免循环
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export interface User {
   id: string;
   email: string;

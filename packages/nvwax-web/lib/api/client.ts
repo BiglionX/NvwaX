@@ -29,8 +29,21 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized access
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // 检查是否是管理员账号
+      const adminInfo = localStorage.getItem('admin_info');
+      if (adminInfo) {
+        // 管理员 401，清除管理员 token 并跳转到管理员登录页
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_info');
+        window.location.href = '/admin/login';
+      } else {
+        // 普通用户 401，清除用户 token 并跳转到用户登录页
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_token');
+        localStorage.removeItem('user_info');
+        localStorage.removeItem('userInfo');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

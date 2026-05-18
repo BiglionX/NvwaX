@@ -24,6 +24,11 @@ function LoginForm() {
   useEffect(() => {
     if (loginLoading || justLoggedIn) return;
     
+    // 检查是否有 admin_token，如果有说明是管理员，不执行此重定向
+    if (typeof window !== 'undefined' && localStorage.getItem('admin_token')) {
+      return;
+    }
+    
     // 检查是否是管理员，如果是则不执行此重定向
     const adminEmails = ['1055603323@qq.com', 'admin@admin.com'];
     if (userInfo && (adminEmails.includes(userInfo.email?.toLowerCase() || '') || userInfo.email?.endsWith('@admin.com'))) {
@@ -60,28 +65,14 @@ function LoginForm() {
         const adminResponse = await adminApi.login(username, password);
         console.log('[Login Page] Admin login response:', adminResponse);
         
-        // 保存 admin token 和 info
+        // 只保存 admin token 和 info（不要同时设置 user_token）
         localStorage.setItem('admin_token', adminResponse.data.token);
         localStorage.setItem('admin_info', JSON.stringify(adminResponse.data.admin));
-        
-        // 同时保存为 user token（保持一致性）
-        localStorage.setItem('user_token', adminResponse.data.token);
-        localStorage.setItem('user_info', JSON.stringify({
-          id: adminResponse.data.admin.id,
-          email: adminResponse.data.admin.email,
-          name: adminResponse.data.admin.name || adminResponse.data.admin.username
-        }));
-        
-        setAuthState(adminResponse.data.token, {
-          id: adminResponse.data.admin.id,
-          email: adminResponse.data.admin.email,
-          name: adminResponse.data.admin.name || adminResponse.data.admin.username
-        });
         
         console.log('[Login Page] Admin tokens saved. Redirecting to dashboard...');
         setJustLoggedIn(true);
         
-        // 直接跳转到管理后台
+        // 使用 location.replace 避免浏览器历史记录问题
         setTimeout(() => {
           window.location.replace('/admin/dashboard');
         }, 100);
