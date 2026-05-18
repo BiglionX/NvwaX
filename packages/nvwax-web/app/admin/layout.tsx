@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, LayoutDashboard, Users, Settings, LogOut, User, Database, Folder, Bot, Building2, Bell, FileText } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, Settings, LogOut, Database, Folder, Bot, Building2, Bell, FileText } from 'lucide-react';
 import ProtectedAdminRoute from '@/components/Auth/ProtectedAdminRoute';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -20,21 +19,6 @@ function AdminContent({ children }: { children: React.ReactNode }) {
   
   console.log('[AdminLayout] Rendering, pathname:', pathname);
   
-  // Lazily get admin username from localStorage (only runs on client)
-  const [adminUsername] = useState(() => {
-    if (typeof window === 'undefined') return 'Admin';
-    try {
-      const info = localStorage.getItem('admin_info');
-      if (info) {
-        const parsed = JSON.parse(info);
-        return parsed.username || 'Admin';
-      }
-    } catch {
-      // Ignore parse errors
-    }
-    return 'Admin';
-  });
-
   const handleLogout = () => {
     // 清除所有认证状态
     localStorage.removeItem('admin_token');
@@ -74,10 +58,6 @@ function AdminContent({ children }: { children: React.ReactNode }) {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-              <User size={20} />
-              <span className="font-medium">{adminUsername}</span>
-            </div>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
