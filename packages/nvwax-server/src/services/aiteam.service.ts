@@ -86,7 +86,7 @@ export class AiTeamService {
           id, user_id, name, description, members, workflow, triggers,
           version, publish_status, category, tags, thumbnail_url,
           created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::text[], $12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         RETURNING *`,
         [
           aiteamId,
@@ -99,7 +99,7 @@ export class AiTeamService {
           '1.0.0',
           'private',
           input.category || null,
-          input.tags || [],
+          input.tags && input.tags.length > 0 ? input.tags : '{}',
           input.thumbnailUrl || null
         ]
       );
@@ -823,16 +823,16 @@ export class AiTeamService {
       userId: row.user_id,
       name: row.name,
       description: row.description,
-      members: JSON.parse(row.members || '[]'),
-      workflow: JSON.parse(row.workflow || '{}'),
-      triggers: JSON.parse(row.triggers || '{}'),
+      members: row.members ? JSON.parse(row.members) : [],
+      workflow: row.workflow ? JSON.parse(row.workflow) : {},
+      triggers: row.triggers ? JSON.parse(row.triggers) : {},
       version: row.version,
       publishStatus: row.publish_status,
       downloadCount: row.download_count || 0,
       executionCount: row.execution_count || 0,
       successRate: parseFloat(row.success_rate) || 100.00,
       category: row.category,
-      tags: row.tags || [],
+      tags: Array.isArray(row.tags) ? row.tags : (typeof row.tags === 'string' ? JSON.parse(row.tags) : []),
       thumbnailUrl: row.thumbnail_url,
       rating: parseFloat(row.rating) || 0.00,
       reviewCount: row.review_count || 0,

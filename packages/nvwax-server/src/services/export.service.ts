@@ -9,7 +9,7 @@ import { Pool } from 'pg';
 import { v4 as uuidv4 } from 'uuid';
 import { writeFileSync, mkdirSync, existsSync, statSync, unlinkSync } from 'fs';
 import { join } from 'path';
-const yaml = require('js-yaml');
+import yaml from 'js-yaml';
 
 export interface ExportConfig {
   format: 'json' | 'yaml' | 'proclaw';

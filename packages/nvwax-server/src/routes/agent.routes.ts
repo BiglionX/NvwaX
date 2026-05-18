@@ -4,7 +4,10 @@ import {
   getUserAgents,
   getAgentById,
   updateAgent,
-  deleteAgent
+  deleteAgent,
+  publishAgent,
+  unpublishAgent,
+  exportAgent
 } from '../controllers/agent.controller.js';
 import { userAuthMiddleware } from '../middleware/user-auth.middleware.js';
 
@@ -19,5 +22,12 @@ router.get('/', getUserAgents);
 router.get('/:id', getAgentById);
 router.put('/:id', updateAgent);
 router.delete('/:id', deleteAgent);
+
+// Agent 发布管理
+router.post('/:id/publish', publishAgent);
+router.post('/:id/unpublish', unpublishAgent);
+
+// Agent 导出
+router.post('/:id/export', exportAgent);
 
 export default router;

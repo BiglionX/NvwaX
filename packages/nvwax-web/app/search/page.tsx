@@ -118,7 +118,7 @@ export default function SearchPage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Agent & Skill 搜索</h1>
         <p className="text-gray-600 dark:text-gray-300">智能搜索：优先本地数据库，无结果则全网搜索</p>

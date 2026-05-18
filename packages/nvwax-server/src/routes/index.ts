@@ -17,6 +17,7 @@ import v1Router from './v1.routes.js';
 import webhookRouter from './webhook.routes.js';
 import billingRouter from './billing.routes.js';
 import agentRouter from './agent.routes.js';
+import aiteamRouter from './aiteam.routes.js';
 import notificationRouter from './notification.routes.js';
 
 const router = Router();
@@ -113,6 +114,9 @@ router.use('/sdk', billingRouter);
 
 // Agent routes (Nvwa 智能体工厂)
 router.use('/agents', agentRouter);
+
+// AiTeam routes (AI 团队管理)
+router.use('/aiteams', aiteamRouter);
 
 // Notification routes (通知系统)
 router.use('/notifications', notificationRouter);

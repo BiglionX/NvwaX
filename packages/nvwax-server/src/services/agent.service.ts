@@ -91,8 +91,10 @@ export class AgentService {
       `INSERT INTO agents (
         id, user_id, name, description, config, skills, 
         data_sources, output_types, implementation, template_id, 
-        status, version, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        status, version, type, publish_status, tags, category,
+        download_count, rating, review_count,
+        created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6::text[], $7::text[], $8::text[], $9, $10, $11, $12, $13, $14, $15::text[], $16, $17, $18, $19, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       RETURNING *`,
       [
         agentId,
@@ -100,13 +102,20 @@ export class AgentService {
         input.name,
         input.description || null,
         JSON.stringify(input.config || {}),
-        JSON.stringify(input.skills || []),
-        input.dataSources || [],
-        input.outputTypes || [],
+        input.skills && input.skills.length > 0 ? input.skills : '{}',
+        input.dataSources && input.dataSources.length > 0 ? input.dataSources : '{}',
+        input.outputTypes && input.outputTypes.length > 0 ? input.outputTypes : '{}',
         input.implementation || null,
         input.templateId || null,
         'draft',
-        '1.0.0'
+        '1.0.0',
+        input.type || 'single',
+        'private',
+        input.tags && input.tags.length > 0 ? input.tags : '{}',
+        input.category || null,
+        0,
+        0.00,
+        0
       ]
     );
 
@@ -402,8 +411,8 @@ export class AgentService {
       userId: row.user_id,
       name: row.name,
       description: row.description,
-      config: JSON.parse(row.config || '{}'),
-      skills: JSON.parse(row.skills || '[]'),
+      config: typeof row.config === 'string' ? JSON.parse(row.config) : (row.config || {}),
+      skills: Array.isArray(row.skills) ? row.skills : (typeof row.skills === 'string' ? JSON.parse(row.skills) : []),
       dataSources: row.data_sources || [],
       outputTypes: row.output_types || [],
       implementation: row.implementation,
@@ -416,7 +425,7 @@ export class AgentService {
       publishStatus: row.publish_status || 'private',
       downloadCount: row.download_count || 0,
       exportFormat: row.export_format || [],
-      tags: row.tags || [],
+      tags: Array.isArray(row.tags) ? row.tags : (typeof row.tags === 'string' ? JSON.parse(row.tags) : []),
       category: row.category,
       thumbnailUrl: row.thumbnail_url,
       rating: parseFloat(row.rating) || 0.00,

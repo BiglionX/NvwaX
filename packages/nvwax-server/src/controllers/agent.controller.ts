@@ -56,17 +56,22 @@ export const createAgent = async (req: Request, res: Response): Promise<void> =>
       userId
     });
 
+    console.log('✅ Agent created successfully:', agent.id);
+
     res.status(201).json({
       success: true,
       data: agent
     });
   } catch (error: any) {
-    console.error('Create agent error:', error);
+    console.error('❌ Create agent error:', error);
+    console.error('   Error message:', error.message);
+    console.error('   Error stack:', error.stack);
     res.status(500).json({
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: '创建智能体失败'
+        message: '创建智能体失败',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       }
     });
   }
@@ -227,14 +232,19 @@ export const deleteAgent = async (req: Request, res: Response): Promise<void> =>
     const { id } = req.params;
     const agentId = Array.isArray(id) ? id[0] : id;
 
+    console.log('🗑️ Deleting agent:', agentId, 'for user:', userId);
+
     await agentService.deleteAgent(agentId, userId);
+
+    console.log('✅ Agent deleted successfully:', agentId);
 
     res.json({
       success: true,
       message: '智能体已删除'
     });
   } catch (error: any) {
-    console.error('Delete agent error:', error);
+    console.error('❌ Delete agent error:', error);
+    console.error('   Error message:', error.message);
     
     if (error.message.includes('AGENT_NOT_FOUND')) {
       res.status(404).json({

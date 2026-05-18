@@ -2,8 +2,12 @@
 
 import { useState, FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Folder, Users, Plus, Search, Filter, Download, Eye, Edit, Trash2 } from 'lucide-react';
+import { Folder, Users, Plus, Search, Filter, Download, Eye, Edit, Trash2, Send } from 'lucide-react';
 import LoadingState from '@/components/Layout/LoadingState';
+import ExportModal from '@/components/ExportModal';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import DetailModal from '@/components/DetailModal';
+import EditModal from '@/components/EditModal';
 import { agentApi } from '@/lib/api/agents';
 import { aiteamApi } from '@/lib/api/aiteams';
 import type { Agent } from '@/lib/api/agents';
@@ -20,6 +24,36 @@ export default function AgentRepositoryPage() {
     description: '',
     type: 'agent' as 'agent' | 'aiteam'
   });
+  
+  // 导出模态框状态
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportResource, setExportResource] = useState<{
+    id: string;
+    name: string;
+    type: 'agent' | 'aiteam';
+  } | null>(null);
+  
+  // 删除确认对话框状态
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteResource, setDeleteResource] = useState<{
+    id: string;
+    name: string;
+    type: 'agent' | 'aiteam';
+  } | null>(null);
+  
+  // 详情模态框状态
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailResource, setDetailResource] = useState<{
+    resource: Agent | AiTeam;
+    type: 'agent' | 'aiteam';
+  } | null>(null);
+  
+  // 编辑模态框状态
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editResource, setEditResource] = useState<{
+    resource: Agent | AiTeam;
+    type: 'agent' | 'aiteam';
+  } | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -62,6 +96,75 @@ export default function AgentRepositoryPage() {
       setCreateForm({ name: '', description: '', type: 'agent' });
     }
   });
+
+  // 发布/取消发布 mutation
+  const publishMutation = useMutation({
+    mutationFn: async ({ id, type, action }: { id: string; type: 'agent' | 'aiteam'; action: 'publish' | 'unpublish' }) => {
+      if (type === 'agent') {
+        return action === 'publish' 
+          ? agentApi.publishAgent(id)
+          : agentApi.unpublishAgent(id);
+      } else {
+        return action === 'publish'
+          ? aiteamApi.publishAiTeam(id)
+          : aiteamApi.unpublishAiTeam(id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents', userId] });
+      queryClient.invalidateQueries({ queryKey: ['aiteams', userId] });
+    }
+  });
+
+  // 导出处理函数
+  const handleExport = async (format: 'json' | 'yaml' | 'proclaw') => {
+    if (!exportResource) return;
+    
+    try {
+      if (exportResource.type === 'agent') {
+        await agentApi.exportAgent(exportResource.id, format);
+      } else {
+        await aiteamApi.exportAiTeam(exportResource.id, format);
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      throw error;
+    }
+  };
+
+  // 删除处理函数
+  const handleDelete = async () => {
+    if (!deleteResource) return;
+    
+    if (deleteResource.type === 'agent') {
+      await agentApi.deleteAgent(deleteResource.id);
+    } else {
+      await aiteamApi.deleteAiTeam(deleteResource.id);
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ['agents', userId] });
+    queryClient.invalidateQueries({ queryKey: ['aiteams', userId] });
+  };
+
+  // 编辑保存处理函数
+  const handleEditSave = async (data: {
+    name: string;
+    description: string;
+    tags: string[];
+    category: string;
+    version: string;
+  }) => {
+    if (!editResource) return;
+    
+    if (editResource.type === 'agent') {
+      await agentApi.updateAgent(editResource.resource.id, data);
+    } else {
+      await aiteamApi.updateAiTeam(editResource.resource.id, data);
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ['agents', userId] });
+    queryClient.invalidateQueries({ queryKey: ['aiteams', userId] });
+  };
 
   const isLoading = activeTab === 'agents' ? agentsLoading : aiteamsLoading;
 
@@ -134,9 +237,47 @@ export default function AgentRepositoryPage() {
 
       {/* 内容区域 */}
       {activeTab === 'agents' ? (
-        <AgentsList agents={agentsData?.data?.agents || []} />
+        <AgentsList 
+          agents={agentsData?.data?.agents || []}
+          onPublish={(id, action) => publishMutation.mutate({ id, type: 'agent', action })}
+          onExport={(id, name) => {
+            setExportResource({ id, name, type: 'agent' });
+            setShowExportModal(true);
+          }}
+          onDeleteClick={(id, name) => {
+            setDeleteResource({ id, name, type: 'agent' });
+            setShowDeleteDialog(true);
+          }}
+          onViewClick={(resource) => {
+            setDetailResource({ resource, type: 'agent' });
+            setShowDetailModal(true);
+          }}
+          onEditClick={(resource) => {
+            setEditResource({ resource, type: 'agent' });
+            setShowEditModal(true);
+          }}
+        />
       ) : (
-        <AiTeamsList aiteams={aiteamsData?.data?.aiteams || []} />
+        <AiTeamsList 
+          aiteams={aiteamsData?.data?.aiteams || []}
+          onPublish={(id, action) => publishMutation.mutate({ id, type: 'aiteam', action })}
+          onExport={(id, name) => {
+            setExportResource({ id, name, type: 'aiteam' });
+            setShowExportModal(true);
+          }}
+          onDeleteClick={(id, name) => {
+            setDeleteResource({ id, name, type: 'aiteam' });
+            setShowDeleteDialog(true);
+          }}
+          onViewClick={(resource) => {
+            setDetailResource({ resource, type: 'aiteam' });
+            setShowDetailModal(true);
+          }}
+          onEditClick={(resource) => {
+            setEditResource({ resource, type: 'aiteam' });
+            setShowEditModal(true);
+          }}
+        />
       )}
 
       {/* 创建资源模态框 */}
@@ -149,12 +290,84 @@ export default function AgentRepositoryPage() {
           isPending={createMutation.isPending}
         />
       )}
+
+      {/* 导出模态框 */}
+      {showExportModal && exportResource && (
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => {
+            setShowExportModal(false);
+            setExportResource(null);
+          }}
+          resourceType={exportResource.type}
+          resourceName={exportResource.name}
+          onExport={handleExport}
+        />
+      )}
+
+      {/* 删除确认对话框 */}
+      {showDeleteDialog && deleteResource && (
+        <ConfirmDialog
+          isOpen={showDeleteDialog}
+          onClose={() => {
+            setShowDeleteDialog(false);
+            setDeleteResource(null);
+          }}
+          onConfirm={handleDelete}
+          title="确认删除"
+          message={`确定要删除${deleteResource.type === 'agent' ? 'Agent' : 'AiTeam'} "${deleteResource.name}" 吗？此操作不可恢复。`}
+          confirmText="删除"
+          cancelText="取消"
+          variant="danger"
+        />
+      )}
+
+      {/* 详情模态框 */}
+      {showDetailModal && detailResource && (
+        <DetailModal
+          isOpen={showDetailModal}
+          onClose={() => {
+            setShowDetailModal(false);
+            setDetailResource(null);
+          }}
+          resourceType={detailResource.type}
+          resource={detailResource.resource}
+        />
+      )}
+
+      {/* 编辑模态框 */}
+      {showEditModal && editResource && (
+        <EditModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditResource(null);
+          }}
+          resourceType={editResource.type}
+          resource={editResource.resource}
+          onSave={handleEditSave}
+        />
+      )}
     </div>
   );
 }
 
 // Agents 列表组件
-function AgentsList({ agents }: { agents: Agent[] }) {
+function AgentsList({ 
+  agents,
+  onPublish,
+  onExport,
+  onDeleteClick,
+  onViewClick,
+  onEditClick
+}: { 
+  agents: Agent[];
+  onPublish: (id: string, action: 'publish' | 'unpublish') => void;
+  onExport: (id: string, name: string) => void;
+  onDeleteClick: (id: string, name: string) => void;
+  onViewClick: (resource: Agent) => void;
+  onEditClick: (resource: Agent) => void;
+}) {
   if (agents.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-12 text-center">
@@ -176,14 +389,36 @@ function AgentsList({ agents }: { agents: Agent[] }) {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       {agents.map((agent) => (
-        <AgentCard key={agent.id} agent={agent} />
+        <AgentCard 
+          key={agent.id} 
+          agent={agent}
+          onPublish={onPublish}
+          onExport={onExport}
+          onDeleteClick={onDeleteClick}
+          onViewClick={() => onViewClick(agent)}
+          onEditClick={() => onEditClick(agent)}
+        />
       ))}
     </div>
   );
 }
 
 // Agent 卡片组件
-function AgentCard({ agent }: { agent: Agent }) {
+function AgentCard({ 
+  agent,
+  onPublish,
+  onExport,
+  onDeleteClick,
+  onViewClick,
+  onEditClick
+}: { 
+  agent: Agent;
+  onPublish: (id: string, action: 'publish' | 'unpublish') => void;
+  onExport: (id: string, name: string) => void;
+  onDeleteClick: (id: string, name: string) => void;
+  onViewClick: () => void;
+  onEditClick: () => void;
+}) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 hover:border-blue-300 dark:hover:border-blue-700 hover:-translate-y-1 hover:shadow-xl transition-all group">
       <div className="flex items-start justify-between mb-4">
@@ -241,16 +476,49 @@ function AgentCard({ agent }: { agent: Agent }) {
           <span>⭐ {agent.rating.toFixed(1)}</span>
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" title="查看">
+          <button 
+            onClick={onViewClick}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" 
+            title="查看"
+          >
             <Eye size={16} />
           </button>
-          <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" title="编辑">
+          <button 
+            onClick={onEditClick}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" 
+            title="编辑"
+          >
             <Edit size={16} />
           </button>
-          <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all" title="导出">
+          <button 
+            onClick={() => onExport(agent.id, agent.name)}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all" 
+            title="导出"
+          >
             <Download size={16} />
           </button>
-          <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="删除">
+          {agent.publishStatus === 'published' ? (
+            <button 
+              onClick={() => onPublish(agent.id, 'unpublish')}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-all" 
+              title="取消发布"
+            >
+              <Send size={16} />
+            </button>
+          ) : (
+            <button 
+              onClick={() => onPublish(agent.id, 'publish')}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all" 
+              title="发布"
+            >
+              <Send size={16} />
+            </button>
+          )}
+          <button 
+            onClick={() => onDeleteClick(agent.id, agent.name)}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" 
+            title="删除"
+          >
             <Trash2 size={16} />
           </button>
         </div>
@@ -260,7 +528,21 @@ function AgentCard({ agent }: { agent: Agent }) {
 }
 
 // AiTeams 列表组件
-function AiTeamsList({ aiteams }: { aiteams: AiTeam[] }) {
+function AiTeamsList({ 
+  aiteams,
+  onPublish,
+  onExport,
+  onDeleteClick,
+  onViewClick,
+  onEditClick
+}: { 
+  aiteams: AiTeam[];
+  onPublish: (id: string, action: 'publish' | 'unpublish') => void;
+  onExport: (id: string, name: string) => void;
+  onDeleteClick: (id: string, name: string) => void;
+  onViewClick: (resource: AiTeam) => void;
+  onEditClick: (resource: AiTeam) => void;
+}) {
   if (aiteams.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-12 text-center">
@@ -282,14 +564,36 @@ function AiTeamsList({ aiteams }: { aiteams: AiTeam[] }) {
   return (
     <div className="grid md:grid-cols-2 gap-6">
       {aiteams.map((aiteam) => (
-        <AiTeamCard key={aiteam.id} aiteam={aiteam} />
+        <AiTeamCard 
+          key={aiteam.id} 
+          aiteam={aiteam}
+          onPublish={onPublish}
+          onExport={onExport}
+          onDeleteClick={onDeleteClick}
+          onViewClick={() => onViewClick(aiteam)}
+          onEditClick={() => onEditClick(aiteam)}
+        />
       ))}
     </div>
   );
 }
 
 // AiTeam 卡片组件
-function AiTeamCard({ aiteam }: { aiteam: AiTeam }) {
+function AiTeamCard({ 
+  aiteam,
+  onPublish,
+  onExport,
+  onDeleteClick,
+  onViewClick,
+  onEditClick
+}: { 
+  aiteam: AiTeam;
+  onPublish: (id: string, action: 'publish' | 'unpublish') => void;
+  onExport: (id: string, name: string) => void;
+  onDeleteClick: (id: string, name: string) => void;
+  onViewClick: () => void;
+  onEditClick: () => void;
+}) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 hover:border-purple-300 dark:hover:border-purple-700 hover:-translate-y-1 hover:shadow-xl transition-all group">
       <div className="flex items-start justify-between mb-4">
@@ -349,16 +653,49 @@ function AiTeamCard({ aiteam }: { aiteam: AiTeam }) {
           <span>成功率: {aiteam.successRate.toFixed(1)}%</span>
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all" title="查看">
+          <button 
+            onClick={onViewClick}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all" 
+            title="查看"
+          >
             <Eye size={16} />
           </button>
-          <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all" title="编辑">
+          <button 
+            onClick={onEditClick}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all" 
+            title="编辑"
+          >
             <Edit size={16} />
           </button>
-          <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all" title="导出">
+          <button 
+            onClick={() => onExport(aiteam.id, aiteam.name)}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all" 
+            title="导出"
+          >
             <Download size={16} />
           </button>
-          <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="删除">
+          {aiteam.publishStatus === 'published' ? (
+            <button 
+              onClick={() => onPublish(aiteam.id, 'unpublish')}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-all" 
+              title="取消发布"
+            >
+              <Send size={16} />
+            </button>
+          ) : (
+            <button 
+              onClick={() => onPublish(aiteam.id, 'publish')}
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all" 
+              title="发布"
+            >
+              <Send size={16} />
+            </button>
+          )}
+          <button 
+            onClick={() => onDeleteClick(aiteam.id, aiteam.name)}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" 
+            title="删除"
+          >
             <Trash2 size={16} />
           </button>
         </div>
