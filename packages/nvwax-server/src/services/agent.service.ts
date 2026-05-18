@@ -20,6 +20,18 @@ export interface Agent {
   status: 'draft' | 'active' | 'archived' | 'deleted';
   templateId?: string;
   version: string;
+  
+  // 新增字段（Agent 仓库重构）
+  type: 'single' | 'team_member';
+  publishStatus: 'draft' | 'published' | 'private';
+  downloadCount: number;
+  exportFormat: string[];
+  tags: string[];
+  category?: string;
+  thumbnailUrl?: string;
+  rating: number;
+  reviewCount: number;
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,6 +46,13 @@ export interface CreateAgentInput {
   implementation?: string;
   templateId?: string;
   userId: string;
+  
+  // 新增字段
+  type?: 'single' | 'team_member';
+  publishStatus?: 'draft' | 'published' | 'private';
+  tags?: string[];
+  category?: string;
+  thumbnailUrl?: string;
 }
 
 export interface UpdateAgentInput {
@@ -46,6 +65,13 @@ export interface UpdateAgentInput {
   implementation?: string;
   status?: 'draft' | 'active' | 'archived' | 'deleted';
   version?: string;
+  
+  // 新增字段
+  type?: 'single' | 'team_member';
+  publishStatus?: 'draft' | 'published' | 'private';
+  tags?: string[];
+  category?: string;
+  thumbnailUrl?: string;
 }
 
 export class AgentService {
@@ -236,6 +262,138 @@ export class AgentService {
   }
 
   /**
+   * 发布智能体到市场
+   */
+  async publishAgent(id: string, userId: string): Promise<Agent> {
+    const result = await this.pool.query(
+      `UPDATE agents 
+       SET publish_status = 'published', updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $1 AND user_id = $2 
+       RETURNING *`,
+      [id, userId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new Error('AGENT_NOT_FOUND: 智能体不存在或无权访问');
+    }
+
+    return this.mapRowToAgent(result.rows[0]);
+  }
+
+  /**
+   * 取消发布（设为私有）
+   */
+  async unpublishAgent(id: string, userId: string): Promise<Agent> {
+    const result = await this.pool.query(
+      `UPDATE agents 
+       SET publish_status = 'private', updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $1 AND user_id = $2 
+       RETURNING *`,
+      [id, userId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new Error('AGENT_NOT_FOUND: 智能体不存在或无权访问');
+    }
+
+    return this.mapRowToAgent(result.rows[0]);
+  }
+
+  /**
+   * 搜索已发布的智能体（公开市场）
+   */
+  async searchPublishedAgents(options?: {
+    query?: string;
+    category?: string;
+    tags?: string[];
+    page?: number;
+    limit?: number;
+  }): Promise<{ agents: Agent[]; total: number }> {
+    const { query, category, tags, page = 1, limit = 20 } = options || {};
+    
+    const conditions: string[] = ['publish_status = $1'];
+    const params: any[] = ['published'];
+    let paramIndex = 2;
+
+    if (query) {
+      conditions.push(`(name ILIKE $${paramIndex} OR description ILIKE $${paramIndex})`);
+      params.push('%' + query + '%');
+      paramIndex++;
+    }
+
+    if (category) {
+      conditions.push(`category = $${paramIndex++}`);
+      params.push(category);
+    }
+
+    if (tags && tags.length > 0) {
+      conditions.push(`tags && $${paramIndex++}`);
+      params.push(tags);
+    }
+
+    const whereClause = conditions.join(' AND ');
+
+    // 查询总数
+    const countResult = await this.pool.query(
+      `SELECT COUNT(*) FROM agents WHERE ${whereClause}`,
+      params
+    );
+    const total = parseInt(countResult.rows[0].count);
+
+    // 查询数据
+    const offset = (page - 1) * limit;
+    const dataResult = await this.pool.query(
+      `SELECT * FROM agents WHERE ${whereClause} ORDER BY rating DESC, download_count DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
+      [...params, limit, offset]
+    );
+
+    const agents = dataResult.rows.map(row => this.mapRowToAgent(row));
+
+    return { agents, total };
+  }
+
+  /**
+   * 增加下载次数
+   */
+  async incrementDownloadCount(id: string): Promise<void> {
+    await this.pool.query(
+      `UPDATE agents SET download_count = download_count + 1 WHERE id = $1`,
+      [id]
+    );
+  }
+
+  /**
+   * 获取用户的 Agent 统计信息
+   */
+  async getUserStats(userId: string): Promise<{
+    total: number;
+    draft: number;
+    published: number;
+    private: number;
+    totalDownloads: number;
+  }> {
+    const result = await this.pool.query(
+      `SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN publish_status = 'draft' THEN 1 END) as draft,
+        COUNT(CASE WHEN publish_status = 'published' THEN 1 END) as published,
+        COUNT(CASE WHEN publish_status = 'private' THEN 1 END) as private,
+        COALESCE(SUM(download_count), 0) as total_downloads
+      FROM agents WHERE user_id = $1 AND status != 'deleted'`,
+      [userId]
+    );
+
+    const stats = result.rows[0];
+    return {
+      total: parseInt(stats.total),
+      draft: parseInt(stats.draft),
+      published: parseInt(stats.published),
+      private: parseInt(stats.private),
+      totalDownloads: parseInt(stats.total_downloads)
+    };
+  }
+
+  /**
    * 将数据库行映射为 Agent 对象
    */
   private mapRowToAgent(row: any): Agent {
@@ -252,6 +410,18 @@ export class AgentService {
       status: row.status,
       templateId: row.template_id,
       version: row.version,
+      
+      // 新增字段
+      type: row.type || 'single',
+      publishStatus: row.publish_status || 'private',
+      downloadCount: row.download_count || 0,
+      exportFormat: row.export_format || [],
+      tags: row.tags || [],
+      category: row.category,
+      thumbnailUrl: row.thumbnail_url,
+      rating: parseFloat(row.rating) || 0.00,
+      reviewCount: row.review_count || 0,
+      
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
