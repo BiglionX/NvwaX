@@ -1,8 +1,8 @@
 'use client';
 
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, LayoutDashboard, Users, Settings, LogOut, Database, Folder, Bot, Building2, Bell, FileText } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, Settings, Database, Folder, Bot, Building2, Bell, FileText } from 'lucide-react';
 import ProtectedAdminRoute from '@/components/Auth/ProtectedAdminRoute';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -14,21 +14,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 }
 
 function AdminContent({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const pathname = usePathname();
   
   console.log('[AdminLayout] Rendering, pathname:', pathname);
-  
-  const handleLogout = () => {
-    // 清除所有认证状态
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_info');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user_token');
-    localStorage.removeItem('user_info');
-    localStorage.removeItem('userInfo');
-    router.push('/admin/login');
-  };
 
   const menuItems = [
     { label: '数据看板', icon: LayoutDashboard, path: '/admin/dashboard' },
@@ -57,15 +45,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">NvwaX 管理后台</h1>
           </div>
           
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <LogOut size={18} />
-              退出登录
-            </button>
-          </div>
+          {/* 用户状态和退出登录功能已在顶部导航栏提供 */}
         </div>
       </header>
 
