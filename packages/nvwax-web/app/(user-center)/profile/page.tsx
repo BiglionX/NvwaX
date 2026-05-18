@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '@/lib/api/users';
 import { useAuth } from '@/hooks/useAuth';
-import { User as UserIcon, Mail, Calendar, Edit2, Save, X, Folder, Users, Bot, Clock, Star, Award, Settings, Shield, Activity } from 'lucide-react';
+import { User as UserIcon, Mail, Calendar, Edit2, Save, X, Folder, Users, Bot, Clock, Shield, Activity } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import LoadingState from '@/components/Layout/LoadingState';
@@ -177,9 +177,6 @@ function ProfileContent() {
       {/* 统计卡片 */}
       <StatsCards stats={stats} />
       
-      {/* 快捷操作 */}
-      <QuickActions />
-      
       {/* 账号安全 */}
       <AccountSecurity />
       
@@ -338,45 +335,6 @@ function StatsCards({ stats }: StatsCardsProps) {
   );
 }
 
-// 快捷操作组件
-function QuickActions() {
-  const actions = [
-    { label: '我的项目', icon: Folder, href: '/projects', color: 'from-blue-500 to-blue-600', description: '查看和管理您的项目' },
-    { label: '我的悬赏', icon: Award, href: '/my-bounties', color: 'from-purple-500 to-purple-600', description: '查看悬赏任务' },
-    { label: '收藏的 Agent', icon: Star, href: '/favorites', color: 'from-pink-500 to-pink-600', description: '查看收藏内容' },
-    { label: '设置', icon: Settings, href: '/settings', color: 'from-gray-500 to-gray-600', description: '账户设置' }
-  ];
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        快捷操作
-      </h3>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {actions.map((action, index) => {
-          const Icon = action.icon;
-          return (
-            <Link
-              key={index}
-              href={action.href}
-              prefetch={false} // 禁用预取，避免 404 错误
-              className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 hover:-translate-y-1 hover:shadow-lg transition-all group"
-            >
-              <div className={`w-12 h-12 bg-linear-to-r ${action.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md`}>
-                <Icon className="text-white" size={24} />
-              </div>
-              <div className="text-center">
-                <span className="text-sm font-semibold text-gray-900 dark:text-white block">
-                  {action.label}
-                </span>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 // 最近活动组件
 function RecentActivity() {
