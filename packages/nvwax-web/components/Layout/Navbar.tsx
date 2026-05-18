@@ -74,7 +74,7 @@ export default function Navbar() {
           </div>
 
           {/* User Actions */}
-          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
             {isLoggedIn ? (
               <>
                 {/* 通知下拉组件 */}
@@ -91,10 +91,10 @@ export default function Navbar() {
                   href="/profile"
                   className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm whitespace-nowrap"
                 >
-                  <div className="w-7 h-7 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
                     {userInfo?.name?.charAt(0).toUpperCase() || userInfo?.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300 max-w-[120px] truncate">
+                  <span className="font-medium text-gray-700 dark:text-gray-300 max-w-30 truncate">
                     {userInfo?.name || userInfo?.email || '用户'}
                   </span>
                 </Link>

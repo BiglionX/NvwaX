@@ -67,8 +67,26 @@ env/
 venv/
 ENV/
 
-# Reports (keep markdown files, ignore generated reports)
-# *.md  <-- We want to keep our markdown docs!
+# One-time scripts and debug files (not tracked in version control)
+packages/nvwax-server/test-*.mjs
+packages/nvwax-server/test-*.ts
+packages/nvwax-server/check-*.mjs
+packages/nvwax-server/check-*.ts
+packages/nvwax-server/run-migration*.mjs
+packages/nvwax-server/run-migration.js
+packages/nvwax-server/create-*.mjs
+packages/nvwax-server/create-*.ts
+packages/nvwax-server/init-*.ts
+packages/nvwax-server/reset-*.mjs
+packages/nvwax-server/reset-*.ts
+packages/nvwax-server/migrate-*.ts
+packages/nvwax-server/sync-*.ts
+packages/nvwax-server/cold-start-*.ts
+packages/nvwax-server/crawl-*.ts
+packages/nvwax-server/diagnose-*.mjs
+packages/nvwax-server/update-*.mjs
 
-# Archived temporary files (not tracked in version control)
-docs-archive/temp-files/
+# Cleanup script itself
+ cleanup-*.ps1
+ cleanup-*.sh
+ cleanup-*.bat
