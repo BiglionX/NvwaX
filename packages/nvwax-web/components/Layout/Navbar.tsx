@@ -11,9 +11,9 @@ import NotificationDropdown from '../notification-dropdown';
 const navItems = [
   { label: '首页', icon: Home, path: '/' },
   { label: 'Nvwa', icon: Sparkles, path: '/nvwa' },
-  { label: 'Agent 广场', icon: Store, path: '/marketplace' },
-  { label: '悬赏市场', icon: Award, path: '/bounties' },
-  { label: 'API文档', icon: FileText, path: '/api/docs' },
+  { label: 'Agent广场', icon: Store, path: '/marketplace' },
+  { label: '悬赏', icon: Award, path: '/bounties' },
+  { label: 'API', icon: FileText, path: '/api/docs' },
 ];
 
 export default function Navbar() {
@@ -51,7 +51,7 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden lg:flex items-center space-x-1 flex-1 justify-center min-w-0">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.path;
@@ -60,13 +60,13 @@ export default function Navbar() {
                 <Link
                   key={item.path}
                   href={item.path}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  className={`flex items-center gap-1.5 px-2 py-2 rounded-lg transition-colors text-sm whitespace-nowrap ${
                     isActive
                       ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
-                  <Icon size={18} />
+                  <Icon size={16} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );
@@ -74,7 +74,7 @@ export default function Navbar() {
           </div>
 
           {/* User Actions */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
             {isLoggedIn ? (
               <>
                 {/* 通知下拉组件 */}
@@ -82,27 +82,27 @@ export default function Navbar() {
                 
                 <Link
                   href="/my-bounties"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
+                  className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 text-sm whitespace-nowrap"
                 >
-                  <ClipboardList size={18} />
-                  <span className="text-sm font-medium">我的悬赏</span>
+                  <ClipboardList size={16} />
+                  <span className="font-medium">我的悬赏</span>
                 </Link>
                 <Link
                   href="/profile"
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm whitespace-nowrap"
                 >
-                  <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
+                  <div className="w-7 h-7 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                     {userInfo?.name?.charAt(0).toUpperCase() || userInfo?.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {userInfo?.name || '用户'}
+                  <span className="font-medium text-gray-700 dark:text-gray-300 max-w-[120px] truncate">
+                    {userInfo?.name || userInfo?.email || '用户'}
                   </span>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-2 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm whitespace-nowrap"
                 >
-                  <LogOut size={18} />
+                  <LogOut size={16} />
                   <span>退出</span>
                 </button>
               </>
@@ -118,7 +118,7 @@ export default function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="lg:hidden flex items-center">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -131,7 +131,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="lg:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <div className="px-4 pt-2 pb-4 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
