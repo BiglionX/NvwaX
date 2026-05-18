@@ -6,9 +6,11 @@
 
 import { Request, Response } from 'express';
 import { AgentService } from '../services/agent.service.js';
+import { ExportService } from '../services/export.service.js';
 import { databaseService } from '../services/database.service.js';
 
 const agentService = new AgentService(databaseService.getPool());
+const exportService = new ExportService(databaseService.getPool());
 
 /**
  * 创建智能体
@@ -250,6 +252,283 @@ export const deleteAgent = async (req: Request, res: Response): Promise<void> =>
       error: {
         code: 'INTERNAL_ERROR',
         message: '删除智能体失败'
+      }
+    });
+  }
+};
+
+/**
+ * 发布智能体到市场
+ */
+export const publishAgent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '未授权，请先登录'
+        }
+      });
+      return;
+    }
+
+    const { id } = req.params;
+    const agentId = Array.isArray(id) ? id[0] : id;
+
+    const agent = await agentService.publishAgent(agentId, userId);
+
+    res.json({
+      success: true,
+      data: agent,
+      message: '智能体已发布到市场'
+    });
+  } catch (error: any) {
+    console.error('Publish agent error:', error);
+    
+    if (error.message.includes('AGENT_NOT_FOUND')) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'AGENT_NOT_FOUND',
+          message: error.message
+        }
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: '发布智能体失败'
+      }
+    });
+  }
+};
+
+/**
+ * 取消发布智能体
+ */
+export const unpublishAgent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '未授权，请先登录'
+        }
+      });
+      return;
+    }
+
+    const { id } = req.params;
+    const agentId = Array.isArray(id) ? id[0] : id;
+
+    const agent = await agentService.unpublishAgent(agentId, userId);
+
+    res.json({
+      success: true,
+      data: agent,
+      message: '智能体已取消发布'
+    });
+  } catch (error: any) {
+    console.error('Unpublish agent error:', error);
+    
+    if (error.message.includes('AGENT_NOT_FOUND')) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'AGENT_NOT_FOUND',
+          message: error.message
+        }
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: '取消发布失败'
+      }
+    });
+  }
+};
+
+/**
+ * 搜索公开市场的智能体
+ */
+export const searchPublishedAgents = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { q, category, tags, page = 1, limit = 20 } = req.query;
+
+    const result = await agentService.searchPublishedAgents({
+      query: q as string | undefined,
+      category: category as string | undefined,
+      tags: tags ? (tags as string).split(',') : undefined,
+      page: parseInt(page as string),
+      limit: parseInt(limit as string)
+    });
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error: any) {
+    console.error('Search published agents error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: '搜索智能体失败'
+      }
+    });
+  }
+};
+
+/**
+ * 获取用户统计信息
+ */
+export const getUserStats = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '未授权，请先登录'
+        }
+      });
+      return;
+    }
+
+    const stats = await agentService.getUserStats(userId);
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error: any) {
+    console.error('Get user stats error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: '获取统计信息失败'
+      }
+    });
+  }
+};
+
+/**
+ * 导出智能体
+ */
+export const exportAgent = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '未授权，请先登录'
+        }
+      });
+      return;
+    }
+
+    const { id } = req.params;
+    const agentId = Array.isArray(id) ? id[0] : id;
+    const { format = 'json', includeMetadata = true, includeImplementation = false } = req.body;
+
+    // 验证格式
+    if (!['json', 'yaml', 'proclaw'].includes(format)) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: '不支持的导出格式，请使用 json、yaml 或 proclaw'
+        }
+      });
+      return;
+    }
+
+    const result = await exportService.exportAgent(agentId, userId, {
+      format: format as 'json' | 'yaml' | 'proclaw',
+      includeMetadata,
+      includeImplementation
+    });
+
+    res.json({
+      success: true,
+      data: result,
+      message: '导出成功'
+    });
+  } catch (error: any) {
+    console.error('Export agent error:', error);
+    
+    if (error.message.includes('AGENT_NOT_FOUND')) {
+      res.status(404).json({
+        success: false,
+        error: {
+          code: 'AGENT_NOT_FOUND',
+          message: error.message
+        }
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: '导出智能体失败'
+      }
+    });
+  }
+};
+
+/**
+ * 获取导出历史
+ */
+export const getExportHistory = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '未授权，请先登录'
+        }
+      });
+      return;
+    }
+
+    const { limit = 20 } = req.query;
+    const history = await exportService.getExportHistory(userId, parseInt(limit as string));
+
+    res.json({
+      success: true,
+      data: history
+    });
+  } catch (error: any) {
+    console.error('Get export history error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: '获取导出历史失败'
       }
     });
   }
