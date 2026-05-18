@@ -287,7 +287,8 @@ export class CEOAgentService {
     if (currentStatus === 'role_recommendation' && 
         (lowerMessage.includes('确认') || lowerMessage.includes('confirm') || 
          lowerMessage.includes('开始') || lowerMessage.includes('start') ||
-         lowerMessage.includes('构建') || lowerMessage.includes('build'))) {
+         lowerMessage.includes('构建') || lowerMessage.includes('build') ||
+         lowerMessage === '确认' || lowerMessage === 'confirm')) {
       return {
         message: `✅ 好的！我现在开始为您构建 AI 团队...
 
@@ -367,7 +368,8 @@ export class CEOAgentService {
     const statusMap: Record<string, string> = {
       'requirements_gathering': 'requirements_gathering',
       'role_recommendation': 'role_selection',
-      'confirmation': 'confirming'
+      'confirmation': 'confirming',
+      'building': 'building'
     };
 
     const newStatus = statusMap[phase];
@@ -379,7 +381,8 @@ export class CEOAgentService {
     const stepMap: Record<string, number> = {
       'requirements_gathering': 1,
       'role_recommendation': 2,
-      'confirmation': 5
+      'confirmation': 5,
+      'building': 6
     };
 
     const stepNumber = stepMap[phase];
