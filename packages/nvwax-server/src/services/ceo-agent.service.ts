@@ -283,6 +283,27 @@ export class CEOAgentService {
       };
     }
 
+    // 检查用户是否确认角色配置
+    if (currentStatus === 'role_recommendation' && 
+        (lowerMessage.includes('确认') || lowerMessage.includes('confirm') || 
+         lowerMessage.includes('开始') || lowerMessage.includes('start') ||
+         lowerMessage.includes('构建') || lowerMessage.includes('build'))) {
+      return {
+        message: `✅ 好的！我现在开始为您构建 AI 团队...
+
+**正在执行以下步骤：**
+1. 🔍 搜索合适的 Agent
+2. 🎯 匹配 Skills
+3. 🔧 配置团队协作
+4. 📦 打包团队配置
+
+请稍候，这可能需要几分钟时间...`,
+        phase: 'building',
+        needsClarification: false,
+        clarificationQuestions: []
+      };
+    }
+
     // 默认响应
     return {
       message: `感谢您的反馈！
