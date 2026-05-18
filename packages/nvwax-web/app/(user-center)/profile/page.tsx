@@ -161,38 +161,30 @@ function ProfileContent() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Header - 移除，因为 layout 中已有用户中心标题 */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* 左侧 - 个人信息卡片 */}
-        <div className="lg:col-span-4 space-y-6">
-          <ProfileCard 
-            user={user} 
-            isEditing={isEditing}
-            editForm={editForm}
-            setEditForm={setEditForm}
-            setIsEditing={setIsEditing}
-            handleSave={handleSave}
-            handleCancel={handleCancel}
-            updateMutation={updateMutation}
-          />
-          
-          {/* 账号安全 */}
-          <AccountSecurity />
-        </div>
-
-        {/* 右侧 - 统计和功能区域 */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* 统计卡片 */}
-          <StatsCards stats={stats} />
-          
-          {/* 快捷操作 */}
-          <QuickActions />
-          
-          {/* 最近活动 */}
-          <RecentActivity />
-        </div>
-      </div>
+    <div className="space-y-6">
+      {/* 个人信息卡片 */}
+      <ProfileCard 
+        user={user} 
+        isEditing={isEditing}
+        editForm={editForm}
+        setEditForm={setEditForm}
+        setIsEditing={setIsEditing}
+        handleSave={handleSave}
+        handleCancel={handleCancel}
+        updateMutation={updateMutation}
+      />
+      
+      {/* 统计卡片 */}
+      <StatsCards stats={stats} />
+      
+      {/* 快捷操作 */}
+      <QuickActions />
+      
+      {/* 账号安全 */}
+      <AccountSecurity />
+      
+      {/* 最近活动 */}
+      <RecentActivity />
     </div>
   );
 }

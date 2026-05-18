@@ -66,12 +66,9 @@ export default function MyBountiesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* 左侧 - 筛选区域 */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Tabs */}
-          <div className="bg-white dark:bg-gray-800 p-2 rounded-xl border-2 border-gray-200 dark:border-gray-700">
+    <div className="space-y-6">
+      {/* Tabs */}
+      <div className="bg-white dark:bg-gray-800 p-2 rounded-xl border-2 border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setActiveTab('published')}
               className={`w-full px-4 py-2.5 font-medium transition-all rounded-lg flex items-center justify-center gap-2 mb-2 ${
@@ -116,10 +113,7 @@ export default function MyBountiesPage() {
               </select>
             </div>
           </div>
-        </div>
-
-        {/* 右侧 - 悬赏列表 */}
-        <div className="lg:col-span-8">
+      </div>
 
       {/* Bounty List */}
       {currentLoading ? (
@@ -161,9 +155,7 @@ export default function MyBountiesPage() {
             <BountyCard key={bounty.id} bounty={bounty} />
           ))}
         </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -43,29 +43,24 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* 左侧 - 操作区域 */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Folder className="text-blue-600" size={20} />
-              项目管理
-            </h3>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
-            >
-              <Plus size={18} />
-              创建项目
-            </button>
-          </div>
-        </div>
+    <div className="space-y-6">
+      {/* 操作栏 */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Folder className="text-blue-600" size={24} />
+          我的项目
+        </h2>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
+        >
+          <Plus size={18} />
+          创建项目
+        </button>
+      </div>
 
-        {/* 右侧 - 项目列表 */}
-        <div className="lg:col-span-8">
-          {/* Projects Grid */}
-          <div className="grid md:grid-cols-2 gap-6">
+      {/* 项目列表 */}
+      <div className="grid md:grid-cols-2 gap-6">
         {data?.data?.map((project: Project) => (
           <Link
             key={project.id}
@@ -103,28 +98,10 @@ export default function ProjectsPage() {
             </div>
           </Link>
         ))}
-          </div>
-
-          {!data?.data?.length && (
-            <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-md">
-              <div className="w-20 h-20 bg-linear-to-br from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Folder size={40} className="text-gray-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">暂无项目</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">创建您的第一个项目开始使用</p>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center gap-2 px-8 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all font-medium"
-              >
-                <Plus size={18} />
-                创建项目
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Create Project Modal */}
+      {/* 创建项目模态框 */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-8 shadow-2xl border-2 border-gray-200 dark:border-gray-700">
