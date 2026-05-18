@@ -36,8 +36,13 @@ function AdminContent({ children }: { children: React.ReactNode }) {
   });
 
   const handleLogout = () => {
+    // 清除所有认证状态
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_info');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user_token');
+    localStorage.removeItem('user_info');
+    localStorage.removeItem('userInfo');
     router.push('/admin/login');
   };
 

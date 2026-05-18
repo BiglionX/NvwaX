@@ -92,6 +92,10 @@ function LoginForm() {
         const response = await authApi.login(email, password);
         console.log('Login response:', response);
         
+        // 清除管理员认证状态，避免冲突
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_info');
+        
         // 保存 token 和用户信息，并更新 auth 状态
         localStorage.setItem('user_token', response.data.token);
         localStorage.setItem('user_info', JSON.stringify(response.data.user));

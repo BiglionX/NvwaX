@@ -29,6 +29,12 @@ export default function AdminLoginPage() {
       const response = await adminApi.login(username, password);
       console.log('[Admin Login Page] Login successful');
       
+      // 清除普通用户的认证状态，避免冲突
+      localStorage.removeItem('token');
+      localStorage.removeItem('user_token');
+      localStorage.removeItem('user_info');
+      localStorage.removeItem('userInfo');
+      
       localStorage.setItem('admin_token', response.data.token);
       localStorage.setItem('admin_info', JSON.stringify(response.data.admin));
       

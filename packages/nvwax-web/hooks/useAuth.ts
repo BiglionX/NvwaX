@@ -68,8 +68,13 @@ export function useAuth() {
 
   // 登出
   const logout = () => {
+    // 清除所有认证状态（用户 + 管理员）
     localStorage.removeItem('token');
     localStorage.removeItem('userInfo');
+    localStorage.removeItem('user_token');
+    localStorage.removeItem('user_info');
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_info');
     setIsLoggedIn(false);
     setUserInfo(null);
   };
