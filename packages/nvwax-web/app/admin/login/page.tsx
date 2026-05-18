@@ -35,8 +35,20 @@ export default function AdminLoginPage() {
       localStorage.removeItem('user_info');
       localStorage.removeItem('userInfo');
       
+      // 保存管理员 token
       localStorage.setItem('admin_token', response.data.token);
       localStorage.setItem('admin_info', JSON.stringify(response.data.admin));
+      
+      // 同时设置普通用户 token（兼容旧代码和通用组件如通知栏）
+      // 将管理员信息也保存到 user_info，这样 useAuth 和普通 API 调用都能正常工作
+      localStorage.setItem('user_token', response.data.token);
+      localStorage.setItem('user_info', JSON.stringify({
+        id: response.data.admin.id,
+        email: response.data.admin.email,
+        name: response.data.admin.username || response.data.admin.email,
+        role: 'admin', // 标记为管理员角色
+        isAdmin: true
+      }));
       
       console.log('[Admin Login Page] Tokens saved. Redirecting to dashboard...');
       

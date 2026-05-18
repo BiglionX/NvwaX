@@ -69,6 +69,16 @@ function LoginForm() {
         localStorage.setItem('admin_token', adminResponse.data.token);
         localStorage.setItem('admin_info', JSON.stringify(adminResponse.data.admin));
         
+        // 同时设置普通用户 token（兼容旧代码和通用组件如通知栏）
+        localStorage.setItem('user_token', adminResponse.data.token);
+        localStorage.setItem('user_info', JSON.stringify({
+          id: adminResponse.data.admin.id,
+          email: adminResponse.data.admin.email,
+          name: adminResponse.data.admin.username || adminResponse.data.admin.email,
+          role: 'admin',
+          isAdmin: true
+        }));
+        
         console.log('[Login Page] Admin tokens saved. Redirecting to dashboard...');
         setJustLoggedIn(true);
         
