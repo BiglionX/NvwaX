@@ -50,6 +50,10 @@ RUN pnpm install --prod
 COPY --from=backend-builder /app/packages/nvwax-server/dist ./packages/nvwax-server/dist
 COPY --from=backend-builder /app/packages/nvwax-server/migrations ./packages/nvwax-server/migrations
 
+# Create exports directory and set permissions before switching to non-root user
+RUN mkdir -p /app/packages/nvwax-server/exports && \
+    chmod -R 777 /app/packages/nvwax-server/exports
+
 # Create startup script before switching to non-root user
 COPY <<'EOF' /app/start.sh
 #!/bin/sh
