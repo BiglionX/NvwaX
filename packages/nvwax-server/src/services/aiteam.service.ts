@@ -523,6 +523,298 @@ export class AiTeamService {
   }
 
   /**
+   * 添加成员到 AiTeam
+   */
+  async addMember(
+    aiteamId: string,
+    userId: string,
+    member: Omit<AiTeamMember, 'sortOrder'>
+  ): Promise<AiTeam> {
+    const client = await this.pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // 验证 AiTeam 存在且属于用户
+      const aiteamCheck = await client.query(
+        'SELECT id FROM aiteams WHERE id = $1 AND user_id = $2',
+        [aiteamId, userId]
+      );
+
+      if (aiteamCheck.rows.length === 0) {
+        throw new Error('AITEAM_NOT_FOUND: AiTeam 不存在或无权访问');
+      }
+
+      // 验证 Agent 存在
+      const agentCheck = await client.query(
+        'SELECT id FROM agents WHERE id = $1',
+        [member.agentId]
+      );
+
+      if (agentCheck.rows.length === 0) {
+        throw new Error('AGENT_NOT_FOUND: Agent 不存在');
+      }
+
+      // 检查是否已存在
+      const existingCheck = await client.query(
+        'SELECT 1 FROM aiteam_members WHERE aiteam_id = $1 AND agent_id = $2',
+        [aiteamId, member.agentId]
+      );
+
+      if (existingCheck.rows.length > 0) {
+        throw new Error('MEMBER_ALREADY_EXISTS: 该 Agent 已经是团队成员');
+      }
+
+      // 获取当前最大排序号
+      const maxSortResult = await client.query(
+        'SELECT COALESCE(MAX(sort_order), 0) as max_sort FROM aiteam_members WHERE aiteam_id = $1',
+        [aiteamId]
+      );
+
+      const sortOrder = maxSortResult.rows[0].max_sort + 1;
+
+      // 插入成员
+      await client.query(
+        `INSERT INTO aiteam_members (aiteam_id, agent_id, role, responsibilities, config, sort_order)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          aiteamId,
+          member.agentId,
+          member.role,
+          member.responsibilities || null,
+          JSON.stringify(member.config || {}),
+          sortOrder
+        ]
+      );
+
+      // 更新 aiteams 表的 members JSON（保持向后兼容）
+      const membersResult = await client.query(
+        `SELECT am.*, a.name as agent_name, a.type as agent_type
+         FROM aiteam_members am
+         JOIN agents a ON am.agent_id = a.id
+         WHERE am.aiteam_id = $1
+         ORDER BY am.sort_order`,
+        [aiteamId]
+      );
+
+      const membersJson = JSON.stringify(membersResult.rows.map(row => ({
+        agentId: row.agent_id,
+        agentName: row.agent_name,
+        role: row.role,
+        responsibilities: row.responsibilities,
+        config: JSON.parse(row.config || '{}')
+      })));
+
+      await client.query(
+        'UPDATE aiteams SET members = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [membersJson, aiteamId]
+      );
+
+      await client.query('COMMIT');
+
+      // 返回更新后的 AiTeam
+      const updated = await this.getAiTeamById(aiteamId, userId);
+      if (!updated) {
+        throw new Error('AITEAM_NOT_FOUND: 获取更新后的 AiTeam 失败');
+      }
+      return updated;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * 从 AiTeam 移除成员
+   */
+  async removeMember(aiteamId: string, userId: string, agentId: string): Promise<AiTeam> {
+    const client = await this.pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // 验证 AiTeam 存在且属于用户
+      const aiteamCheck = await client.query(
+        'SELECT id FROM aiteams WHERE id = $1 AND user_id = $2',
+        [aiteamId, userId]
+      );
+
+      if (aiteamCheck.rows.length === 0) {
+        throw new Error('AITEAM_NOT_FOUND: AiTeam 不存在或无权访问');
+      }
+
+      // 删除成员
+      const deleteResult = await client.query(
+        'DELETE FROM aiteam_members WHERE aiteam_id = $1 AND agent_id = $2 RETURNING *',
+        [aiteamId, agentId]
+      );
+
+      if (deleteResult.rows.length === 0) {
+        throw new Error('MEMBER_NOT_FOUND: 成员不存在');
+      }
+
+      // 重新排序
+      await client.query(
+        `WITH ranked AS (
+          SELECT id, ROW_NUMBER() OVER (ORDER BY sort_order) - 1 as new_order
+          FROM aiteam_members
+          WHERE aiteam_id = $1
+        )
+        UPDATE aiteam_members am
+        SET sort_order = r.new_order
+        FROM ranked r
+        WHERE am.id = r.id`,
+        [aiteamId]
+      );
+
+      // 更新 aiteams 表的 members JSON
+      const membersResult = await client.query(
+        `SELECT am.*, a.name as agent_name, a.type as agent_type
+         FROM aiteam_members am
+         JOIN agents a ON am.agent_id = a.id
+         WHERE am.aiteam_id = $1
+         ORDER BY am.sort_order`,
+        [aiteamId]
+      );
+
+      const membersJson = JSON.stringify(membersResult.rows.map(row => ({
+        agentId: row.agent_id,
+        agentName: row.agent_name,
+        role: row.role,
+        responsibilities: row.responsibilities,
+        config: JSON.parse(row.config || '{}')
+      })));
+
+      await client.query(
+        'UPDATE aiteams SET members = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [membersJson, aiteamId]
+      );
+
+      await client.query('COMMIT');
+
+      // 返回更新后的 AiTeam
+      const updated = await this.getAiTeamById(aiteamId, userId);
+      if (!updated) {
+        throw new Error('AITEAM_NOT_FOUND: 获取更新后的 AiTeam 失败');
+      }
+      return updated;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * 更新成员角色
+   */
+  async updateMemberRole(
+    aiteamId: string,
+    userId: string,
+    agentId: string,
+    updates: { role?: string; responsibilities?: string; config?: Record<string, unknown> }
+  ): Promise<AiTeam> {
+    const client = await this.pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // 验证 AiTeam 存在且属于用户
+      const aiteamCheck = await client.query(
+        'SELECT id FROM aiteams WHERE id = $1 AND user_id = $2',
+        [aiteamId, userId]
+      );
+
+      if (aiteamCheck.rows.length === 0) {
+        throw new Error('AITEAM_NOT_FOUND: AiTeam 不存在或无权访问');
+      }
+
+      // 构建更新字段
+      const updateFields: string[] = [];
+      const values: any[] = [];
+      let paramIndex = 3;
+
+      if (updates.role !== undefined) {
+        updateFields.push(`role = $${paramIndex}`);
+        values.push(updates.role);
+        paramIndex++;
+      }
+
+      if (updates.responsibilities !== undefined) {
+        updateFields.push(`responsibilities = $${paramIndex}`);
+        values.push(updates.responsibilities);
+        paramIndex++;
+      }
+
+      if (updates.config !== undefined) {
+        updateFields.push(`config = $${paramIndex}`);
+        values.push(JSON.stringify(updates.config));
+        paramIndex++;
+      }
+
+      if (updateFields.length === 0) {
+        throw new Error('NO_UPDATES: 没有提供任何更新字段');
+      }
+
+      updateFields.push('updated_at = CURRENT_TIMESTAMP');
+
+      values.unshift(agentId, aiteamId);
+
+      // 执行更新
+      const updateResult = await client.query(
+        `UPDATE aiteam_members SET ${updateFields.join(', ')}
+         WHERE aiteam_id = $1 AND agent_id = $2
+         RETURNING *`,
+        values
+      );
+
+      if (updateResult.rows.length === 0) {
+        throw new Error('MEMBER_NOT_FOUND: 成员不存在');
+      }
+
+      // 更新 aiteams 表的 members JSON
+      const membersResult = await client.query(
+        `SELECT am.*, a.name as agent_name, a.type as agent_type
+         FROM aiteam_members am
+         JOIN agents a ON am.agent_id = a.id
+         WHERE am.aiteam_id = $1
+         ORDER BY am.sort_order`,
+        [aiteamId]
+      );
+
+      const membersJson = JSON.stringify(membersResult.rows.map(row => ({
+        agentId: row.agent_id,
+        agentName: row.agent_name,
+        role: row.role,
+        responsibilities: row.responsibilities,
+        config: JSON.parse(row.config || '{}')
+      })));
+
+      await client.query(
+        'UPDATE aiteams SET members = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [membersJson, aiteamId]
+      );
+
+      await client.query('COMMIT');
+
+      // 返回更新后的 AiTeam
+      const updated = await this.getAiTeamById(aiteamId, userId);
+      if (!updated) {
+        throw new Error('AITEAM_NOT_FOUND: 获取更新后的 AiTeam 失败');
+      }
+      return updated;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * 将数据库行映射为 AiTeam 对象（不含成员）
    */
   private mapRowToAiTeam(row: any): AiTeam {
