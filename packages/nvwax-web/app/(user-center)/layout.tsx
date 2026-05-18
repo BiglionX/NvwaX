@@ -12,9 +12,9 @@ export default function UserCenterLayout({ children }: { children: React.ReactNo
 
   const menuItems = [
     { label: '个人信息', icon: UserIcon, path: '/profile' },
-    { label: '我的项目', icon: Folder, path: '/projects' },
+    { label: '我的Agent仓库', icon: Folder, path: '/agent-repository' },
     { label: '我的悬赏', icon: Award, path: '/my-bounties' },
-    { label: '我的 AiTeam', icon: Users, path: '/my-aiteam' },
+    { label: '虚拟公司', icon: Users, path: '/my-aiteam' },
     { label: '账号设置', icon: Settings, path: '/settings' }
   ];
 
