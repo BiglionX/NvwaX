@@ -69,8 +69,8 @@ export default function AdminVirtualCompaniesPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">虚拟公司监控</h1>
-        <p className="text-gray-600 dark:text-gray-300">监控 Team Skill 异步打包任务状态</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">打包任务监控</h1>
+        <p className="text-gray-600 dark:text-gray-300">监控 Team Skill 异步打包构建任务状态</p>
       </div>
 
       {/* 打包任务列表 */}

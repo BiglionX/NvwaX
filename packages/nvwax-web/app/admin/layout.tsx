@@ -23,7 +23,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     { label: '用户管理', icon: Users, path: '/admin/users' },
     { label: '项目管理', icon: Folder, path: '/admin/projects' },
     { label: 'Agent 管理', icon: Bot, path: '/admin/agents' },
-    { label: '虚拟公司', icon: Building2, path: '/admin/virtual-companies' },
+    { label: '打包任务', icon: Building2, path: '/admin/virtual-companies' },
     { label: '通知中心', icon: Bell, path: '/admin/notifications' },
     { label: '审计日志', icon: FileText, path: '/admin/audit-logs' },
     { label: '爬虫管理', icon: Database, path: '/admin/crawler' },
