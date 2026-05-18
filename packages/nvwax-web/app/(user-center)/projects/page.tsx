@@ -99,7 +99,6 @@ export default function ProjectsPage() {
           </Link>
         ))}
         </div>
-      </div>
 
       {/* 创建项目模态框 */}
       {showCreateModal && (
