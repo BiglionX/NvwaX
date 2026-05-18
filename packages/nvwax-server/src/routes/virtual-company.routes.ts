@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { virtualCompanyCreationController } from '../controllers/virtual-company-creation.controller.js';
-import { userAuthMiddleware } from '../middleware/user-auth.middleware.js';
+import { universalAuthMiddleware } from '../middleware/universal-auth.middleware.js';
 
 const router = Router();
 
-// 所有虚拟公司路由都需要用户认证
-router.use(userAuthMiddleware);
+// 所有虚拟公司路由都需要用户或管理员认证
+router.use(universalAuthMiddleware);
 
 // 虚拟公司创建会话路由
 router.post('/sessions', virtualCompanyCreationController.createSession);

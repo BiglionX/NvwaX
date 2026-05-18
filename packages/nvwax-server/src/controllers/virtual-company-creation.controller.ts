@@ -17,8 +17,8 @@ export class VirtualCompanyCreationController {
    */
   async createSession(req: Request, res: Response) {
     try {
-      // 从认证中间件获取用户 ID
-      const userId = (req as any).user?.id;
+      // 从认证中间件获取用户 ID（支持普通用户和管理员）
+      const userId = (req as any).user?.id || (req as any).admin?.id;
       
       if (!userId) {
         return res.status(401).json({
@@ -79,7 +79,7 @@ export class VirtualCompanyCreationController {
    */
   async getUserSessions(req: Request, res: Response) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = (req as any).user?.id || (req as any).admin?.id;
       
       if (!userId) {
         return res.status(401).json({
@@ -260,7 +260,7 @@ export class VirtualCompanyCreationController {
     try {
       const { id } = req.params;
       const sessionId = Array.isArray(id) ? id[0] : id;
-      const userId = (req as any).user?.id;
+      const userId = (req as any).user?.id || (req as any).admin?.id;
       
       if (!userId) {
         return res.status(401).json({
@@ -325,7 +325,7 @@ export class VirtualCompanyCreationController {
     try {
       const { id } = req.params;
       const sessionId = Array.isArray(id) ? id[0] : id;
-      const userId = (req as any).user?.id;
+      const userId = (req as any).user?.id || (req as any).admin?.id;
       
       if (!userId) {
         return res.status(401).json({
@@ -388,7 +388,7 @@ export class VirtualCompanyCreationController {
       const { id } = req.params;
       const sessionId = Array.isArray(id) ? id[0] : id;
       const { roleName, decision } = req.body;
-      const userId = (req as any).user?.id;
+      const userId = (req as any).user?.id || (req as any).admin?.id;
       
       if (!userId) {
         return res.status(401).json({

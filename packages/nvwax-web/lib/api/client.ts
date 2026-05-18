@@ -12,7 +12,14 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Add auth token if available
-    const token = localStorage.getItem('token');
+    // 优先使用普通用户 token，如果没有则使用管理员 token
+    let token = localStorage.getItem('user_token') || localStorage.getItem('token');
+    
+    // 如果都没有，尝试使用管理员 token
+    if (!token) {
+      token = localStorage.getItem('admin_token');
+    }
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

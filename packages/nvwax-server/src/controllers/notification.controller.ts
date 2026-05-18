@@ -15,7 +15,7 @@ const notificationService = new NotificationService(databaseService.getPool());
  */
 export const getUserNotifications = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.id || req.admin?.id;
     
     if (!userId) {
       res.status(401).json({
@@ -58,7 +58,7 @@ export const getUserNotifications = async (req: Request, res: Response): Promise
  */
 export const getUnreadCount = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.id || req.admin?.id;
     
     if (!userId) {
       res.status(401).json({
@@ -94,7 +94,7 @@ export const getUnreadCount = async (req: Request, res: Response): Promise<void>
  */
 export const markAsRead = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.id || req.admin?.id;
     
     if (!userId) {
       res.status(401).json({
@@ -145,7 +145,7 @@ export const markAsRead = async (req: Request, res: Response): Promise<void> => 
  */
 export const markAllAsRead = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.id || req.admin?.id;
     
     if (!userId) {
       res.status(401).json({
@@ -181,7 +181,7 @@ export const markAllAsRead = async (req: Request, res: Response): Promise<void> 
  */
 export const deleteNotification = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.id || req.admin?.id;
     
     if (!userId) {
       res.status(401).json({
