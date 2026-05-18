@@ -70,4 +70,5 @@ ENV/
 # Reports (keep markdown files, ignore generated reports)
 # *.md  <-- We want to keep our markdown docs!
 
-# Note: docs-archive/ is tracked for historical reference
+# Archived temporary files (not tracked in version control)
+docs-archive/temp-files/

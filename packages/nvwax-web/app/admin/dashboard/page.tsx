@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
 import { Users, Folder, Shield, Activity, TrendingUp, Clock } from 'lucide-react';
 import LoadingState from '@/components/Layout/LoadingState';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // 注意：权限验证已由 ProtectedAdminRoute 在 layout 层面处理，无需在此重复检查
 
@@ -98,8 +99,66 @@ export default function AdminDashboardPage() {
         })}
       </div>
 
+      {/* Recent Logs & Charts */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* User Growth Chart */}
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">近 7 天用户增长趋势</h2>
+          <div className="h-75">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats?.userTrend || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#9ca3af"
+                  tickFormatter={(value) => new Date(value).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                />
+                <YAxis stroke="#9ca3af" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
+                  labelStyle={{ color: '#9ca3af' }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="count" 
+                  stroke="#3b82f6" 
+                  strokeWidth={3}
+                  dot={{ fill: '#3b82f6', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* System Info */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">系统信息</h2>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Clock className="text-blue-500" size={20} />
+                <span className="text-gray-600 dark:text-gray-300">运行时间</span>
+              </div>
+              <span className="font-bold text-gray-900 dark:text-white">
+                {Math.floor(stats?.systemUptime / 3600)} 小时
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Activity className="text-green-500" size={20} />
+                <span className="text-gray-600 dark:text-gray-300">系统状态</span>
+              </div>
+              <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
+                正常运行
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Recent Logs */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
+      <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">最近系统日志</h2>
         </div>

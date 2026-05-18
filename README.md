@@ -7,7 +7,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=for-the-badge&logo=typescript)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue?style=for-the-badge&logo=postgresql)
-![Version](https://img.shields.io/badge/Version-v1.3.0-orange?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v1.5.0-orange?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen?style=for-the-badge)
 
 **开源的 AI Agent 搜索、发现和管理平台**
@@ -28,6 +28,7 @@ NvwaX 是一个现代化的 AI Agent 平台，提供全网 Agent 和技能的搜
 - 🤖 **Nvwa 智能体工厂**: 对话式创建智能体，8步引导流程
 - 🎁 **悬赏系统**: 发布、领取、提交、验证完整的悬赏流程
 - 🏢 **虚拟公司打包**: Team Skill 异步打包，多平台支持（NEW!）
+- 👑 **Admin 后台升级**: Agent管理、虚拟公司监控、通知中心、审计日志（NEW! v1.5.0）
 - 🌐 **多数据源**: GitHub、Gitee、百度、阿里、腾讯等
 - 👥 **团队管理**: 创建和管理 AiTeam 和 Agent Teams
 - 🚀 **工作流引擎**: 基于 LangChain.js 的工作流编排
@@ -38,9 +39,25 @@ NvwaX 是一个现代化的 AI Agent 平台，提供全网 Agent 和技能的搜
 
 ---
 
-## 🆕 最新更新 (v1.4.0)
+## 🆕 最新更新 (v1.5.0)
 
-**更新日期**: 2026-05-15
+**更新日期**: 2026-05-18
+
+### ✨ Admin 后台重大升级
+
+- **🤖 Agent 管理模块** - 查看和管理用户创建的 AI 智能体，支持搜索和分页（NEW!）
+- **🏢 虚拟公司监控** - 实时监控 Team Skill 打包任务状态和进度（NEW!）
+- **🔔 通知中心** - 向全站用户发送系统公告，支持优先级设置（NEW!）
+- **📋 审计日志** - 追踪管理员操作记录与系统安全事件（NEW!）
+- **⚙️ 系统管理增强** - 系统健康检查、缓存清理、数据库备份（NEW!）
+
+> 📖 详细文档: [ADMIN-UPGRADE-SUMMARY.md](./ADMIN-UPGRADE-SUMMARY.md) | [ADMIN-TEST-GUIDE.md](./ADMIN-TEST-GUIDE.md)
+
+---
+
+## 🆕 历史更新 (v1.4.0)
+
+**更新日期**: 2026-05-18
 
 ### ✨ 新增功能
 
@@ -51,6 +68,7 @@ NvwaX 是一个现代化的 AI Agent 平台，提供全网 Agent 和技能的搜
 - **📦 Web Component SDK** - 基于 Lit 的可嵌入组件 (@nvwax/agent-marketplace, @nvwax/agent-studio)
 - **🔧 代码质量全面提升** - 零 TypeScript 错误，零 ESLint 警告
 - **🎨 Tailwind CSS v4** - 迁移到最新规范，50+ 处更新
+- **👥 用户中心整合** - 优化"我的Agent仓库"与"虚拟公司"功能入口，提升用户体验（NEW!）
 
 ### 🚀 部署就绪
 

@@ -229,5 +229,27 @@ export const adminApi = {
   backupDatabase: async () => {
     const response = await api.post('/admin/system/backup');
     return response.data;
+  },
+
+  // ========== AI 业务管理 ==========
+
+  // 获取 Agent 列表（分页）
+  getAgentList: async (page: number = 1, limit: number = 20, search?: string) => {
+    const params: Record<string, string | number> = { page, limit };
+    if (search) params.search = search;
+    const response = await api.get('/admin/agents', { params });
+    return response.data;
+  },
+
+  // 获取虚拟公司打包任务列表
+  getVirtualCompanyBuilds: async () => {
+    const response = await api.get('/admin/virtual-companies/builds');
+    return response.data;
+  },
+
+  // 发送系统公告
+  sendAnnouncement: async (data: { title: string; message: string; priority?: string }) => {
+    const response = await api.post('/admin/notifications/announce', data);
+    return response.data;
   }
 };

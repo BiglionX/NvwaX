@@ -1,12 +1,136 @@
 # NvwaX 项目开发进展报告
 
-**更新日期**: 2026-04-26  
-**版本**: v1.3.0 (代码清理与部署准备)  
+**更新日期**: 2026-05-18  
+**版本**: v1.5.0 (Admin 后台重大升级)  
 **状态**: ✅ **核心功能完成，已准备好生产部署**
 
 ---
 
-## 📊 本次更新概览
+## 📊 本次更新概览 (2026-05-18)
+
+### 主要成就
+
+1. **✅ Admin 后台重大升级**
+   - 新增 Agent 管理模块
+   - 新增虚拟公司监控模块
+   - 新增通知中心模块
+   - 新增审计日志模块
+   - 完善系统管理功能
+   
+2. **✅ 技术架构优化**
+   - 前后端分离架构完善
+   - RESTful API 设计规范
+   - JWT 认证机制增强
+   - React Query 数据管理
+   
+3. **✅ 用户体验提升**
+   - 响应式设计支持
+   - 深色模式完整实现
+   - 统一的 UI/UX 设计
+   - 完善的错误处理
+
+4. **✅ 文档与测试**
+   - 创建 Admin 后台升级报告
+   - 编写自动化测试脚本
+   - 更新 CHANGELOG.md
+   - 完善部署指南
+
+---
+
+## 🎯 新增功能与改进
+
+### 1. Admin 后台四大核心模块 ✨ NEW
+
+**完成时间**: 2026-05-18  
+**状态**: ✅ 已完成并测试
+
+#### 1.1 Agent 管理模块
+
+**功能特性**:
+- 查看平台上所有用户创建的 AI 智能体
+- 支持按名称或描述搜索 Agent
+- 分页展示，每页默认 20 条记录
+- 显示 Agent 基本信息（名称、描述、创建者、创建时间）
+- 快速查看 Agent 详情入口
+
+**技术实现**:
+- 前端: React + Next.js + React Query
+- 后端: Express.js RESTful API
+- 数据库: PostgreSQL agents 表查询
+- 支持模糊搜索 (ILIKE) 和分页 (LIMIT/OFFSET)
+
+**API 接口**:
+```
+GET /api/admin/agents?page=1&limit=20&search=keyword
+```
+
+#### 1.2 虚拟公司监控模块
+
+**功能特性**:
+- 实时监控 Team Skill 异步打包任务
+- 显示任务状态（排队中、构建中、已完成、失败）
+- 可视化进度条展示构建进度
+- 自动刷新（每 5 秒）以跟踪实时状态
+- 支持下载已完成的打包文件
+- 显示错误信息（如果构建失败）
+
+**技术实现**:
+- 前端: 自动轮询机制 (refetchInterval: 5000ms)
+- 后端: teamSkillPackageService 服务集成
+- 状态管理: queued → building → completed/failed
+- 支持多平台打包（Windows/macOS/Linux）
+
+**API 接口**:
+```
+GET /api/admin/virtual-companies/builds
+```
+
+#### 1.3 通知中心模块
+
+**功能特性**:
+- 向全站用户发送系统公告
+- 支持四种优先级：低、普通、高、紧急
+- 实时统计接收用户数量
+- 友好的表单界面和确认提示
+- 批量插入通知到数据库
+
+**技术实现**:
+- 前端: 表单验证 + 优先级选择器
+- 后端: 批量 INSERT 操作，一次性发送给所有用户
+- 数据库: notifications 表，type 为 'system_announcement'
+- 安全处理: SQL 注入防护（转义单引号）
+
+**API 接口**:
+```
+POST /api/admin/notifications/announce
+Body: { title, message, priority }
+Response: { success, message, sentCount }
+```
+
+#### 1.4 审计日志模块
+
+**功能特性**:
+- 追踪所有管理员操作记录
+- 显示操作类型、管理员 ID、IP 地址、时间戳
+- 支持按操作类型筛选
+- 点击查看详细日志内容
+- 分页展示，每页 20 条记录
+- 日志级别标识（info/warning/error）
+
+**技术实现**:
+- 前端: 模态框展示日志详情
+- 后端: admin_logs 表查询，支持过滤
+- 自动记录: 登录、创建管理员、封禁用户等关键操作
+- 数据保留: 建议定期清理旧日志
+
+**API 接口**:
+```
+GET /api/admin/system/logs?page=1&limit=20&action=LOGIN
+```
+
+---
+
+## 📊 历史更新记录
 
 ### 主要成就
 
@@ -389,10 +513,10 @@ CREATE INDEX idx_build_jobs_created ON team_skill_build_jobs(created_at DESC);
 #### Flex 布局简化
 
 ```tsx
-// 修改前
+// 修改前（Tailwind CSS v3）
 <div className="flex-shrink-0 w-10 h-10">
 
-// 修改后
+// 修改后（Tailwind CSS v4）
 <div className="shrink-0 w-10 h-10">
 ```
 

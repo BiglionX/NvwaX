@@ -6,6 +6,11 @@ import { authMiddleware } from '../middleware/auth.middleware.js';
 import { crawlerSchedulerService } from '../services/crawler-scheduler.service.js';
 import { agentCrawlerService } from '../services/agent-crawler.service.js';
 import { databaseService } from '../services/database.service.js';
+import { TeamSkillPackageService } from '../services/team-skill-package.service.js';
+import { v4 as uuidv4 } from 'uuid';
+
+// 创建 TeamSkillPackageService 实例
+const teamSkillPackageService = new TeamSkillPackageService(databaseService.getPool());
 
 export class AdminController {
   // 管理员登录
@@ -160,18 +165,34 @@ export class AdminController {
   // 获取系统统计数据
   async getSystemStats(req: Request, res: Response) {
     try {
-      const totalUsers = await adminService.getAdminById('user-123') ? 1 : 0; // 简单示例
+      const pool = databaseService.getPool();
       
-      const allProjects = await projectService.getProjects('user-123', 1, 1000);
-      const totalProjects = allProjects.total;
-      const allAdmins = await adminService.getAllAdmins();
+      // 获取基础统计
+      const usersResult = await pool.query('SELECT COUNT(*) FROM users');
+      const projectsResult = await pool.query('SELECT COUNT(*) FROM projects');
+      const adminsResult = await pool.query('SELECT COUNT(*) FROM admins');
+      
+      // 获取近7天用户注册趋势
+      const trendResult = await pool.query(`
+        SELECT 
+          DATE(created_at) as date,
+          COUNT(*) as count
+        FROM users
+        WHERE created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date ASC
+      `);
 
       res.json({
         data: {
-          totalUsers,
-          totalProjects,
-          totalAdmins: allAdmins.length,
-          systemUptime: process.uptime()
+          totalUsers: parseInt(usersResult.rows[0].count),
+          totalProjects: parseInt(projectsResult.rows[0].count),
+          totalAdmins: parseInt(adminsResult.rows[0].count),
+          systemUptime: process.uptime(),
+          userTrend: trendResult.rows.map(row => ({
+            date: row.date,
+            count: parseInt(row.count)
+          }))
         }
       });
     } catch (error) {
@@ -185,9 +206,47 @@ export class AdminController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
+      const action = req.query.action as string | undefined;
+      const adminId = req.query.adminId as string | undefined;
 
-      const logs = await adminService.getSystemLogs(page, limit);
-      res.json(logs);
+      const pool = databaseService.getPool();
+      let query = 'SELECT * FROM system_logs';
+      const params: any[] = [];
+      let whereClauses = [];
+
+      if (action) {
+        whereClauses.push(`action ILIKE $${params.length + 1}`);
+        params.push(`%${action}%`);
+      }
+      if (adminId) {
+        whereClauses.push(`admin_id = $${params.length + 1}`);
+        params.push(adminId);
+      }
+
+      if (whereClauses.length > 0) {
+        query += ' WHERE ' + whereClauses.join(' AND ');
+      }
+
+      query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+      params.push(limit, (page - 1) * limit);
+
+      const result = await pool.query(query, params);
+
+      // 获取总数
+      let countQuery = 'SELECT COUNT(*) FROM system_logs';
+      const countParams: any[] = [];
+      if (whereClauses.length > 0) {
+        countQuery += ' WHERE ' + whereClauses.join(' AND ');
+        countParams.push(...params.slice(0, params.length - 2));
+      }
+      const countResult = await pool.query(countQuery, countParams);
+
+      res.json({
+        data: result.rows,
+        total: parseInt(countResult.rows[0].count),
+        page,
+        limit
+      });
     } catch (error) {
       console.error('Error fetching system logs:', error);
       res.status(500).json({ error: 'Failed to fetch system logs' });
@@ -652,6 +711,109 @@ export class AdminController {
     } catch (error) {
       console.error('Error clearing cache:', error);
       res.status(500).json({ error: 'Failed to clear cache' });
+    }
+  }
+
+  // 获取 Agent 列表（分页）
+  async getAgentList(req: Request, res: Response) {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const search = req.query.search as string | undefined;
+
+      const pool = databaseService.getPool();
+      let query = 'SELECT * FROM agents';
+      const params: any[] = [];
+      
+      if (search) {
+        query += ' WHERE name ILIKE $1 OR description ILIKE $1';
+        params.push(`%${search}%`);
+      }
+      
+      query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+      params.push(limit, (page - 1) * limit);
+
+      const result = await pool.query(query, params);
+      
+      // 获取总数
+      let countQuery = 'SELECT COUNT(*) FROM agents';
+      const countParams: any[] = [];
+      if (search) {
+        countQuery += ' WHERE name ILIKE $1 OR description ILIKE $1';
+        countParams.push(`%${search}%`);
+      }
+      const countResult = await pool.query(countQuery, countParams);
+
+      res.json({
+        data: result.rows,
+        total: parseInt(countResult.rows[0].count),
+        page,
+        limit
+      });
+    } catch (error) {
+      console.error('Error fetching agent list:', error);
+      res.status(500).json({ error: 'Failed to fetch agent list' });
+    }
+  }
+
+  // 获取虚拟公司打包任务列表
+  async getVirtualCompanyBuilds(req: Request, res: Response) {
+    try {
+      const jobs = teamSkillPackageService.getAllJobs();
+      
+      res.json({
+        success: true,
+        data: jobs,
+        total: jobs.length
+      });
+    } catch (error) {
+      console.error('Error fetching virtual company builds:', error);
+      res.status(500).json({ error: 'Failed to fetch build jobs' });
+    }
+  }
+
+  // 发送系统公告（广播通知）
+  async sendSystemAnnouncement(req: Request, res: Response) {
+    try {
+      const { title, message, priority = 'high' } = req.body;
+      const adminId = req.admin.id;
+
+      if (!title || !message) {
+        return res.status(400).json({ error: 'Title and message are required' });
+      }
+
+      const pool = databaseService.getPool();
+      
+      // 获取所有用户 ID
+      const usersResult = await pool.query('SELECT id FROM users');
+      const userIds = usersResult.rows.map(row => row.id);
+
+      if (userIds.length === 0) {
+        return res.json({ success: true, message: 'No users to notify', sentCount: 0 });
+      }
+
+      // 批量插入通知
+      const values = userIds.map((userId, index) => {
+        const id = uuidv4();
+        return `('${id}', '${userId}', 'system_announcement', '${title.replace(/'/g, "''")}', '${message.replace(/'/g, "''")}', '{}', false, '${priority}', NOW(), NOW())`;
+      }).join(', ');
+
+      await pool.query(`
+        INSERT INTO notifications (id, user_id, type, title, message, data, is_read, priority, created_at, updated_at)
+        VALUES ${values}
+      `);
+
+      await adminService.logAction('info', 'SEND_ANNOUNCEMENT', adminId, 
+        `Sent announcement to ${userIds.length} users`, req.ip);
+
+      res.json({
+        success: true,
+        message: `公告已发送给 ${userIds.length} 位用户`,
+        sentCount: userIds.length
+      });
+    } catch (error) {
+      console.error('Error sending announcement:', error);
+      res.status(500).json({ error: 'Failed to send announcement' });
     }
   }
 

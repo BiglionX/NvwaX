@@ -47,4 +47,11 @@ router.put('/crawler/config', adminController.updateCrawlerConfig);
 router.get('/crawler/history', adminController.getCrawlerHistory);
 router.post('/crawler/clean', adminController.cleanOldAgents);
 
+// AI 业务管理
+router.get('/agents', adminController.getAgentList);
+router.get('/virtual-companies/builds', adminController.getVirtualCompanyBuilds);
+
+// 通知管理
+router.post('/notifications/announce', adminController.sendSystemAnnouncement);
+
 export default router;
