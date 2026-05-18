@@ -126,7 +126,7 @@ COMMENT ON COLUMN aiteams.success_rate IS '成功率（百分比）';
 
 CREATE TABLE IF NOT EXISTS aiteam_members (
   aiteam_id UUID REFERENCES aiteams(id) ON DELETE CASCADE,
-  agent_id UUID REFERENCES agents(id) ON DELETE CASCADE,
+  agent_id TEXT REFERENCES agents(id) ON DELETE CASCADE,
   role VARCHAR(100) NOT NULL,
   responsibilities TEXT,
   config JSONB DEFAULT '{}'::jsonb,
@@ -174,12 +174,7 @@ CREATE TABLE IF NOT EXISTS agent_exports (
   
   -- 时间戳
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  completed_at TIMESTAMP WITH TIME ZONE,
-  
-  CONSTRAINT valid_resource CHECK (
-    (resource_type = 'agent' AND EXISTS (SELECT 1 FROM agents WHERE id = resource_id)) OR
-    (resource_type = 'aiteam' AND EXISTS (SELECT 1 FROM aiteams WHERE id = resource_id))
-  )
+  completed_at TIMESTAMP WITH TIME ZONE
 );
 
 -- 创建索引
