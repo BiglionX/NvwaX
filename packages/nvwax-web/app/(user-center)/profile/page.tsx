@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '@/lib/api/users';
 import { useAuth } from '@/hooks/useAuth';
-import { User as UserIcon, Mail, Calendar, Edit2, Save, X, Folder, Users, Bot, Clock, Shield, Activity } from 'lucide-react';
-import Image from 'next/image';
+import { Mail, Calendar, Edit2, Save, X, Folder, Users, Bot, Clock, Shield, Activity } from 'lucide-react';
 import Link from 'next/link';
 import LoadingState from '@/components/Layout/LoadingState';
+import { Card, Button, Input, Space, Avatar, Badge } from '@/components/UI';
 
 interface User {
   id: string;
@@ -161,7 +161,7 @@ function ProfileContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <Space direction="vertical" size="middle" className="w-full">
       {/* 个人信息卡片 */}
       <ProfileCard 
         user={user} 
@@ -182,107 +182,104 @@ function ProfileContent() {
       
       {/* 最近活动 */}
       <RecentActivity />
-    </div>
+    </Space>
   );
 }
 
 // 个人信息卡片组件
 function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, handleSave, handleCancel, updateMutation }: ProfileCardProps) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
-      <div className="p-5">
-        {/* 头像 */}
-        <div className="flex justify-center mb-4">
-          <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/30 p-0.5">
-            <div className="w-full h-full bg-white dark:bg-gray-800 rounded-full flex items-center justify-center overflow-hidden">
-              {user?.avatar ? (
-                <Image src={user.avatar} alt={user?.name || 'User'} width={80} height={80} className="rounded-full object-cover" />
-              ) : (
-                <UserIcon className="text-gray-600 dark:text-gray-300" size={40} />
-              )}
-            </div>
-          </div>
-        </div>
+    <Card padding="lg">
+      {/* 头像 */}
+      <div className="flex justify-center mb-4">
+        <Avatar
+          src={user?.avatar}
+          alt={user?.name || 'User'}
+          size="lg"
+        />
+      </div>
 
-        {/* 用户信息 */}
-        <div className="text-center mb-4">
-          {isEditing ? (
-            <input
-              type="text"
-              value={editForm.name}
-              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              className="text-base font-medium text-gray-900 dark:text-white bg-transparent border-b border-blue-500 focus:outline-none text-center w-full mb-2"
-              placeholder="输入昵称"
-            />
-          ) : (
-            <h2 className="text-base font-medium text-gray-900 dark:text-white mb-1">
-              {user?.name || '未设置昵称'}
-            </h2>
-          )}
-          
-          <div className="flex items-center justify-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
-            <Mail size={14} />
-            <span className="truncate max-w-50">{user?.email}</span>
-          </div>
-        </div>
-
-        {/* 个人简介 */}
-        <div className="mb-4">
-          <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">个人简介</h3>
-          {isEditing ? (
-            <textarea
-              value={editForm.bio}
-              onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white text-sm"
-              rows={3}
-              placeholder="介绍一下自己..."
-            />
-          ) : (
-            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-              {user?.bio || '暂无简介'}
-            </p>
-          )}
-        </div>
-
-        {/* 注册时间 */}
-        <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
-          <Calendar size={14} />
-          <span>注册于 {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('zh-CN') : '未知'}</span>
-        </div>
-
-        {/* 编辑按钮 */}
+      {/* 用户信息 */}
+      <div className="text-center mb-4">
         {isEditing ? (
-          <div className="flex gap-2">
-            <button
-              onClick={handleCancel}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
-            >
-              <X size={16} />
-              取消
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={updateMutation.isPending}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 font-medium"
-            >
-              <Save size={16} />
-              {updateMutation.isPending ? '保存中...' : '保存'}
-            </button>
-          </div>
+          <Input
+            type="text"
+            value={editForm.name}
+            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+            placeholder="输入昵称"
+            className="text-center mb-2"
+          />
         ) : (
-          <button
-            onClick={() => {
-              setEditForm({ name: user?.name || '', bio: user?.bio || '' });
-              setIsEditing(true);
-            }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
-          >
-            <Edit2 size={16} />
-            编辑资料
-          </button>
+          <h2 className="text-base font-medium text-gray-900 dark:text-white mb-1">
+            {user?.name || '未设置昵称'}
+          </h2>
+        )}
+        
+        <div className="flex items-center justify-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+          <Mail size={14} />
+          <span className="truncate max-w-50">{user?.email}</span>
+        </div>
+      </div>
+
+      {/* 个人简介 */}
+      <div className="mb-4">
+        <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">个人简介</h3>
+        {isEditing ? (
+          <textarea
+            value={editForm.bio}
+            onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-violet-500 text-gray-900 dark:text-white text-sm"
+            rows={3}
+            placeholder="介绍一下自己..."
+          />
+        ) : (
+          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            {user?.bio || '暂无简介'}
+          </p>
         )}
       </div>
-    </div>
+
+      {/* 注册时间 */}
+      <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
+        <Calendar size={14} />
+        <span>注册于 {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('zh-CN') : '未知'}</span>
+      </div>
+
+      {/* 编辑按钮 */}
+      {isEditing ? (
+        <Space size="small" className="w-full">
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            icon={<X size={16} />}
+            fullWidth
+          >
+            取消
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSave}
+            loading={updateMutation.isPending}
+            icon={!updateMutation.isPending ? <Save size={16} /> : undefined}
+            fullWidth
+          >
+            {updateMutation.isPending ? '保存中...' : '保存'}
+          </Button>
+        </Space>
+      ) : (
+        <Button
+          variant="primary"
+          onClick={() => {
+            setEditForm({ name: user?.name || '', bio: user?.bio || '' });
+            setIsEditing(true);
+          }}
+          icon={<Edit2 size={16} />}
+          fullWidth
+        >
+          编辑资料
+        </Button>
+      )}
+    </Card>
   );
 }
 
@@ -293,9 +290,9 @@ function StatsCards({ stats }: StatsCardsProps) {
       label: '项目数',
       value: stats?.projectCount || 0,
       icon: Folder,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
-      iconColor: 'text-blue-600 dark:text-blue-400'
+      color: 'from-violet-500 to-violet-600',
+      bgColor: 'bg-violet-50 dark:bg-violet-900/20',
+      iconColor: 'text-violet-600 dark:text-violet-400'
     },
     {
       label: 'AiTeam 数',
@@ -309,9 +306,9 @@ function StatsCards({ stats }: StatsCardsProps) {
       label: 'Agent Team 数',
       value: stats?.agentTeamCount || 0,
       icon: Bot,
-      color: 'from-green-500 to-green-600',
-      bgColor: 'bg-green-50 dark:bg-green-900/20',
-      iconColor: 'text-green-600 dark:text-green-400'
+      color: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      iconColor: 'text-blue-600 dark:text-blue-400'
     }
   ];
 
@@ -320,7 +317,7 @@ function StatsCards({ stats }: StatsCardsProps) {
       {statsData.map((stat, index) => {
         const Icon = stat.icon;
         return (
-          <div key={index} className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 hover:border-blue-300 dark:hover:border-blue-700 transition-all">
+          <Card key={index} className="hover:border-violet-300 dark:hover:border-violet-700 transition-all">
             <div className="flex items-center justify-between mb-3">
               <div className={`w-10 h-10 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
                 <Icon className={stat.iconColor} size={20} />
@@ -328,7 +325,7 @@ function StatsCards({ stats }: StatsCardsProps) {
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{stat.label}</p>
             <p className="text-3xl font-semibold text-gray-900 dark:text-white">{stat.value}</p>
-          </div>
+          </Card>
         );
       })}
     </div>
@@ -339,23 +336,23 @@ function StatsCards({ stats }: StatsCardsProps) {
 // 最近活动组件
 function RecentActivity() {
   const activities = [
-    { type: 'project', message: '创建了新项目 "AI Agent 平台"', time: '2 小时前', icon: Folder, color: 'text-blue-600' },
+    { type: 'project', message: '创建了新项目 "AI Agent 平台"', time: '2 小时前', icon: Folder, color: 'text-violet-600' },
     { type: 'team', message: '加入了 AiTeam "前端开发组"', time: '1 天前', icon: Users, color: 'text-purple-600' },
-    { type: 'agent', message: '收藏了 Agent "Code Review Bot"', time: '3 天前', icon: Bot, color: 'text-green-600' }
+    { type: 'agent', message: '收藏了 Agent "Code Review Bot"', time: '3 天前', icon: Bot, color: 'text-blue-600' }
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6">
+    <Card>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <Activity className="text-blue-600" size={20} />
+          <Activity className="text-violet-600" size={20} />
           最近活动
         </h3>
-        <Link href="/activity" prefetch={false} className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium">
+        <Link href="/activity" prefetch={false} className="text-sm text-violet-600 dark:text-violet-400 hover:underline font-medium">
           查看全部
         </Link>
       </div>
-      <div className="space-y-3">
+      <Space direction="vertical" size="small" className="w-full">
         {activities.map((activity, index) => {
           const Icon = activity.icon;
           return (
@@ -373,43 +370,41 @@ function RecentActivity() {
             </div>
           );
         })}
-      </div>
-    </div>
+      </Space>
+    </Card>
   );
 }
 
 // 账号安全组件
 function AccountSecurity() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6">
+    <Card>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <Shield className="text-green-600" size={20} />
           账号安全
         </h3>
-        <div className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg text-xs font-medium">
-          安全
-        </div>
+        <Badge variant="success">安全</Badge>
       </div>
-      <div className="space-y-2">
+      <Space direction="vertical" size="small" className="w-full">
         <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
             <span className="text-sm text-gray-700 dark:text-gray-300">邮箱已验证</span>
           </div>
-          <span className="text-xs text-green-600 px-2 py-1 bg-green-50 dark:bg-green-900/20 rounded-lg font-medium">已验证</span>
+          <Badge variant="success">已验证</Badge>
         </div>
         <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
             <span className="text-sm text-gray-700 dark:text-gray-300">密码强度</span>
           </div>
-          <span className="text-xs text-green-600 px-2 py-1 bg-green-50 dark:bg-green-900/20 rounded-lg font-medium">强</span>
+          <Badge variant="success">强</Badge>
         </div>
-        <button className="w-full mt-3 px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium">
+        <Button variant="outline" fullWidth>
           修改密码
-        </button>
-      </div>
-    </div>
+        </Button>
+      </Space>
+    </Card>
   );
 }

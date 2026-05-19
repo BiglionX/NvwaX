@@ -8,6 +8,7 @@ import ExportModal from '@/components/ExportModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DetailModal from '@/components/DetailModal';
 import EditModal from '@/components/EditModal';
+import { Card, Button, Input, Space, Badge, Tag } from '@/components/UI';
 import { agentApi } from '@/lib/api/agents';
 import { aiteamApi } from '@/lib/api/aiteams';
 import type { Agent } from '@/lib/api/agents';
@@ -175,75 +176,66 @@ export default function AgentRepositoryPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <Space direction="vertical" size="middle" className="w-full">
       {/* 页面标题和操作栏 */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Folder className="text-blue-600" size={24} />
+          <Folder className="text-violet-600" size={24} />
           我的Agent仓库
         </h2>
         <div className="flex gap-3">
-          <button
+          <Button
+            variant="primary"
             onClick={() => setShowVirtualCompanyModal(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
+            icon={<Building2 size={18} />}
           >
-            <Building2 size={18} />
             虚拟公司
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium"
+            icon={<Plus size={18} />}
           >
-            <Plus size={18} />
             创建新资源
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* 标签页导航 */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-1">
+      <Card padding="sm">
         <div className="flex gap-1">
-          <button
+          <Button
+            variant={activeTab === 'agents' ? 'primary' : 'ghost'}
             onClick={() => setActiveTab('agents')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'agents'
-                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            }`}
+            icon={<Folder size={18} />}
+            fullWidth
           >
-            <Folder size={18} />
-            <span>Agents ({agentsData?.data?.total || 0})</span>
-          </button>
-          <button
+            Agents ({agentsData?.data?.total || 0})
+          </Button>
+          <Button
+            variant={activeTab === 'aiteams' ? 'primary' : 'ghost'}
             onClick={() => setActiveTab('aiteams')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              activeTab === 'aiteams'
-                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            }`}
+            icon={<Users size={18} />}
+            fullWidth
           >
-            <Users size={18} />
-            <span>AiTeams ({aiteamsData?.data?.total || 0})</span>
-          </button>
+            AiTeams ({aiteamsData?.data?.total || 0})
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* 搜索和过滤栏 */}
       <div className="flex gap-3">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`搜索${activeTab === 'agents' ? 'Agent' : 'AiTeam'}...`}
-            className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 dark:text-white transition-all"
-          />
-        </div>
-        <button className="px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
-          <Filter size={18} />
-          <span>筛选</span>
-        </button>
+        <Input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={`搜索${activeTab === 'agents' ? 'Agent' : 'AiTeam'}...`}
+          prefix={<Search size={18} />}
+          className="flex-1"
+        />
+        <Button variant="outline" icon={<Filter size={18} />}>
+          筛选
+        </Button>
       </div>
 
       {/* 内容区域 */}
@@ -371,7 +363,7 @@ export default function AgentRepositoryPage() {
           onSave={handleEditSave}
         />
       )}
-    </div>
+    </Space>
   );
 }
 
@@ -393,19 +385,20 @@ function AgentsList({
 }) {
   if (agents.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-12 text-center">
-        <Folder className="mx-auto text-gray-400 mb-4" size={48} />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          还没有 Agent
-        </h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
-          创建你的第一个智能体，开始构建你的Agent仓库
-        </p>
-        <button className="px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium inline-flex items-center gap-2">
-          <Plus size={18} />
-          创建 Agent
-        </button>
-      </div>
+      <Card padding="lg">
+        <div className="text-center py-12">
+          <Folder className="mx-auto text-gray-400 mb-4" size={48} />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            还没有 Agent
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            创建你的第一个智能体，开始构建你的Agent仓库
+          </p>
+          <Button variant="primary" icon={<Plus size={18} />}>
+            创建 Agent
+          </Button>
+        </div>
+      </Card>
     );
   }
 
@@ -443,26 +436,20 @@ function AgentCard({
   onEditClick: () => void;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 hover:border-blue-300 dark:hover:border-blue-700 hover:-translate-y-1 hover:shadow-xl transition-all group">
+    <Card padding="lg" className="hover:-translate-y-1 hover:shadow-xl transition-all group">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 bg-linear-to-br from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/30 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-            <Folder className="text-blue-600 dark:text-blue-400" size={28} />
+          <div className="w-14 h-14 bg-linear-to-br from-violet-100 to-violet-50 dark:from-violet-900/40 dark:to-violet-800/30 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm">
+            <Folder className="text-violet-600 dark:text-violet-400" size={28} />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
               {agent.name}
             </h3>
             <div className="flex items-center gap-2 text-xs">
-              <span className={`px-2 py-0.5 rounded-full ${
-                agent.publishStatus === 'published' 
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                  : agent.publishStatus === 'draft'
-                  ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
-              }`}>
+              <Badge variant={agent.publishStatus === 'published' ? 'success' : agent.publishStatus === 'draft' ? 'warning' : 'default'}>
                 {agent.publishStatus === 'published' ? '已发布' : agent.publishStatus === 'draft' ? '草稿' : '私有'}
-              </span>
+              </Badge>
               <span className="text-gray-500 dark:text-gray-400">v{agent.version}</span>
             </div>
           </div>
@@ -478,14 +465,14 @@ function AgentCard({
       {agent.tags && agent.tags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           {agent.tags.slice(0, 3).map((tag, index) => (
-            <span key={index} className="px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs rounded-lg">
+            <Tag key={index} variant="primary" size="sm">
               {tag}
-            </span>
+            </Tag>
           ))}
           {agent.tags.length > 3 && (
-            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-lg">
+            <Tag variant="default" size="sm">
               +{agent.tags.length - 3}
-            </span>
+            </Tag>
           )}
         </div>
       )}
@@ -499,54 +486,39 @@ function AgentCard({
           <span>⭐ {agent.rating.toFixed(1)}</span>
         </div>
         <div className="flex items-center gap-2">
-          <button 
+          <Button 
+            variant="ghost"
             onClick={onViewClick}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" 
+            icon={<Eye size={16} />}
             title="查看"
-          >
-            <Eye size={16} />
-          </button>
-          <button 
+          />
+          <Button 
+            variant="ghost"
             onClick={onEditClick}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" 
+            icon={<Edit size={16} />}
             title="编辑"
-          >
-            <Edit size={16} />
-          </button>
-          <button 
+          />
+          <Button 
+            variant="ghost"
             onClick={() => onExport(agent.id, agent.name)}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all" 
+            icon={<Download size={16} />}
             title="导出"
-          >
-            <Download size={16} />
-          </button>
-          {agent.publishStatus === 'published' ? (
-            <button 
-              onClick={() => onPublish(agent.id, 'unpublish')}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-all" 
-              title="取消发布"
-            >
-              <Send size={16} />
-            </button>
-          ) : (
-            <button 
-              onClick={() => onPublish(agent.id, 'publish')}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all" 
-              title="发布"
-            >
-              <Send size={16} />
-            </button>
-          )}
-          <button 
+          />
+          <Button 
+            variant="ghost"
+            onClick={() => onPublish(agent.id, agent.publishStatus === 'published' ? 'unpublish' : 'publish')}
+            icon={<Send size={16} />}
+            title={agent.publishStatus === 'published' ? '取消发布' : '发布'}
+          />
+          <Button 
+            variant="ghost"
             onClick={() => onDeleteClick(agent.id, agent.name)}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" 
+            icon={<Trash2 size={16} />}
             title="删除"
-          >
-            <Trash2 size={16} />
-          </button>
+          />
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -568,19 +540,20 @@ function AiTeamsList({
 }) {
   if (aiteams.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-12 text-center">
-        <Users className="mx-auto text-gray-400 mb-4" size={48} />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          还没有 AiTeam
-        </h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
-          创建你的第一个AI团队，组合多个Agent协同工作
-        </p>
-        <button className="px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium inline-flex items-center gap-2">
-          <Plus size={18} />
-          创建 AiTeam
-        </button>
-      </div>
+      <Card padding="lg">
+        <div className="text-center py-12">
+          <Users className="mx-auto text-gray-400 mb-4" size={48} />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            还没有 AiTeam
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            创建你的第一个AI团队，组合多个Agent协同工作
+          </p>
+          <Button variant="primary" icon={<Plus size={18} />}>
+            创建 AiTeam
+          </Button>
+        </div>
+      </Card>
     );
   }
 
@@ -618,7 +591,7 @@ function AiTeamCard({
   onEditClick: () => void;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-6 hover:border-purple-300 dark:hover:border-purple-700 hover:-translate-y-1 hover:shadow-xl transition-all group">
+    <Card padding="lg" className="hover:-translate-y-1 hover:shadow-xl transition-all group">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 bg-linear-to-br from-purple-100 to-purple-50 dark:from-purple-900/40 dark:to-purple-800/30 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm">
@@ -629,15 +602,9 @@ function AiTeamCard({
               {aiteam.name}
             </h3>
             <div className="flex items-center gap-2 text-xs">
-              <span className={`px-2 py-0.5 rounded-full ${
-                aiteam.publishStatus === 'published' 
-                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                  : aiteam.publishStatus === 'draft'
-                  ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
-              }`}>
+              <Badge variant={aiteam.publishStatus === 'published' ? 'success' : aiteam.publishStatus === 'draft' ? 'warning' : 'default'}>
                 {aiteam.publishStatus === 'published' ? '已发布' : aiteam.publishStatus === 'draft' ? '草稿' : '私有'}
-              </span>
+              </Badge>
               <span className="text-gray-500 dark:text-gray-400">v{aiteam.version}</span>
               <span className="text-gray-500 dark:text-gray-400">{aiteam.members.length} 成员</span>
             </div>
@@ -654,14 +621,14 @@ function AiTeamCard({
       {aiteam.tags && aiteam.tags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           {aiteam.tags.slice(0, 3).map((tag, index) => (
-            <span key={index} className="px-2 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs rounded-lg">
+            <Tag key={index} variant="primary" size="sm">
               {tag}
-            </span>
+            </Tag>
           ))}
           {aiteam.tags.length > 3 && (
-            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs rounded-lg">
+            <Tag variant="default" size="sm">
               +{aiteam.tags.length - 3}
-            </span>
+            </Tag>
           )}
         </div>
       )}
@@ -676,54 +643,39 @@ function AiTeamCard({
           <span>成功率: {aiteam.successRate.toFixed(1)}%</span>
         </div>
         <div className="flex items-center gap-2">
-          <button 
+          <Button 
+            variant="ghost"
             onClick={onViewClick}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all" 
+            icon={<Eye size={16} />}
             title="查看"
-          >
-            <Eye size={16} />
-          </button>
-          <button 
+          />
+          <Button 
+            variant="ghost"
             onClick={onEditClick}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all" 
+            icon={<Edit size={16} />}
             title="编辑"
-          >
-            <Edit size={16} />
-          </button>
-          <button 
+          />
+          <Button 
+            variant="ghost"
             onClick={() => onExport(aiteam.id, aiteam.name)}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-all" 
+            icon={<Download size={16} />}
             title="导出"
-          >
-            <Download size={16} />
-          </button>
-          {aiteam.publishStatus === 'published' ? (
-            <button 
-              onClick={() => onPublish(aiteam.id, 'unpublish')}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-all" 
-              title="取消发布"
-            >
-              <Send size={16} />
-            </button>
-          ) : (
-            <button 
-              onClick={() => onPublish(aiteam.id, 'publish')}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all" 
-              title="发布"
-            >
-              <Send size={16} />
-            </button>
-          )}
-          <button 
+          />
+          <Button 
+            variant="ghost"
+            onClick={() => onPublish(aiteam.id, aiteam.publishStatus === 'published' ? 'unpublish' : 'publish')}
+            icon={<Send size={16} />}
+            title={aiteam.publishStatus === 'published' ? '取消发布' : '发布'}
+          />
+          <Button 
+            variant="ghost"
             onClick={() => onDeleteClick(aiteam.id, aiteam.name)}
-            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" 
+            icon={<Trash2 size={16} />}
             title="删除"
-          >
-            <Trash2 size={16} />
-          </button>
+          />
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -748,9 +700,9 @@ function CreateResourceModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-8 shadow-2xl border-2 border-gray-200 dark:border-gray-700">
+      <Card padding="lg" className="max-w-md w-full shadow-2xl">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-          <Plus className="text-blue-600" size={24} />
+          <Plus className="text-violet-600" size={24} />
           创建新资源
         </h2>
         <form onSubmit={handleSubmit}>
@@ -765,12 +717,12 @@ function CreateResourceModal({
                 onClick={() => setForm({ ...form, type: 'agent' })}
                 className={`p-4 border-2 rounded-xl transition-all ${
                   form.type === 'agent'
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-300 dark:border-gray-600 hover:border-blue-300'
+                    ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-violet-300'
                 }`}
               >
-                <Folder className={`mx-auto mb-2 ${form.type === 'agent' ? 'text-blue-600' : 'text-gray-400'}`} size={24} />
-                <div className={`text-sm font-medium ${form.type === 'agent' ? 'text-blue-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                <Folder className={`mx-auto mb-2 ${form.type === 'agent' ? 'text-violet-600' : 'text-gray-400'}`} size={24} />
+                <div className={`text-sm font-medium ${form.type === 'agent' ? 'text-violet-600' : 'text-gray-700 dark:text-gray-300'}`}>
                   Agent
                 </div>
                 <div className="text-xs text-gray-500 mt-1">单个智能体</div>
@@ -797,11 +749,10 @@ function CreateResourceModal({
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
               名称 <span className="text-red-500">*</span>
             </label>
-            <input
+            <Input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 dark:text-white transition-all"
               placeholder={`输入${form.type === 'agent' ? 'Agent' : 'AiTeam'}名称`}
               required
             />
@@ -814,30 +765,33 @@ function CreateResourceModal({
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 dark:text-white transition-all resize-none"
+              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 text-gray-900 dark:text-white transition-all resize-none"
               placeholder="输入描述（可选）"
               rows={3}
             />
           </div>
 
-          <div className="flex gap-4">
-            <button
+          <Space size="small" className="w-full">
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
-              className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+              fullWidth
             >
               取消
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
               disabled={isPending}
-              className="flex-1 px-4 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium disabled:opacity-50"
+              loading={isPending}
+              fullWidth
             >
               {isPending ? '创建中...' : '创建'}
-            </button>
-          </div>
+            </Button>
+          </Space>
         </form>
-      </div>
+      </Card>
     </div>
   );
 }

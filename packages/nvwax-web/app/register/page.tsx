@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi } from '@/lib/api/auth';
 import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Card, Input, Button, Alert, Space } from '@/components/UI';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -55,12 +56,12 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-violet-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+        <Card padding="lg" shadow>
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-green-500 to-blue-600 rounded-2xl mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-violet-500 to-purple-600 rounded-2xl mb-4">
               <User className="text-white" size={32} />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -73,118 +74,88 @@ export default function RegisterPage() {
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            </div>
+            <Alert
+              type="error"
+              message={error}
+              closable
+              onClose={() => setError('')}
+              className="mb-6"
+            />
           )}
 
           {/* Register Form */}
-          <form onSubmit={handleRegister} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                邮箱地址 <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="text-gray-400" size={20} />
-                </div>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400"
-                  placeholder="your@email.com"
-                  required
-                />
-              </div>
-            </div>
+          <form onSubmit={handleRegister}>
+            <Space direction="vertical" size="middle" className="w-full">
+              <Input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                label="邮箱地址 *"
+                placeholder="your@email.com"
+                prefix={<Mail size={20} />}
+                required
+              />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                昵称（可选）
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="text-gray-400" size={20} />
-                </div>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400"
-                  placeholder="您的昵称"
-                />
-              </div>
-            </div>
+              <Input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                label="昵称（可选）"
+                placeholder="您的昵称"
+                prefix={<User size={20} />}
+              />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                密码 <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="text-gray-400" size={20} />
-                </div>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full pl-10 pr-12 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400"
-                  placeholder="至少6个字符"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                  aria-label={showPassword ? '隐藏密码' : '显示密码'}
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-            </div>
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                label="密码 *"
+                placeholder="至少6个字符"
+                prefix={<Lock size={20} />}
+                suffix={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    aria-label={showPassword ? '隐藏密码' : '显示密码'}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                }
+                required
+              />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                确认密码 <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="text-gray-400" size={20} />
-                </div>
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="w-full pl-10 pr-12 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400"
-                  placeholder="再次输入密码"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                  aria-label={showConfirmPassword ? '隐藏密码' : '显示密码'}
-                >
-                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-            </div>
+              <Input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                label="确认密码 *"
+                placeholder="再次输入密码"
+                prefix={<Lock size={20} />}
+                suffix={
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    aria-label={showConfirmPassword ? '隐藏密码' : '显示密码'}
+                  >
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                }
+                required
+              />
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <span>注册中...</span>
-              ) : (
-                <>
-                  <span>创建账户</span>
-                  <ArrowRight size={20} />
-                </>
-              )}
-            </button>
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                fullWidth
+                loading={loading}
+                rightIcon={!loading ? <ArrowRight size={20} /> : undefined}
+              >
+                {loading ? '注册中...' : '创建账户'}
+              </Button>
+            </Space>
           </form>
 
           {/* Login Link */}
@@ -193,7 +164,7 @@ export default function RegisterPage() {
               已有账户？{' '}
               <Link
                 href="/login"
-                className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                className="text-violet-600 dark:text-violet-400 hover:underline font-medium"
               >
                 立即登录
               </Link>
@@ -209,7 +180,7 @@ export default function RegisterPage() {
               ← 返回首页
             </Link>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

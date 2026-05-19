@@ -564,18 +564,21 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
 
     return (
       <div className="mt-4 space-y-3">
-        <p className="text-sm font-semibold text-gray-700">🎯 推荐角色配置：</p>
+        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+          <span className="text-lg">🎯</span>
+          推荐角色配置：
+        </p>
         {roles.map((role, index) => (
-          <div key={index} className="bg-linear-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <CheckCircle className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
+          <div key={index} className="bg-linear-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border border-violet-200 dark:border-violet-800 rounded-xl p-4 hover:shadow-md transition-shadow duration-200">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
               <div className="flex-1">
-                <h4 className="font-semibold text-purple-900">{role.roleName}</h4>
-                <p className="text-sm text-gray-700 mt-1">{role.description}</p>
+                <h4 className="font-semibold text-violet-900 dark:text-violet-300 text-base">{role.roleName}</h4>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1.5 leading-relaxed">{role.description}</p>
                 {role.responsibilities && (
-                  <ul className="text-xs text-gray-600 mt-2 list-disc list-inside">
+                  <ul className="text-xs text-gray-600 dark:text-gray-400 mt-2.5 list-disc list-inside space-y-1">
                     {role.responsibilities.map((resp: string, i: number) => (
-                      <li key={i}>{resp}</li>
+                      <li key={i} className="leading-relaxed">{resp}</li>
                     ))}
                   </ul>
                 )}
@@ -588,142 +591,159 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b bg-linear-to-r from-purple-50 to-pink-50">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-linear-to-r from-purple-500 to-pink-500 rounded-lg">
-              <Building2 className="w-6 h-6 text-white" />
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-7xl max-h-[92vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+        {/* Header - 更简洁现代的设计 */}
+        <div className="flex items-center justify-between px-8 py-5 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-violet-50 via-purple-50 to-pink-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-linear-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg">
+              <Building2 className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">创建虚拟公司</h2>
-              <p className="text-sm text-gray-600">与 NvwaX Aiteam架构师 对话，构建您的 AI 团队</p>
+              <h2 className="text-2xl font-bold bg-linear-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">创建 AI 团队</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">与 NvwaX 智能助手对话，构建您的专属 AI 团队</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+            className="p-2.5 hover:bg-white/60 dark:hover:bg-gray-700/60 rounded-xl transition-all duration-200 group"
+            aria-label="关闭"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-6 h-6 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200" />
           </button>
         </div>
 
-        {/* Main Content - 左右分栏 */}
+        {/* Main Content - 优化的三栏布局 */}
         <div className="flex-1 flex overflow-hidden">
-          {/* 左侧：可视化进度 */}
-          <div className="w-72 border-r border-gray-200 bg-gray-50 p-6 overflow-y-auto">
-            <h3 className="font-semibold text-sm mb-6 text-gray-700 flex items-center gap-2">
-              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-              创建进度
-            </h3>
-            <div className="space-y-4">
-              {progressSteps.map((step, index) => (
-                <div key={step.stepNumber} className="flex items-start gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className={`
-                      w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300
-                      ${step.status === 'completed' ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 
-                        step.status === 'in_progress' ? 'bg-blue-500 text-white animate-pulse shadow-lg shadow-blue-200' : 
-                        'bg-gray-200 text-gray-500'}
-                    `}>
-                      {step.status === 'completed' ? '✓' : step.stepNumber}
-                    </div>
-                    {index < progressSteps.length - 1 && (
-                      <div className={`w-0.5 h-10 transition-all duration-300 ${step.status === 'completed' ? 'bg-green-500' : 'bg-gray-200'}`} />
-                    )}
-                  </div>
-                  <div className="flex-1 pt-1">
-                    <p className={`text-sm font-semibold transition-colors duration-300 ${
-                      step.status === 'completed' ? 'text-green-700' : 
-                      step.status === 'in_progress' ? 'text-blue-700' : 
-                      'text-gray-500'
-                    }`}>
-                      {step.name}
-                    </p>
-                    {step.message && step.message !== '等待开始' && (
-                      <p className="text-xs text-gray-600 mt-1 leading-relaxed">{step.message}</p>
-                    )}
-                    {step.status === 'in_progress' && (
-                      <div className="mt-2">
-                        <div className="flex items-center gap-2 text-xs text-blue-600">
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          <span>进行中...</span>
-                        </div>
+          {/* 左侧：可视化进度 - 更紧凑优雅 */}
+          <aside className="w-80 border-r border-gray-200 dark:border-gray-700 bg-linear-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 p-6 overflow-y-auto">
+            <div className="sticky top-0">
+              <h3 className="font-semibold text-sm mb-6 text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <span className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span>
+                创建进度
+              </h3>
+              <div className="space-y-5">
+                {progressSteps.map((step, index) => (
+                  <div key={step.stepNumber} className="flex items-start gap-3 group">
+                    <div className="flex flex-col items-center">
+                      <div className={`
+                        w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 shadow-sm
+                        ${step.status === 'completed' ? 'bg-linear-to-br from-green-500 to-emerald-500 text-white shadow-green-200 dark:shadow-green-900/30 scale-110' : 
+                          step.status === 'in_progress' ? 'bg-linear-to-br from-violet-500 to-purple-500 text-white animate-pulse shadow-violet-200 dark:shadow-violet-900/30 scale-110' : 
+                          'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'}
+                      `}>
+                        {step.status === 'completed' ? '✓' : step.stepNumber}
                       </div>
-                    )}
+                      {index < progressSteps.length - 1 && (
+                        <div className={`w-0.5 h-12 transition-all duration-500 ${step.status === 'completed' ? 'bg-linear-to-b from-green-500 to-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                      )}
+                    </div>
+                    <div className="flex-1 pt-1.5">
+                      <p className={`text-sm font-semibold transition-colors duration-300 ${
+                        step.status === 'completed' ? 'text-green-700 dark:text-green-400' : 
+                        step.status === 'in_progress' ? 'text-violet-700 dark:text-violet-400' : 
+                        'text-gray-500 dark:text-gray-500'
+                      }`}>
+                        {step.name}
+                      </p>
+                      {step.message && step.message !== '等待开始' && (
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1.5 leading-relaxed">{step.message}</p>
+                      )}
+                      {step.status === 'in_progress' && (
+                        <div className="mt-2.5">
+                          <div className="flex items-center gap-2 text-xs text-violet-600 dark:text-violet-400">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span className="font-medium">处理中...</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                ))}
+              </div>
+              
+              {/* 总体进度条 - 更醒目 */}
+              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  <span className="font-medium">总进度</span>
+                  <span className="font-bold text-violet-600 dark:text-violet-400 text-base">{currentProgress?.percentage || 0}%</span>
                 </div>
-              ))}
-            </div>
-            
-            {/* 总体进度条 */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <div className="flex justify-between text-xs text-gray-600 mb-2">
-                <span className="font-medium">总进度</span>
-                <span className="font-bold text-blue-600">{currentProgress?.percentage || 0}%</span>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden shadow-inner">
+                  <div 
+                    className="bg-linear-to-r from-violet-500 via-purple-500 to-pink-500 h-2.5 rounded-full transition-all duration-700 ease-out shadow-sm"
+                    style={{ width: `${currentProgress?.percentage || 0}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div 
-                  className="bg-linear-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-700 ease-out"
-                  style={{ width: `${currentProgress?.percentage || 0}%` }}
-                />
+              
+              {/* 提示信息 - 更友好 */}
+              <div className="mt-6 p-4 bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                  💡 <strong className="font-semibold">提示</strong>：团队创建完成后，将自动保存到您的 Agent 仓库并生成可下载的文档包。
+                </p>
               </div>
             </div>
-            
-            {/* 提示信息 */}
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs text-blue-700 leading-relaxed">
-                💡 <strong>提示</strong>：整个团队创建完成后，会自动保存到我的Agent仓库并生成可下载的文档包。
-              </p>
-            </div>
-          </div>
+          </aside>
           
-          {/* 右侧：对话区域 */}
-          <div className="flex-1 flex flex-col min-h-0">
+          {/* 中间：对话区域 - 更宽敞舒适 */}
+          <section className="flex-1 flex flex-col min-h-0 bg-linear-to-b from-white to-gray-50/30 dark:from-gray-900 dark:to-gray-800/30">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-8 space-y-6 scroll-smooth">
             {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+              <div
+                key={message.id}
+                className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}
+              >
               {message.role === 'nvwax_agent' && (
-                <div className="w-8 h-8 bg-linear-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shrink-0">
-                  <Bot className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 bg-linear-to-br from-violet-500 to-purple-600 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-violet-200 dark:shadow-violet-900/30">
+                  <Bot className="w-6 h-6 text-white" />
                 </div>
               )}
               
               <div
-                className={`max-w-[75%] rounded-2xl p-4 ${
+                className={`max-w-[80%] rounded-2xl p-5 shadow-sm ${
                   message.role === 'user'
-                    ? 'bg-linear-to-r from-purple-500 to-pink-500 text-white'
-                    : 'bg-white border border-gray-200 shadow-sm'
+                    ? 'bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-violet-200 dark:shadow-violet-900/30'
+                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
                 }`}
               >
                 <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {message.content}
+                  {message.content.split('\n').map((line, idx) => {
+                    // 简单 Markdown 渲染
+                    if (line.startsWith('**') && line.endsWith('**')) {
+                      return <strong key={idx} className="font-semibold">{line.slice(2, -2)}</strong>;
+                    }
+                    if (line.startsWith('- ')) {
+                      return <div key={idx} className="ml-4">• {line.slice(2)}</div>;
+                    }
+                    if (line.match(/^\d+\./)) {
+                      return <div key={idx} className="ml-4">{line}</div>;
+                    }
+                    return <div key={idx}>{line}</div>;
+                  })}
                 </div>
                 
-                {/* 显示推荐角色 */}
+                {/* 显示推荐角色 - 优化样式 */}
                 {message.role === 'nvwax_agent' && message.recommendedRoles && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     {renderRecommendedRoles(message.recommendedRoles)}
                   </div>
                 )}
 
                 {/* 显示 CEO 配置预览 */}
                 {message.role === 'nvwax_agent' && message.ceoConfig && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <CEOConfigPreview config={message.ceoConfig} />
                   </div>
                 )}
 
-                {/* 显示确认按钮 */}
+                {/* 显示确认按钮 - 更醒目的设计 */}
                 {message.role === 'nvwax_agent' && message.showConfirmButton && (
-                  <div className="mt-4 pt-3 border-t border-gray-200">
+                  <div className="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <button
                       onClick={handleConfirmAndSave}
                       disabled={isConfirming}
-                      className="w-full px-6 py-3 bg-linear-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold"
+                      className="w-full px-6 py-3.5 bg-linear-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl hover:shadow-lg hover:shadow-green-200 dark:hover:shadow-green-900/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 font-semibold text-base"
                     >
                       {isConfirming ? (
                         <>
@@ -733,43 +753,43 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                       ) : (
                         <>
                           <CheckCircle className="w-5 h-5" />
-                          <span>确认并保存到我的Agent仓库</span>
+                          <span>确认并保存到 Agent 仓库</span>
                         </>
                       )}
                     </button>
-                    <p className="text-xs text-gray-500 mt-2 text-center">
-                      确认后，团队配置将保存到Agent仓库，并生成可下载的文档包
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+                      确认后，团队配置将保存到 Agent 仓库，并生成可下载的文档包
                     </p>
                   </div>
                 )}
 
                 {/* 显示文档包预览 */}
                 {message.role === 'nvwax_agent' && message.documentPackage && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <DocumentPackagePreview docPackage={message.documentPackage} />
                   </div>
                 )}
 
-                {/* 显示操作按钮（下载 + 集成到ProClaw + 分享） */}
+                {/* 显示操作按钮（下载 + 集成到ProClaw + 分享）- 更好的布局 */}
                 {message.role === 'nvwax_agent' && message.showActionButtons && message.downloadUrl && (
-                  <div className="mt-4 pt-3 border-t border-gray-200 space-y-3">
+                  <div className="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
                     <button
                       onClick={() => handleDownload(message.downloadUrl!)}
-                      className="w-full px-6 py-3 bg-linear-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-semibold"
+                      className="w-full px-6 py-3.5 bg-linear-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-200 dark:hover:shadow-blue-900/30 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
                     >
                       <Send className="w-5 h-5" />
                       <span>下载文档包</span>
                     </button>
                     <button
                       onClick={() => handleIntegrateToProClaw(sessionId!)}
-                      className="w-full px-6 py-3 bg-linear-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-semibold"
+                      className="w-full px-6 py-3.5 bg-linear-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white rounded-xl hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
                     >
                       <Building2 className="w-5 h-5" />
-                      <span>集成到ProClaw</span>
+                      <span>集成到 ProClaw</span>
                     </button>
                     <button
                       onClick={handleShare}
-                      className="w-full px-6 py-3 bg-linear-to-r from-orange-500 to-red-500 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-semibold"
+                      className="w-full px-6 py-3.5 bg-linear-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-orange-200 dark:hover:shadow-orange-900/30 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
                     >
                       <Share2 className="w-5 h-5" />
                       <span>分享给朋友</span>
@@ -777,15 +797,15 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                   </div>
                 )}
 
-                {/* 显示澄清问题 */}
+                {/* 显示澄清问题 - 更友好的样式 */}
                 {message.role === 'nvwax_agent' && message.clarificationQuestions && message.clarificationQuestions.length > 0 && (
-                  <div className="mt-3 flex items-start gap-2 text-sm text-blue-600">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="mt-4 flex items-start gap-2.5 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium">需要更多信息：</p>
-                      <ul className="list-disc list-inside mt-1">
+                      <p className="font-semibold mb-1">需要更多信息：</p>
+                      <ul className="list-disc list-inside space-y-1">
                         {message.clarificationQuestions.map((q, i) => (
-                          <li key={i}>{q}</li>
+                          <li key={i} className="leading-relaxed">{q}</li>
                         ))}
                       </ul>
                     </div>
@@ -793,8 +813,8 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                 )}
                 
                 <div
-                  className={`text-xs mt-2 ${
-                    message.role === 'user' ? 'text-purple-100' : 'text-gray-400'
+                  className={`text-xs mt-3 ${
+                    message.role === 'user' ? 'text-violet-100' : 'text-gray-400 dark:text-gray-500'
                   }`}
                 >
                   {message.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
@@ -802,50 +822,51 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
               </div>
 
               {message.role === 'user' && (
-                <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center shrink-0">
-                  <User className="w-5 h-5 text-gray-600" />
+                <div className="w-10 h-10 bg-linear-to-br from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 rounded-full flex items-center justify-center shrink-0 shadow-md">
+                  <User className="w-6 h-6 text-white" />
                 </div>
               )}
             </div>
             ))}
             
             {isSending && (
-            <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 bg-linear-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shrink-0">
-                <Bot className="w-5 h-5 text-white" />
+            <div className="flex gap-4 justify-start animate-in slide-in-from-bottom-2 duration-300">
+              <div className="w-10 h-10 bg-linear-to-br from-violet-500 to-purple-600 rounded-full flex items-center justify-center shrink-0 shadow-lg shadow-violet-200 dark:shadow-violet-900/30">
+                <Bot className="w-6 h-6 text-white" />
               </div>
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
-                <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 shadow-sm">
+                <Loader2 className="w-5 h-5 text-violet-500 dark:text-violet-400 animate-spin" />
               </div>
             </div>
             )}
             
             <div ref={messagesEndRef} />
-          </div>
+            </div>
+          </section>
 
-          {/* Input Area */}
-          <div className="p-4 border-t bg-white">
+          {/* Input Area - 固定在底部，更现代的设计 */}
+          <div className="px-8 py-5 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
             <div className="flex gap-3">
               <textarea
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="输入消息... (按 Enter 发送)"
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none min-h-15 max-h-30"
+                placeholder="描述您想创建的 AI 团队... (按 Enter 发送，Shift + Enter 换行)"
+                className="flex-1 px-5 py-3.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none min-h-15 max-h-30 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200"
                 disabled={isSending || !sessionId}
                 rows={2}
               />
               <button
                 onClick={sendMessage}
                 disabled={!inputMessage.trim() || isSending || !sessionId}
-                className="px-6 py-3 bg-linear-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-8 py-3.5 bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white rounded-xl hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2.5 font-semibold"
               >
                 <Send className="w-5 h-5" />
                 <span className="hidden sm:inline">发送</span>
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              💡 提示：详细描述您的需求，NvwaX Aiteam架构师 会为您推荐合适的角色配置
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+              💡 提示：详细描述您的需求，NvwaX 智能助手会为您推荐合适的角色配置
             </p>
           </div>
         </div>

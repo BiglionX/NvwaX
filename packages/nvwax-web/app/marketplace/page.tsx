@@ -9,6 +9,7 @@ import { Star, Download, ExternalLink, Users, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import VirtualCompanyChatModal from '@/components/virtual-company-chat-modal';
 import LoadingState from '@/components/Layout/LoadingState';
+import { Button, Input, Space, Container, Card, Badge, Tag } from '@/components/UI';
 
 type Category = 'all' | 'agents' | 'virtual-company';
 
@@ -76,7 +77,7 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <Container size="lg" className="py-6">
       {/* 页面标题和搜索 */}
       <div className="mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
@@ -86,24 +87,22 @@ export default function MarketplacePage() {
           </div>
           
           {/* 搜索框 */}
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="搜索智能体或虚拟公司..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-12 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white placeholder-gray-500"
-            />
-            {searchQuery && (
+          <Input
+            type="text"
+            placeholder="搜索智能体或虚拟公司..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            prefix={<Search size={20} />}
+            suffix={searchQuery ? (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 <X size={20} />
               </button>
-            )}
-          </div>
+            ) : undefined}
+            className="w-full md:w-96"
+          />
         </div>
         
         {/* 搜索提示 */}
@@ -111,10 +110,10 @@ export default function MarketplacePage() {
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Search size={16} />
             <span>搜索结果：</span>
-            <span className="font-medium text-blue-600 dark:text-blue-400">{debouncedSearch}</span>
+            <span className="font-medium text-violet-600 dark:text-violet-400">{debouncedSearch}</span>
             <button
               onClick={() => setSearchQuery('')}
-              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              className="text-violet-600 dark:text-violet-400 hover:underline font-medium"
             >
               清除搜索
             </button>
@@ -123,43 +122,40 @@ export default function MarketplacePage() {
       </div>
 
       {/* 分类筛选器 */}
-      <div className="mb-6 flex gap-3 overflow-x-auto pb-2">
+      <Space size="small" className="mb-6 overflow-x-auto pb-2">
         {categories.map((cat) => (
-          <button
+          <Button
             key={cat.value}
+            variant={selectedCategory === cat.value ? 'primary' : 'outline'}
             onClick={() => setSelectedCategory(cat.value)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium whitespace-nowrap transition-all ${
-              selectedCategory === cat.value
-                ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-md'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-gray-200 dark:border-gray-700'
-            }`}
+            icon={cat.icon ? <cat.icon size={18} /> : undefined}
           >
-            {cat.icon && <cat.icon size={18} />}
             {cat.label}
-          </button>
+          </Button>
         ))}
-      </div>
+      </Space>
 
       {/* Featured Section for Virtual Companies */}
       {selectedCategory === 'virtual-company' && (
-        <div className="mb-8 p-6 bg-linear-to-r from-purple-600 to-pink-600 rounded-xl text-white shadow-lg">
+        <Card className="mb-8 bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-lg">
           <h2 className="text-2xl font-bold mb-2">🏢 虚拟公司</h2>
           <p className="mb-4">组建你的 AI 团队，像真实公司一样协作工作</p>
-          <button
+          <Button
+            variant="primary"
             onClick={() => setShowCreateModal(true)}
-            className="px-6 py-2.5 bg-white text-purple-600 rounded-xl font-semibold hover:bg-gray-50 transition-all shadow-md hover:shadow-lg"
+            className="bg-white text-purple-600 hover:bg-gray-50"
           >
             ✨ 创建虚拟公司
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
 
       {/* Featured Section for Agents */}
       {selectedCategory === 'agents' && (
-        <div className="mb-8 p-6 bg-linear-to-r from-blue-600 to-cyan-600 rounded-xl text-white shadow-lg">
+        <Card className="mb-8 bg-linear-to-r from-blue-600 to-cyan-600 text-white shadow-lg">
           <h2 className="text-2xl font-bold mb-2">🤖 智能体</h2>
           <p>发现和探索优秀的单个 AI Agent</p>
-        </div>
+        </Card>
       )}
 
       {/* Agents Grid */}
@@ -172,55 +168,52 @@ export default function MarketplacePage() {
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {agentsData.data.map((agent: Agent) => (
-              <div key={agent.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all border-2 border-gray-200 dark:border-gray-700 hover:-translate-y-1 overflow-hidden group">
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{agent.name}</h3>
-                    <span className={`px-3 py-1.5 text-xs font-medium rounded-lg shrink-0 ${
-                      agent.source === 'github' ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                    }`}>
-                      {agent.source}
-                    </span>
-                  </div>
-                  
-                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">{agent.description}</p>
-                  
-                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    {agent.stars !== undefined && (
-                      <div className="flex items-center gap-1">
-                        <Star size={16} className="text-yellow-500" />
-                        <span>{agent.stars.toLocaleString()}</span>
-                      </div>
-                    )}
-                    {agent.downloads !== undefined && (
-                      <div className="flex items-center gap-1">
-                        <Download size={16} />
-                        <span>{agent.downloads.toLocaleString()}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {agent.tags && agent.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {agent.tags.slice(0, 3).map((tag, idx) => (
-                        <span key={idx} className="px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs rounded">
-                          {tag}
-                        </span>
-                      ))}
+              <Card key={agent.id} className="hover:-translate-y-1 hover:shadow-xl transition-all group">
+                <div className="flex items-start justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">{agent.name}</h3>
+                  <Badge variant={agent.source === 'github' ? 'default' : 'warning'}>
+                    {agent.source}
+                  </Badge>
+                </div>
+                
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">{agent.description}</p>
+                
+                <Space size="middle" className="mb-4">
+                  {agent.stars !== undefined && (
+                    <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                      <Star size={16} className="text-yellow-500" />
+                      <span>{agent.stars.toLocaleString()}</span>
                     </div>
                   )}
+                  {agent.downloads !== undefined && (
+                    <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+                      <Download size={16} />
+                      <span>{agent.downloads.toLocaleString()}</span>
+                    </div>
+                  )}
+                </Space>
 
-                  <a
-                    href={agent.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center w-full gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg text-sm font-medium"
-                  >
-                    <ExternalLink size={16} />
+                {agent.tags && agent.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {agent.tags.slice(0, 3).map((tag, idx) => (
+                      <Tag key={idx} variant="primary" size="sm">
+                        {tag}
+                      </Tag>
+                    ))}
+                  </div>
+                )}
+
+                <a
+                  href={agent.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center w-full"
+                >
+                  <Button variant="primary" fullWidth icon={<ExternalLink size={16} />}>
                     查看详情
-                  </a>
-                </div>
-              </div>
+                  </Button>
+                </a>
+              </Card>
             ))}
           </div>
         </>
@@ -241,17 +234,17 @@ export default function MarketplacePage() {
               <Link
                 key={skill.id}
                 href={`/marketplace/team-skills/${skill.id}`}
-                className="block bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all border-2 border-gray-200 dark:border-gray-700 hover:-translate-y-1 overflow-hidden group"
+                className="block"
               >
-                <div className="p-6">
+                <Card className="hover:-translate-y-1 hover:shadow-xl transition-all group">
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
                       {skill.name}
                     </h3>
                     {skill.category === 'virtual-company' && (
-                      <span className="px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                      <Badge variant="info">
                         虚拟公司
-                      </span>
+                      </Badge>
                     )}
                   </div>
                   
@@ -269,16 +262,16 @@ export default function MarketplacePage() {
 
                   {skill.category && (
                     <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg">
+                      <Tag variant="primary" size="sm">
                         {skill.category}
-                      </span>
+                      </Tag>
                     </div>
                   )}
 
-                  <div className="inline-flex items-center justify-center w-full gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg text-sm font-medium">
+                  <Button variant="primary" fullWidth>
                     查看详情
-                  </div>
-                </div>
+                  </Button>
+                </Card>
               </Link>
             ))}
           </div>
@@ -295,17 +288,19 @@ export default function MarketplacePage() {
         }
         return !teamSkillsData?.data?.data?.length;
       })() && (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-md">
-          <div className="w-20 h-20 bg-linear-to-br from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Search size={40} className="text-gray-400" />
+        <Card padding="lg">
+          <div className="text-center py-12">
+            <div className="w-20 h-20 bg-linear-to-br from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Search size={40} className="text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              {debouncedSearch ? '未找到匹配的结果' : '暂无数据'}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              {debouncedSearch ? '请尝试其他关键词' : 'Agent 广场数据正在加载中'}
+            </p>
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            {debouncedSearch ? '未找到匹配的结果' : '暂无数据'}
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            {debouncedSearch ? '请尝试其他关键词' : 'Agent 广场数据正在加载中'}
-          </p>
-        </div>
+        </Card>
       )}
 
       {/* 虚拟公司创建弹窗（对话式） */}
@@ -318,6 +313,6 @@ export default function MarketplacePage() {
           }}
         />
       )}
-    </div>
+    </Container>
   );
 }

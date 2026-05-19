@@ -1,26 +1,156 @@
 @import "tailwindcss";
 
+/* ============================================
+   NvwaX 设计令牌系统
+   版本: 1.0.0
+   更新日期: 2026-05-19
+   ============================================ */
+
 :root {
+  /* 基础颜色 */
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* 品牌色 - 紫罗兰渐变 */
+  --color-primary-start: #8b5cf6;    /* violet-500 */
+  --color-primary-end: #9333ea;      /* purple-600 */
+  --color-primary-hover-start: #7c3aed;   /* violet-600 */
+  --color-primary-hover-end: #7e22ce;     /* purple-700 */
+  
+  /* 辅助色 - 蓝色渐变 */
+  --color-secondary-start: #3b82f6;  /* blue-500 */
+  --color-secondary-end: #4f46e5;    /* indigo-600 */
+  
+  /* 状态色 */
+  --color-success-start: #22c55e;    /* green-500 */
+  --color-success-end: #059669;      /* emerald-600 */
+  --color-warning-start: #f97316;    /* orange-500 */
+  --color-warning-end: #d97706;      /* amber-600 */
+  --color-danger-start: #ef4444;     /* red-500 */
+  --color-danger-end: #e11d48;       /* rose-600 */
+  
+  /* 中性色 - 亮色模式 */
+  --bg-primary: #ffffff;             /* white */
+  --bg-secondary: #f9fafb;           /* gray-50 */
+  --bg-tertiary: #f3f4f6;            /* gray-100 */
+  --text-primary: #111827;           /* gray-900 */
+  --text-secondary: #4b5563;         /* gray-600 */
+  --text-tertiary: #6b7280;          /* gray-500 */
+  --text-disabled: #9ca3af;          /* gray-400 */
+  --border-default: #e5e7eb;         /* gray-200 */
+  --border-hover: #d1d5db;           /* gray-300 */
+  --border-focus: #8b5cf6;           /* violet-500 */
+  
+  /* 阴影颜色 - 亮色模式 */
+  --shadow-brand: rgba(139, 92, 246, 0.15);    /* violet-200/50 */
+  --shadow-success: rgba(34, 197, 94, 0.15);   /* green-200/50 */
+  --shadow-warning: rgba(249, 115, 22, 0.15);  /* orange-200/50 */
+  --shadow-danger: rgba(239, 68, 68, 0.15);    /* red-200/50 */
+}
+
+/* 暗色模式 */
+.dark {
+  --background: #111827;             /* gray-900 */
+  --foreground: #f9fafb;             /* gray-50 */
+  
+  /* 中性色 - 暗色模式 */
+  --bg-primary: #111827;             /* gray-900 */
+  --bg-secondary: #1f2937;           /* gray-800 */
+  --bg-tertiary: #374151;            /* gray-700 */
+  --text-primary: #f9fafb;           /* gray-50 */
+  --text-secondary: #d1d5db;         /* gray-300 */
+  --text-tertiary: #9ca3af;          /* gray-400 */
+  --text-disabled: #6b7280;          /* gray-500 */
+  --border-default: #374151;         /* gray-700 */
+  --border-hover: #4b5563;           /* gray-600 */
+  --border-focus: #a78bfa;           /* violet-400 */
+  
+  /* 阴影颜色 - 暗色模式 */
+  --shadow-brand: rgba(139, 92, 246, 0.2);     /* violet-900/30 */
+  --shadow-success: rgba(34, 197, 94, 0.2);    /* green-900/30 */
+  --shadow-warning: rgba(249, 115, 22, 0.2);   /* orange-900/30 */
+  --shadow-danger: rgba(239, 68, 68, 0.2);     /* red-900/30 */
 }
 
 @theme inline {
+  /* 基础颜色映射 */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  
+  /* 字体 */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* 品牌色映射 */
+  --color-primary: var(--color-primary-start);
+  --color-secondary: var(--color-secondary-start);
+  --color-success: var(--color-success-start);
+  --color-warning: var(--color-warning-start);
+  --color-danger: var(--color-danger-start);
+  
+  /* 背景色映射 */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  
+  /* 文本色映射 */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-disabled: var(--text-disabled);
+  
+  /* 边框色映射 */
+  --color-border-default: var(--border-default);
+  --color-border-hover: var(--border-hover);
+  --color-border-focus: var(--border-focus);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  /* 平滑滚动 */
+  scroll-behavior: smooth;
+  /* 优化字体渲染 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   焦点样式 - 无障碍支持
+   ============================================ */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   滚动条样式优化
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* ============================================
+   选择文本样式
+   ============================================ */
+::selection {
+  background: rgba(139, 92, 246, 0.2);
+  color: var(--text-primary);
 }
