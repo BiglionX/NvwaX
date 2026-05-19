@@ -842,33 +842,33 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
             
             <div ref={messagesEndRef} />
             </div>
-          </section>
 
-          {/* Input Area - 固定在底部，更现代的设计 */}
-          <div className="px-8 py-5 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-            <div className="flex gap-3">
-              <textarea
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="描述您想创建的 AI 团队... (按 Enter 发送，Shift + Enter 换行)"
-                className="flex-1 px-5 py-3.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none min-h-15 max-h-30 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200"
-                disabled={isSending || !sessionId}
-                rows={2}
-              />
-              <button
-                onClick={sendMessage}
-                disabled={!inputMessage.trim() || isSending || !sessionId}
-                className="px-8 py-3.5 bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white rounded-xl hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2.5 font-semibold"
-              >
-                <Send className="w-5 h-5" />
-                <span className="hidden sm:inline">发送</span>
-              </button>
+            {/* Input Area - 固定在底部，更现代的设计 */}
+            <div className="px-8 py-5 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+              <div className="flex gap-3">
+                <textarea
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="描述您想创建的 AI 团队... (按 Enter 发送，Shift + Enter 换行)"
+                  className="flex-1 px-5 py-3.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none min-h-15 max-h-30 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200"
+                  disabled={isSending || !sessionId}
+                  rows={2}
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!inputMessage.trim() || isSending || !sessionId}
+                  className="px-8 py-3.5 bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white rounded-xl hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2.5 font-semibold"
+                >
+                  <Send className="w-5 h-5" />
+                  <span className="hidden sm:inline">发送</span>
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+                💡 提示：详细描述您的需求，NvwaX 智能助手会为您推荐合适的角色配置
+              </p>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-              💡 提示：详细描述您的需求，NvwaX 智能助手会为您推荐合适的角色配置
-            </p>
-          </div>
+          </section>
         </div>
       </div>
 

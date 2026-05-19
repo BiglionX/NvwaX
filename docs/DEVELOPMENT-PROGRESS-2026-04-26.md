@@ -514,7 +514,7 @@ CREATE INDEX idx_build_jobs_created ON team_skill_build_jobs(created_at DESC);
 
 ```tsx
 // 修改前（Tailwind CSS v3）
-<div className="flex-shrink-0 w-10 h-10">
+<div className="shrink-0 w-10 h-10">
 
 // 修改后（Tailwind CSS v4）
 <div className="shrink-0 w-10 h-10">
