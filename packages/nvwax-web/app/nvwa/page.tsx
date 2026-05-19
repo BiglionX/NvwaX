@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Bot, Sparkles, Loader, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import VirtualCompanyChatModal from '@/components/virtual-company-chat-modal';
 
 interface Message {
   id: string;
@@ -34,6 +35,7 @@ export default function NvwaPage() {
     implementation: '',
     skills: [],
   });
+  const [showVirtualCompanyModal, setShowVirtualCompanyModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 客户端初始化欢迎消息（避免 hydration 错误）
@@ -92,6 +94,21 @@ export default function NvwaPage() {
 
   // 处理用户输入的各个步骤
   const processUserInput = (input: string) => {
+    // 检测用户是否想创建 AI 团队/虚拟公司
+    const teamKeywords = ['团队', 'team', '虚拟公司', 'virtual company', 'ai团队', 'ai team', '多agent', 'multi-agent', '协作', 'collaboration'];
+    const isTeamRequest = teamKeywords.some(keyword => input.toLowerCase().includes(keyword));
+    
+    if (isTeamRequest && currentStep === 0) {
+      // 如果用户在第一步就提到团队相关关键词，直接引导到虚拟公司创建
+      addAssistantMessage(
+        `我注意到您想创建一个 AI 团队！🎯\n\nNvwa 主要用于创建单个智能体，而创建 AI 团队（虚拟公司）需要使用专门的团队创建工具。\n\n我将为您打开虚拟公司创建窗口，在那里您可以：\n- 描述团队需求\n- 获得专业的角色推荐\n- 自动匹配 Agent 和 Skills\n- 生成完整的团队配置\n\n正在为您打开虚拟公司创建界面...`
+      );
+      setTimeout(() => {
+        setShowVirtualCompanyModal(true);
+      }, 1500);
+      return;
+    }
+    
     switch (currentStep) {
       case 0: // 智能体用途
         setFormData(prev => ({ ...prev, description: input }));
@@ -244,16 +261,27 @@ export default function NvwaPage() {
     <div className="flex flex-col min-h-[calc(100vh-120px)] -m-4 sm:-m-6 lg:-m-8">
       {/* Header - 负 margin 突破 MainLayout 的 padding 限制 */}
       <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 lg:px-8 py-4" role="banner">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <Sparkles size={24} className="text-white" />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+              <Sparkles size={24} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Nvwa
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">轻松创建专属智能体</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Nvwa
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">轻松创建专属智能体</p>
-          </div>
+          
+          {/* 创建虚拟公司按钮 */}
+          <a
+            href="/marketplace"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800"
+          >
+            <Sparkles size={18} />
+            <span>创建虚拟公司</span>
+          </a>
         </div>
       </header>
 
@@ -515,6 +543,19 @@ export default function NvwaPage() {
           </section>
         </div>
       </main>
+
+      {/* 虚拟公司创建弹窗 */}
+      {showVirtualCompanyModal && (
+        <VirtualCompanyChatModal
+          onClose={() => setShowVirtualCompanyModal(false)}
+          onSuccess={(teamSkillId) => {
+            setShowVirtualCompanyModal(false);
+            addAssistantMessage(
+              `🎉 **虚拟公司创建成功！**\n\n您的 AI 团队已经创建完成，可以在市场页面查看和管理。\n\n团队 ID: ${teamSkillId}\n\n还需要我帮您做什么吗？`
+            );
+          }}
+        />
+      )}
     </div>
   );
 }
