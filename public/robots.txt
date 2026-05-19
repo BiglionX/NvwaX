@@ -1,0 +1,14 @@
+# NvwaX - AI Agent Platform
+# https://nvwax.com
+
+# 允许所有搜索引擎爬虫
+User-agent: *
+Allow: /
+
+# Sitemap 位置
+Sitemap: https://nvwax.com/sitemap.xml
+
+# 禁止爬取的路径（API 端点和私有路由）
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/api/
