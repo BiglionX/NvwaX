@@ -13,6 +13,7 @@ export interface VirtualCompanySession {
   conversationHistory: ConversationMessage[];
   requirements: UserRequirements;
   selectedRoles: SelectedRole[];
+  teamDesign?: any; // 团队设计方案
   progress: CreationProgress;
   finalTeamSkillId?: string;
   createdAt: Date;
@@ -297,6 +298,18 @@ export class VirtualCompanyCreationService {
   }
 
   /**
+   * 更新团队设计
+   */
+  async updateTeamDesign(sessionId: string, teamDesign: any): Promise<void> {
+    await this.pool.query(
+      'UPDATE virtual_company_sessions SET team_design = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [JSON.stringify(teamDesign), sessionId]
+    );
+    
+    console.log(`💾 Team design saved for session ${sessionId}`);
+  }
+
+  /**
    * 更新单个步骤的状态
    */
   async updateStepStatus(
@@ -400,6 +413,7 @@ export class VirtualCompanyCreationService {
       conversationHistory: row.conversation_history || [],
       requirements: row.requirements || {},
       selectedRoles: row.selected_roles || [],
+      teamDesign: row.team_design || null, // 添加 team_design 字段映射
       progress: row.progress || {
         currentStep: 0,
         totalSteps: 7,

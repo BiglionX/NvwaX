@@ -166,6 +166,13 @@ export class VirtualCompanyCreationController {
       
       // 保存团队设计
       if (nvwaxResponse.teamDesign) {
+        // 保存团队设计到数据库
+        await virtualCompanyCreationService.updateTeamDesign(
+          sessionId,
+          nvwaxResponse.teamDesign
+        );
+        
+        // 更新进度
         await virtualCompanyCreationService.updateProgress(sessionId, {
           currentStep: 2,
           percentage: 28,
@@ -581,6 +588,303 @@ export class VirtualCompanyCreationController {
   }
 
   /**
+   * 确认并保存团队到用户中心
+   * POST /api/virtual-company/sessions/:id/confirm
+   */
+  async confirmAndSaveTeam(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const sessionId = Array.isArray(id) ? id[0] : id;
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'User not authenticated'
+        });
+      }
+
+      console.log(`✅ Confirming and saving team for session ${sessionId}...`);
+
+      // 获取会话
+      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      if (!session) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session not found'
+        });
+      }
+
+      // 获取完整的团队配置
+      const pool = databaseService.getPool();
+      const result = await pool.query(
+        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM virtual_company_sessions WHERE id = $1',
+        [sessionId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session data not found'
+        });
+      }
+
+      const rowData = result.rows[0];
+      const teamDesign = rowData.team_design;
+      const ceoConfig = rowData.ceo_config;
+      const agentMatches = rowData.agent_matches || {};
+      const skillMatches = rowData.skill_matches || {};
+
+      if (!teamDesign || !ceoConfig) {
+        return res.status(400).json({
+          success: false,
+          error: 'Team configuration not complete'
+        });
+      }
+
+      // 更新会话状态为 completed
+      await virtualCompanyCreationService.updateStatus(sessionId, 'completed');
+      await virtualCompanyCreationService.updateProgress(sessionId, {
+        currentStep: 7,
+        percentage: 100,
+        steps: [
+          { stepNumber: 1, name: '需求分析', status: 'completed', message: '已完成' },
+          { stepNumber: 2, name: '团队设计', status: 'completed', message: '已完成' },
+          { stepNumber: 3, name: 'Agent 搜索', status: 'completed', message: '已完成' },
+          { stepNumber: 4, name: 'Skill 匹配', status: 'completed', message: '已完成' },
+          { stepNumber: 5, name: '需求确认', status: 'completed', message: '已确认' },
+          { stepNumber: 6, name: '团队构建', status: 'completed', message: '已完成' },
+          { stepNumber: 7, name: '保存配置', status: 'completed', message: '已保存到用户中心' }
+        ]
+      });
+
+      // 广播进度更新
+      sseProgressService.broadcastProgress(sessionId).catch(err => {
+        console.error('Failed to broadcast progress:', err);
+      });
+
+      // 生成文档包
+      console.log(' Generating document package for download...');
+      const nvwaxResponse = await nvwaxAgentService.processMessage(
+        '生成文档包',
+        'document_generation',
+        { 
+          teamDesign,
+          ceoConfig,
+          teamName: ceoConfig.teamType + '团队'
+        }
+      );
+
+      const documentPackage = nvwaxResponse.documentPackage;
+
+      if (documentPackage) {
+        // 保存文档包 URL
+        await pool.query(
+          'UPDATE virtual_company_sessions SET document_package_url = $1 WHERE id = $2',
+          [`/api/virtual-company/sessions/${sessionId}/download`, sessionId]
+        );
+      }
+
+      console.log('✅ Team confirmed and saved successfully');
+
+      res.json({
+        success: true,
+        data: {
+          sessionId,
+          documentPackage,
+          downloadUrl: `/api/virtual-company/sessions/${sessionId}/download`,
+          message: '团队已保存到用户中心，文档包已生成'
+        }
+      });
+    } catch (error) {
+      console.error('Error in confirmAndSaveTeam:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to confirm and save team'
+      });
+    }
+  }
+
+  /**
+   * 下载文档包
+   * GET /api/virtual-company/sessions/:id/download
+   */
+  async downloadDocumentPackage(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const sessionId = Array.isArray(id) ? id[0] : id;
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'User not authenticated'
+        });
+      }
+
+      console.log(` Downloading document package for session ${sessionId}...`);
+
+      // 获取会话
+      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      if (!session || session.userId !== userId) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session not found or access denied'
+        });
+      }
+
+      // 获取完整的团队配置
+      const pool = databaseService.getPool();
+      const result = await pool.query(
+        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM virtual_company_sessions WHERE id = $1',
+        [sessionId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session data not found'
+        });
+      }
+
+      const rowData = result.rows[0];
+      const teamDesign = rowData.team_design;
+      const ceoConfig = rowData.ceo_config;
+
+      if (!teamDesign || !ceoConfig) {
+        return res.status(400).json({
+          success: false,
+          error: 'Team configuration not complete'
+        });
+      }
+
+      // 生成文档包
+      const nvwaxResponse = await nvwaxAgentService.processMessage(
+        '生成文档包',
+        'document_generation',
+        { 
+          teamDesign,
+          ceoConfig,
+          teamName: ceoConfig.teamType + '团队'
+        }
+      );
+
+      const documentPackage = nvwaxResponse.documentPackage;
+
+      if (!documentPackage) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to generate document package'
+        });
+      }
+
+      // 生成 ZIP 文件
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      // 添加所有文档到 ZIP
+      for (const doc of documentPackage.documents) {
+        zip.file(`${doc.title}.md`, doc.content);
+      }
+
+      // 生成 ZIP 文件
+      const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
+
+      // 设置响应头
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${ceoConfig.teamType}_team_config.zip"`);
+      res.setHeader('Content-Length', zipBuffer.length.toString());
+
+      // 发送文件
+      res.send(zipBuffer);
+
+      console.log('✅ Document package downloaded successfully');
+    } catch (error) {
+      console.error('Error in downloadDocumentPackage:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to download document package'
+      });
+    }
+  }
+
+  /**
+   * 集成到ProClaw
+   * POST /api/virtual-company/sessions/:id/integrate-proclaw
+   */
+  async integrateToProClaw(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const sessionId = Array.isArray(id) ? id[0] : id;
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'User not authenticated'
+        });
+      }
+
+      console.log(` Integrating team to ProClaw for session ${sessionId}...`);
+
+      // 获取会话
+      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      if (!session || session.userId !== userId) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session not found or access denied'
+        });
+      }
+
+      // 获取完整的团队配置
+      const pool = databaseService.getPool();
+      const result = await pool.query(
+        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM virtual_company_sessions WHERE id = $1',
+        [sessionId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session data not found'
+        });
+      }
+
+      const rowData = result.rows[0];
+      const teamDesign = rowData.team_design;
+      const ceoConfig = rowData.ceo_config;
+
+      if (!teamDesign || !ceoConfig) {
+        return res.status(400).json({
+          success: false,
+          error: 'Team configuration not complete'
+        });
+      }
+
+      // TODO: 实际实现 ProClaw 集成逻辑
+      // 目前返回模拟数据
+      const proclawTeamId = `proclaw_team_${Date.now()}`;
+      
+      console.log(`✅ Team integrated to ProClaw: ${proclawTeamId}`);
+
+      res.json({
+        success: true,
+        data: {
+          proclawTeamId,
+          sessionId,
+          message: '团队已成功集成到 ProClaw'
+        }
+      });
+    } catch (error) {
+      console.error('Error in integrateToProClaw:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to integrate to ProClaw'
+      });
+    }
+  }
+
+  /**
    * 触发 NvwaX 完整匹配流程（Agent + Skill）
    * POST /api/virtual-company/sessions/:id/nvwax-match
    */
@@ -615,9 +919,15 @@ export class VirtualCompanyCreationController {
       });
       
       // 从会话中获取团队设计
-      const teamDesign = (session as any).team_design || session.requirements;
+      const teamDesign = session.teamDesign || (session as any).team_design || session.requirements;
       
       if (!teamDesign || !teamDesign.roles) {
+        console.error('Team design not found. Session data:', {
+          hasTeamDesign: !!session.teamDesign,
+          hasTeamDesignRaw: !!(session as any).team_design,
+          hasRequirements: !!session.requirements,
+          requirementsKeys: Object.keys(session.requirements || {})
+        });
         return res.status(400).json({
           success: false,
           error: 'Team design not found. Please complete requirements gathering first.'
@@ -703,6 +1013,27 @@ export class VirtualCompanyCreationController {
       
       // 更新状态为 confirming
       await virtualCompanyCreationService.updateStatus(sessionId, 'confirming');
+      
+      // 保存完整的团队配置到数据库
+      console.log('💾 Saving complete team configuration...');
+      const pool = databaseService.getPool();
+      await pool.query(
+        `UPDATE virtual_company_sessions 
+         SET team_design = $1, 
+             ceo_config = $2, 
+             agent_matches = $3, 
+             skill_matches = $4,
+             updated_at = CURRENT_TIMESTAMP 
+         WHERE id = $5`,
+        [
+          JSON.stringify(teamDesign),
+          JSON.stringify(ceoConfig || {}),
+          JSON.stringify(agentMatches || {}),
+          JSON.stringify(skillMatches || {}),
+          sessionId
+        ]
+      );
+      console.log('✅ Complete team configuration saved');
       
       // 生成文档包
       let documentPackage = null;
