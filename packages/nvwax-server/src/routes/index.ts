@@ -19,6 +19,7 @@ import billingRouter from './billing.routes.js';
 import agentRouter from './agent.routes.js';
 import aiteamRouter from './aiteam.routes.js';
 import notificationRouter from './notification.routes.js';
+import downloadRouter from './download.routes.js';
 
 const router = Router();
 
@@ -120,6 +121,9 @@ router.use('/aiteams', aiteamRouter);
 
 // Notification routes (通知系统)
 router.use('/notifications', notificationRouter);
+
+// Download routes (打包文件下载)
+router.use('/downloads', downloadRouter);
 
 // V1 API routes (OpenAI-compatible)
 router.use('/v1', v1Router);

@@ -169,6 +169,78 @@ export class CEOAgentService {
       };
     }
 
+    // 检查是否包含小红书相关关键词
+    if (lowerMessage.includes('小红书') || lowerMessage.includes('xiaohongshu') || 
+        lowerMessage.includes('内容创作') || lowerMessage.includes('content creation')) {
+      return {
+        message: `我理解您需要一个**小红书运营团队**。这是一个非常具体的需求！
+
+基于您的需求，我为您推荐以下 AI 团队角色：
+
+**🎯 推荐角色配置：**
+
+1. **内容策划师** 📝
+   - 负责小红书内容策略规划
+   - 分析目标受众和热门话题
+   - 制定内容日历和发布计划
+
+2. **文案创作者** ✍️
+   - 撰写吸引人的小红书笔记
+   - 优化标题和标签提高曝光
+   - 保持品牌语调一致
+
+3. **视觉设计师** 🎨
+   - 设计精美的封面和图片
+   - 制作信息图表和教程图
+   - 确保视觉风格统一美观
+
+4. **社交媒体经理** 📱
+   - 管理小红书账号运营
+   - 安排最佳发布时间
+   - 与粉丝互动和维护社区
+
+5. **数据分析师** 📊
+   - 跟踪笔记表现和转化
+   - 提供优化建议
+   - 生成月度运营报告
+
+这个配置是否符合您的预期？您可以：
+- ✅ 回复"确认"开始构建团队
+- ✏️ 告诉我需要调整哪些角色
+- ➕ 添加其他角色`,
+        phase: 'role_recommendation',
+        extractedRequirements: {
+          companyType: '小红书运营团队',
+          responsibilities: ['内容创作', '社交媒体运营', '数据分析', '用户互动'],
+          outputTypes: ['text', 'image'],
+          targetAudience: '小红书用户',
+          specialRequirements: '小红书平台专业运营'
+        },
+        recommendedRoles: [
+          {
+            roleName: '内容策划师',
+            description: '负责小红书内容策略规划',
+            responsibilities: ['策略规划', '受众分析', '内容日历'],
+            requiredSkills: ['strategy', 'analytics', 'planning']
+          },
+          {
+            roleName: '文案创作者',
+            description: '撰写吸引人的小红书笔记',
+            responsibilities: ['文案撰写', 'SEO优化', '品牌语调'],
+            requiredSkills: ['writing', 'seo', 'branding']
+          },
+          {
+            roleName: '视觉设计师',
+            description: '设计精美的封面和图片',
+            responsibilities: ['图片设计', '信息图表', '视觉风格'],
+            requiredSkills: ['design', 'illustration', 'branding']
+          }
+        ],
+        needsClarification: false,
+        clarificationQuestions: []
+      };
+    }
+
     // 需求收集阶段
     if (lowerMessage.includes('营销') || lowerMessage.includes('marketing')) {
       return {

@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import { virtualCompanyCreationService } from '../services/virtual-company-creation.service.js';
 import { ceoAgentService } from '../services/ceo-agent.service.js';
+import { nvwaxAgentService } from '../services/nvwax-agent.service.js';
 import { agentReuseService } from '../services/agent-reuse.service.js';
 import { sseProgressService } from '../services/sse-progress.service.js';
+import { databaseService } from '../services/database.service.js';
+import { nvwaxMemoryService } from '../services/nvwax-memory.service.js';
 
 /**
  * 虚拟公司创建控制器
@@ -107,7 +110,7 @@ export class VirtualCompanyCreationController {
   }
 
   /**
-   * 发送消息到会话（与 CEO Agent 对话）
+   * 发送消息到会话（与 NvwaX Agent 对话）
    * POST /api/virtual-company/sessions/:id/message
    */
   async sendMessage(req: Request, res: Response) {
@@ -132,18 +135,84 @@ export class VirtualCompanyCreationController {
         });
       }
       
-      // 使用 CEO Agent 处理消息
-      const ceoResponse = await ceoAgentService.processMessage(sessionId, content);
+      // 使用 NvwaX Agent 处理消息（替代 CEO Agent）
+      console.log(`🤖 NvwaX processing message for session ${sessionId}`);
+      
+      // 根据会话状态确定当前阶段
+      let currentPhase: any = 'requirements_gathering';
+      if (session.status === 'role_selection') {
+        currentPhase = 'team_design';
+      } else if (session.status === 'agent_searching') {
+        currentPhase = 'agent_matching';
+      } else if (session.status === 'skill_matching') {
+        currentPhase = 'skill_matching';
+      }
+      
+      const nvwaxResponse = await nvwaxAgentService.processMessage(
+        content,
+        currentPhase,
+        {
+          analysisResult: session.requirements
+        }
+      );
+      
+      // 保存 NvwaX 分析结果到会话
+      if (nvwaxResponse.analysisResult) {
+        await virtualCompanyCreationService.updateRequirements(
+          sessionId,
+          nvwaxResponse.analysisResult as any
+        );
+      }
+      
+      // 保存团队设计
+      if (nvwaxResponse.teamDesign) {
+        await virtualCompanyCreationService.updateProgress(sessionId, {
+          currentStep: 2,
+          percentage: 28,
+          steps: [
+            { stepNumber: 1, name: '需求分析', status: 'completed', message: '已完成' },
+            { stepNumber: 2, name: '团队设计', status: 'completed', message: '已完成' },
+            { stepNumber: 3, name: 'Agent 搜索', status: 'pending', message: '等待开始' },
+            { stepNumber: 4, name: 'Skill 匹配', status: 'pending', message: '等待开始' },
+            { stepNumber: 5, name: '需求确认', status: 'pending', message: '等待开始' },
+            { stepNumber: 6, name: '团队构建', status: 'pending', message: '等待开始' },
+            { stepNumber: 7, name: '保存配置', status: 'pending', message: '等待开始' }
+          ]
+        });
+      }
+      
+      // 关键修复：根据 NvwaX 响应的 phase 更新会话状态
+      const phaseToStatusMap: Record<string, string> = {
+        'requirements_gathering': 'requirements_gathering',
+        'team_design': 'role_selection',
+        'ceo_generation': 'role_selection',
+        'agent_matching': 'agent_searching',
+        'skill_matching': 'skill_matching',
+        'document_generation': 'confirming',
+        'confirming': 'confirming'
+      };
+      
+      const newStatus = phaseToStatusMap[nvwaxResponse.phase];
+      if (newStatus && newStatus !== session.status) {
+        console.log(`🔄 Updating session ${sessionId} status from ${session.status} to ${newStatus}`);
+        await virtualCompanyCreationService.updateStatus(sessionId, newStatus as any);
+      }
+      
+      // 广播进度更新（SSE 服务会自动从数据库读取最新状态）
+      sseProgressService.broadcastProgress(sessionId).catch(err => {
+        console.error('Failed to broadcast progress:', err);
+      });
       
       res.json({
         success: true,
         data: {
-          message: ceoResponse.message,
-          phase: ceoResponse.phase,
-          extractedRequirements: ceoResponse.extractedRequirements,
-          recommendedRoles: ceoResponse.recommendedRoles,
-          needsClarification: ceoResponse.needsClarification,
-          clarificationQuestions: ceoResponse.clarificationQuestions
+          message: nvwaxResponse.message,
+          phase: nvwaxResponse.phase,
+          extractedRequirements: nvwaxResponse.analysisResult,
+          recommendedRoles: nvwaxResponse.teamDesign?.roles,
+          needsClarification: nvwaxResponse.needsClarification,
+          clarificationQuestions: nvwaxResponse.clarificationQuestions,
+          nextStep: nvwaxResponse.nextStep
         }
       });
     } catch (error) {
@@ -507,6 +576,214 @@ export class VirtualCompanyCreationController {
       res.status(500).json({
         success: false,
         error: 'Failed to broadcast progress'
+      });
+    }
+  }
+
+  /**
+   * 触发 NvwaX 完整匹配流程（Agent + Skill）
+   * POST /api/virtual-company/sessions/:id/nvwax-match
+   */
+  async triggerNvwaXMatch(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const sessionId = Array.isArray(id) ? id[0] : id;
+      
+      // 验证会话存在
+      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      if (!session) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session not found'
+        });
+      }
+      
+      console.log(`🚀 Triggering NvwaX match for session ${sessionId}`);
+      
+      // 更新状态为 agent_searching
+      await virtualCompanyCreationService.updateStatus(sessionId, 'agent_searching');
+      await virtualCompanyCreationService.updateStepStatus(
+        sessionId,
+        3,
+        'in_progress',
+        '正在搜索匹配的 Agent...'
+      );
+      
+      // 广播进度更新
+      sseProgressService.broadcastProgress(sessionId).catch(err => {
+        console.error('Failed to broadcast progress:', err);
+      });
+      
+      // 从会话中获取团队设计
+      const teamDesign = (session as any).team_design || session.requirements;
+      
+      if (!teamDesign || !teamDesign.roles) {
+        return res.status(400).json({
+          success: false,
+          error: 'Team design not found. Please complete requirements gathering first.'
+        });
+      }
+      
+      // 生成 NvwaX Aiteam架构师 配置（如果尚未生成）
+      let ceoConfig = (session as any).ceo_config;
+      if (!ceoConfig) {
+        console.log('🎯 Generating CEO config...');
+        try {
+          const nvwaxResponse = await nvwaxAgentService.processMessage(
+            '生成CEO配置',
+            'ceo_generation',
+            { teamDesign }
+          );
+          
+          if (nvwaxResponse.ceoConfig) {
+            ceoConfig = nvwaxResponse.ceoConfig;
+            
+            // 保存 CEO 配置到数据库
+            const pool = databaseService.getPool();
+            await pool.query(
+              'UPDATE virtual_company_sessions SET ceo_config = $1 WHERE id = $2',
+              [JSON.stringify(ceoConfig), sessionId]
+            );
+            
+            console.log(`✅ CEO config saved: ${ceoConfig.templateName}`);
+          }
+        } catch (error) {
+          console.error('Failed to generate CEO config:', error);
+          // 继续执行，不阻断流程
+        }
+      } else {
+        console.log('✅ CEO config already exists');
+      }
+      
+      // 执行 Agent 匹配
+      console.log('🔍 Starting agent matching...');
+      const agentMatches = await nvwaxAgentService.matchAgentsForTeam(teamDesign);
+      
+      // 保存 Agent 匹配结果
+      await virtualCompanyCreationService.updateProgress(sessionId, {
+        currentStep: 3,
+        percentage: 42,
+        steps: [
+          { stepNumber: 1, name: '需求分析', status: 'completed', message: '已完成' },
+          { stepNumber: 2, name: '团队设计', status: 'completed', message: '已完成' },
+          { stepNumber: 3, name: 'Agent 搜索', status: 'completed', message: `找到 ${Object.values(agentMatches).flat().length} 个匹配 Agent` },
+          { stepNumber: 4, name: 'Skill 匹配', status: 'in_progress', message: '正在匹配 Skills...' },
+          { stepNumber: 5, name: '需求确认', status: 'pending', message: '等待开始' },
+          { stepNumber: 6, name: '团队构建', status: 'pending', message: '等待开始' },
+          { stepNumber: 7, name: '保存配置', status: 'pending', message: '等待开始' }
+        ]
+      });
+      
+      // 更新状态为 skill_matching
+      await virtualCompanyCreationService.updateStatus(sessionId, 'skill_matching');
+      
+      // 广播进度更新
+      sseProgressService.broadcastProgress(sessionId).catch(err => {
+        console.error('Failed to broadcast progress:', err);
+      });
+      
+      // 执行 Skill 匹配
+      console.log('🎯 Starting skill matching...');
+      const skillMatches = await nvwaxAgentService.matchSkillsForTeam(teamDesign);
+      
+      // 保存 Skill 匹配结果
+      await virtualCompanyCreationService.updateProgress(sessionId, {
+        currentStep: 4,
+        percentage: 57,
+        steps: [
+          { stepNumber: 1, name: '需求分析', status: 'completed', message: '已完成' },
+          { stepNumber: 2, name: '团队设计', status: 'completed', message: '已完成' },
+          { stepNumber: 3, name: 'Agent 搜索', status: 'completed', message: '已完成' },
+          { stepNumber: 4, name: 'Skill 匹配', status: 'completed', message: `找到 ${Object.values(skillMatches).filter(s => s.status === 'found').length} 个 Skills` },
+          { stepNumber: 5, name: '需求确认', status: 'in_progress', message: '等待确认' },
+          { stepNumber: 6, name: '团队构建', status: 'pending', message: '等待开始' },
+          { stepNumber: 7, name: '保存配置', status: 'pending', message: '等待开始' }
+        ]
+      });
+      
+      // 更新状态为 confirming
+      await virtualCompanyCreationService.updateStatus(sessionId, 'confirming');
+      
+      // 生成文档包
+      let documentPackage = null;
+      if (ceoConfig && teamDesign) {
+        console.log('📄 Generating document package...');
+        try {
+          const nvwaxResponse = await nvwaxAgentService.processMessage(
+            '生成文档包',
+            'document_generation',
+            { 
+              teamDesign,
+              ceoConfig,
+              teamName: (session as any).company_name || `${ceoConfig.teamType}团队`
+            }
+          );
+          
+          if (nvwaxResponse.documentPackage) {
+            documentPackage = nvwaxResponse.documentPackage;
+            
+            // 保存文档包到数据库
+            const pool = databaseService.getPool();
+            await pool.query(
+              'UPDATE virtual_company_sessions SET document_package_url = $1 WHERE id = $2',
+              ['/api/documents/download/' + sessionId, sessionId]
+            );
+            
+            console.log(`✅ Document package generated: ${documentPackage.packageInfo.totalDocuments} documents`);
+          }
+        } catch (error) {
+          console.error('Failed to generate document package:', error);
+          // 继续执行，不阻断流程
+        }
+      }
+      
+      // 广播最终进度
+      sseProgressService.broadcastProgress(sessionId).catch(err => {
+        console.error('Failed to broadcast progress:', err);
+      });
+      
+      console.log('✅ NvwaX match completed');
+      
+      // 保存记忆（异步，不阻塞响应）
+      const userId = (session as any).user_id;
+      if (ceoConfig && teamDesign && userId) {
+        console.log('💾 Saving NvwaX memory...');
+        nvwaxMemoryService.saveMemory(
+          userId,
+          ceoConfig.teamType,
+          {
+            requirements: (session as any).nvwax_analysis_result || {},
+            teamConfig: {
+              roles: teamDesign.roles,
+              estimatedSize: teamDesign.estimatedSize
+            },
+            agentMatches: agentMatches || {},
+            skillMatches: skillMatches || {},
+            successScore: 0.8, // 默认评分，后续可根据用户反馈更新
+            userFeedback: undefined
+          }
+        ).then(memoryId => {
+          console.log(`✅ Memory saved: ${memoryId}`);
+        }).catch(error => {
+          console.error('Failed to save memory:', error);
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: {
+          agentMatches,
+          skillMatches,
+          ceoConfig,
+          documentPackage,
+          status: 'confirming'
+        }
+      });
+    } catch (error) {
+      console.error('Error in triggerNvwaXMatch:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to trigger NvwaX match'
       });
     }
   }

@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Send, Building2, Loader2, Bot, User, CheckCircle, AlertCircle } from 'lucide-react';
 import { useVirtualCompanyProgress } from '@/hooks/use-virtual-company-progress';
 import VirtualCompanyProgress from './virtual-company-progress';
+import CEOConfigPreview from './CEOConfigPreview';
+import DocumentPackagePreview from './DocumentPackagePreview';
 
 interface VirtualCompanyChatModalProps {
   onClose: () => void;
@@ -12,7 +14,7 @@ interface VirtualCompanyChatModalProps {
 
 interface Message {
   id: string;
-  role: 'user' | 'ceo_agent';
+  role: 'user' | 'nvwax_agent'; // 改为 nvwax_agent
   content: string;
   timestamp: Date;
   phase?: string;
@@ -25,6 +27,35 @@ interface Message {
   }>;
   needsClarification?: boolean;
   clarificationQuestions?: string[];
+  nextStep?: string; // 添加下一步提示
+  ceoConfig?: {
+    teamType: string;
+    templateId: string;
+    templateName: string;
+    skills: string[];
+    systemPrompt: string;
+    managementStyle: string;
+    decisionRules: string[];
+  };
+  documentPackage?: {
+    documents: Array<{
+      title: string;
+      type: string;
+      content: string;
+      metadata: {
+        generatedAt: string;
+        version: string;
+        teamType: string;
+        [key: string]: unknown;
+      };
+    }>;
+    packageInfo: {
+      teamName: string;
+      teamType: string;
+      generatedAt: string;
+      totalDocuments: number;
+    };
+  };
 }
 
 export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatModalProps) {
@@ -106,10 +137,10 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
       setSessionId(data.data.id);
       // session 数据现在通过 SSE hook 自动更新
 
-      // 添加 CEO Agent 的欢迎消息
+      // 添加 NvwaX Agent 的欢迎消息
       const welcomeMessage: Message = {
         id: 'welcome',
-        role: 'ceo_agent',
+        role: 'nvwax_agent',
         content: `您好！👋 我是您的 AI 团队架构师。
 
 我将帮助您创建一个专属的 AI 团队来协助您的工作。
@@ -173,20 +204,27 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
         throw new Error(data.error || '发送消息失败');
       }
 
-      // 添加 CEO Agent 回复
-      const ceoMessage: Message = {
-        id: `ceo-${Date.now()}`,
-        role: 'ceo_agent',
+      // 添加 NvwaX Agent 回复
+      const nvwaxMessage: Message = {
+        id: `nvwax-${Date.now()}`,
+        role: 'nvwax_agent',
         content: data.data.message,
         timestamp: new Date(),
         phase: data.data.phase,
         extractedRequirements: data.data.extractedRequirements,
         recommendedRoles: data.data.recommendedRoles,
         needsClarification: data.data.needsClarification,
-        clarificationQuestions: data.data.clarificationQuestions
+        clarificationQuestions: data.data.clarificationQuestions,
+        nextStep: data.data.nextStep
       };
 
-      setMessages(prev => [...prev, ceoMessage]);
+      setMessages(prev => [...prev, nvwaxMessage]);
+
+      // 如果进入 team_design 阶段，自动触发 Agent/Skill 匹配
+      if (data.data.phase === 'team_design' && !data.data.needsClarification) {
+        console.log('🚀 Auto-triggering NvwaX match...');
+        setTimeout(() => triggerNvwaXMatch(), 1000);
+      }
 
       // 更新会话状态
       fetchSessionStatus();
@@ -204,10 +242,90 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
     // TODO: 可以移除此函数或用于其他目的
   };
 
+  /**
+   * 触发 NvwaX 完整匹配流程
+   */
+  const triggerNvwaXMatch = async () => {
+    if (!sessionId) return;
+
+    try {
+      console.log('🚀 Triggering NvwaX match...');
+      
+      // 添加系统消息
+      const systemMessage: Message = {
+        id: `system-match-${Date.now()}`,
+        role: 'nvwax_agent',
+        content: '🔍 正在搜索匹配的 Agent 和 Skills...\n\n请稍候，这可能需要几分钟时间...',
+        timestamp: new Date(),
+        phase: 'agent_matching'
+      };
+      setMessages(prev => [...prev, systemMessage]);
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${API_URL}/virtual-company/sessions/${sessionId}/nvwax-match`, {
+        method: 'POST',
+        headers,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '触发匹配失败');
+      }
+
+      console.log('✅ NvwaX match completed:', data.data);
+
+      // 添加完成消息
+      const agentMatches = data.data.agentMatches || {};
+      const skillMatches = data.data.skillMatches || {};
+      const ceoConfig = data.data.ceoConfig;
+      const agentCount = Object.values(agentMatches).flat().length;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const skillCount = Object.values(skillMatches).filter((s: any) => s.status === 'found').length;
+      
+      let content = `✅ 匹配完成！\n\n找到 ${agentCount} 个 Agent 候选\n找到 ${skillCount} 个 Skills`;
+      
+      if (ceoConfig) {
+        content += `\n\n🎯 NvwaX Aiteam架构师 配置已生成：\n- 类型：${ceoConfig.templateName}\n- 管理风格：${ceoConfig.managementStyle}\n- Skills：${ceoConfig.skills.length} 个`;
+      }
+      
+      content += '\n\n接下来将进入团队构建阶段...';
+      
+      const completeMessage: Message = {
+        id: `system-match-complete-${Date.now()}`,
+        role: 'nvwax_agent',
+        content,
+        timestamp: new Date(),
+        phase: 'confirming',
+        ceoConfig: ceoConfig || undefined
+      };
+      setMessages(prev => [...prev, completeMessage]);
+
+    } catch (error) {
+      console.error('Error triggering NvwaX match:', error);
+      const errorMessage: Message = {
+        id: `system-match-error-${Date.now()}`,
+        role: 'nvwax_agent',
+        content: '⚠️ 匹配过程出现错误，但您可以继续手动配置。',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
+  };
+
   const addSystemMessage = (content: string) => {
     const systemMessage: Message = {
       id: `system-${Date.now()}`,
-      role: 'ceo_agent',
+      role: 'nvwax_agent',
       content,
       timestamp: new Date()
     };
@@ -274,7 +392,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">创建虚拟公司</h2>
-              <p className="text-sm text-gray-600">与 CEO Agent 对话，构建您的 AI 团队</p>
+              <p className="text-sm text-gray-600">与 NvwaX Aiteam架构师 对话，构建您的 AI 团队</p>
             </div>
           </div>
           <button
@@ -295,7 +413,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
               key={message.id}
               className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              {message.role === 'ceo_agent' && (
+              {message.role === 'nvwax_agent' && (
                 <div className="w-8 h-8 bg-linear-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shrink-0">
                   <Bot className="w-5 h-5 text-white" />
                 </div>
@@ -313,14 +431,28 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                 </div>
                 
                 {/* 显示推荐角色 */}
-                {message.role === 'ceo_agent' && message.recommendedRoles && (
+                {message.role === 'nvwax_agent' && message.recommendedRoles && (
                   <div className="mt-3 pt-3 border-t border-gray-200">
                     {renderRecommendedRoles(message.recommendedRoles)}
                   </div>
                 )}
 
+                {/* 显示 CEO 配置预览 */}
+                {message.role === 'nvwax_agent' && message.ceoConfig && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <CEOConfigPreview config={message.ceoConfig} />
+                  </div>
+                )}
+
+                {/* 显示文档包预览 */}
+                {message.role === 'nvwax_agent' && message.documentPackage && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <DocumentPackagePreview docPackage={message.documentPackage} />
+                  </div>
+                )}
+
                 {/* 显示澄清问题 */}
-                {message.role === 'ceo_agent' && message.clarificationQuestions && message.clarificationQuestions.length > 0 && (
+                {message.role === 'nvwax_agent' && message.clarificationQuestions && message.clarificationQuestions.length > 0 && (
                   <div className="mt-3 flex items-start gap-2 text-sm text-blue-600">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                     <div>
@@ -387,7 +519,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
             </button>
           </div>
           <p className="text-xs text-gray-500 mt-2 text-center">
-            💡 提示：详细描述您的需求，CEO Agent 会为您推荐合适的角色配置
+            💡 提示：详细描述您的需求，NvwaX Aiteam架构师 会为您推荐合适的角色配置
           </p>
         </div>
       </div>

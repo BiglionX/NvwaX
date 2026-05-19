@@ -127,7 +127,7 @@ export default function TeamSkillDetailPage() {
               className="inline-flex items-center gap-2 px-6 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-all duration-200 hover:-translate-y-0.5"
             >
               <Sparkles size={20} />
-              与 CEO Agent 对话
+              与 NvwaX Aiteam架构师 对话
             </button>
           </div>
         </div>
@@ -339,7 +339,7 @@ export default function TeamSkillDetailPage() {
               onClick={() => setShowChat(true)}
             >
               <Sparkles size={20} />
-              与 CEO Agent 对话
+              与 NvwaX Aiteam架构师 对话
             </button>
             
             <Link
@@ -366,7 +366,7 @@ export default function TeamSkillDetailPage() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-bold">CEO Agent 对话</h3>
+              <h3 className="text-lg font-bold">NvwaX Aiteam架构师 对话</h3>
               <button onClick={() => setShowChat(false)} className="p-2 hover:bg-gray-100 rounded-full">
                 <span className="sr-only">关闭</span>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

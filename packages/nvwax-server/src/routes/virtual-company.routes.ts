@@ -12,6 +12,7 @@ router.post('/sessions', virtualCompanyCreationController.createSession);
 router.get('/sessions', virtualCompanyCreationController.getUserSessions);
 router.get('/sessions/:id', virtualCompanyCreationController.getSession);
 router.post('/sessions/:id/message', virtualCompanyCreationController.sendMessage);
+router.post('/sessions/:id/nvwax-match', virtualCompanyCreationController.triggerNvwaXMatch);
 router.put('/sessions/:id/requirements', virtualCompanyCreationController.updateRequirements);
 router.put('/sessions/:id/roles', virtualCompanyCreationController.updateRoles);
 router.get('/sessions/:id/progress', virtualCompanyCreationController.getProgress);

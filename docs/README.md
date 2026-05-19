@@ -26,6 +26,9 @@
 | 文档 | 描述 | 大小 |
 |------|------|------|
 | [项目结构说明](../PROJECT-STRUCTURE.md) | 代码组织结构 | - |
+| [NvwaX架构升级概要](./NVWAX-UPGRADE-SUMMARY.md) ⭐ | **快速了解核心变更** | 173行 |
+| [NvwaX核心架构设计](./NVWAX-CORE-ARCHITECTURE.md) ⭐ | **Aiteam创建专家系统** | 746行 |
+| [NvwaX实施计划](./NVWAX-IMPLEMENTATION-PLAN.md) ⭐ | **详细实施路线图** | 807行 |
 | [API 文档](./API-DOCUMENTATION.md) | 完整的 API 参考 | 908行 |
 | [贡献指南](../CONTRIBUTING.md) | 如何贡献代码 | - |
 | [代码规范](./CODE-STANDARDS.md) | 编码风格和最佳实践 | - |
@@ -118,12 +121,12 @@ UI/UX 设计和产品规划。
 | 类别 | 文档数量 | 总行数 |
 |------|----------|--------|
 | 用户指南 | 4 | ~800行 |
-| 开发文档 | 4 | ~1,200行 |
+| 开发文档 | 7 | ~2,920行 |
 | 项目报告 | 4 | ~1,600行 |
 | 技术文档 | 6 | ~2,500行 |
 | 设计文档 | 3 | ~700行 |
 | 代码分析 | 2 | ~300行 |
-| **总计** | **23** | **~7,100行** |
+| **总计** | **26** | **~8,820行** |
 
 ---
 
@@ -131,6 +134,21 @@ UI/UX 设计和产品规划。
 
 | 日期 | 文档 | 更新内容 |
 |------|------|----------|
+| 2026-05-19 | PHASE5-COMPLETION-REPORT.md | Phase 5 完成报告 & 项目总结 |
+| 2026-05-19 | PHASE4-COMPLETION-REPORT.md | Phase 4 完成报告 |
+| 2026-05-19 | PHASE4-PROGRESS-REPORT.md | Phase 4 进度报告 |
+| 2026-05-19 | PHASE3-FINAL-SUMMARY.md | Phase 3 最终总结 |
+| 2026-05-19 | PHASE3-COMPLETION-REPORT.md | Phase 3 完成报告 |
+| 2026-05-19 | PHASE3-PROGRESS-REPORT.md | Phase 3 进度报告 |
+| 2026-05-19 | PHASE2-FINAL-SUMMARY.md | Phase 2 最终总结 |
+| 2026-05-19 | PHASE2-COMPLETION-REPORT.md | Phase 2 完成报告 |
+| 2026-05-19 | PHASE2-PROGRESS-REPORT.md | Phase 2 进度报告 |
+| 2026-05-19 | PHASE1-FINAL-SUMMARY.md | Phase 1 最终总结 |
+| 2026-05-19 | PHASE1-COMPLETION-REPORT.md | Phase 1 完成报告 |
+| 2026-05-19 | PHASE1-PROGRESS-REPORT.md | Phase 1 实施进度报告 |
+| 2026-05-19 | NVWAX-UPGRADE-SUMMARY.md | 创建架构升级概要文档 |
+| 2026-05-19 | NVWAX-IMPLEMENTATION-PLAN.md | 创建NvwaX实施计划文档 |
+| 2026-05-19 | NVWAX-CORE-ARCHITECTURE.md | 创建NvwaX核心架构设计文档 |
 | 2026-04-25 | PROJECT-SUMMARY-2026-04.md | 创建完整项目总结 |
 | 2026-04-25 | README.md | 更新功能特性 |
 | 2026-04-25 | GETTING-STARTED.md | 添加数据库初始化 |

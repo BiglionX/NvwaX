@@ -152,7 +152,7 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 dark:text-gray-400 py-12">
             <Bot className="w-16 h-16 mx-auto mb-4 text-purple-500 opacity-80" />
-            <p className="text-lg font-medium">CEO Agent 正在等待您的消息</p>
+            <p className="text-lg font-medium">NvwaX Aiteam架构师 正在等待您的消息</p>
             <p className="text-sm mt-2">描述您想要创建的团队类型或业务目标</p>
           </div>
         ) : (
