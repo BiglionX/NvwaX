@@ -24,12 +24,16 @@ export class CEOAgentService {
   constructor() {
     this.creationService = new VirtualCompanyCreationService();
     
-    // 初始化 OpenAI 客户端
-    const apiKey = process.env.OPENAI_API_KEY;
+    // 初始化 DeepSeek 客户端（使用 OpenAI SDK，兼容 API）
+    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
     if (apiKey) {
-      this.openai = new OpenAI({ apiKey });
+      this.openai = new OpenAI({ 
+        apiKey,
+        baseURL: 'https://api.deepseek.com/v1' // DeepSeek API 端点
+      });
+      console.log('✅ DeepSeek API configured');
     } else {
-      console.warn('⚠️ OPENAI_API_KEY not configured. Using mock responses.');
+      console.warn('⚠️ DEEPSEEK_API_KEY not configured. Using mock responses.');
     }
   }
 
@@ -99,7 +103,7 @@ export class CEOAgentService {
 
     try {
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'deepseek-chat', // DeepSeek 模型
         messages,
         temperature: 0.7,
         max_tokens: 1000

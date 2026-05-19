@@ -32,7 +32,7 @@ export class NvwaLeaderService {
     // TODO: 接入真实的 LLM API
     // 当环境变量配置了 LLM API Key 时，使用 LLM 生成配置
     // 否则使用 mock 数据作为降级方案
-    const useLLM = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY;
+    const useLLM = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY;
     
     if (useLLM && isVirtualCompany) {
       // TODO: 实现真实的 LLM 调用
