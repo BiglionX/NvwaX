@@ -45,6 +45,7 @@ coverage/
 screenshot-*.png
 test-*.png
 test-result-*.json
+*.png
 
 # Temporary files
 tmp/
@@ -87,6 +88,10 @@ packages/nvwax-server/diagnose-*.mjs
 packages/nvwax-server/update-*.mjs
 
 # Cleanup script itself
- cleanup-*.ps1
- cleanup-*.sh
- cleanup-*.bat
+cleanup-*.ps1
+cleanup-*.sh
+cleanup-*.bat
+
+# Archived files (managed separately)
+docs-archive/test-screenshots/
+docs-archive/temp-files/
