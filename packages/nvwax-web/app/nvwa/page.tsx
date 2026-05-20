@@ -85,10 +85,13 @@ export default function NvwaPage() {
 
   // 添加助手消息
   const addAssistantMessage = (content: string) => {
+    // 确保 content 是字符串，避免 "Objects are not valid as a React child" 错误
+    const safeContent = typeof content === 'string' ? content : String(content);
+    
     const newMessage: Message = {
       id: Date.now().toString(),
       role: 'assistant',
-      content,
+      content: safeContent,
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, newMessage]);
@@ -355,9 +358,15 @@ export default function NvwaPage() {
           if (templates && templates.length > 0) {
             updateProgress(4, 'completed', `找到 ${templates.length} 个模板`);
             
-            const templateList = templates.map((t: TemplateResult, i: number) => 
-              `${i + 1}. **${t.name || t.title}** ⭐${t.rating || 'N/A'}/5\n   - 匹配度：${t.matchScore || 'N/A'}%\n   - 技能：${(t.skills || []).join(', ')}`
-            ).join('\n\n');
+            const templateList = templates.map((t: TemplateResult, i: number) => {
+              // 确保所有值都是字符串，避免 "Objects are not valid as a React child" 错误
+              const name = String(t.name || t.title || '未命名模板');
+              const rating = t.rating ? String(t.rating) : 'N/A';
+              const matchScore = t.matchScore ? String(t.matchScore) : 'N/A';
+              const skills = Array.isArray(t.skills) ? t.skills.map(s => String(s)).join(', ') : '无';
+              
+              return `${i + 1}. **${name}** ${rating}/5\n   - 匹配度：${matchScore}%\n   - 技能：${skills}`;
+            }).join('\n\n');
             
             addAssistantMessage(
               `✅ **找到了 ${templates.length} 个相似的模板！**\n\n${templateList}\n\n您想选择哪个模板？或者我可以为您创建一个全新的智能体。`
