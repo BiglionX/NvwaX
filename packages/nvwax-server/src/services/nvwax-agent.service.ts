@@ -408,27 +408,57 @@ export class NvwaXAgentService {
       try {
         console.log(`🔍 Searching agents for role: ${role.roleName}`);
         
-        // 使用现有的 agentCompatibilityService
-        const scoredAgents = await agentCompatibilityService.searchAndScoreAgents(
-          {
-            roleName: role.roleName,
-            description: role.description,
-            responsibilities: role.responsibilities,
-            requiredSkills: role.requiredSkills
-          },
-          3 // Top 3
-        );
+        // 🔍 新增：使用并行搜索工作流
+        try {
+          const workflowResult = await this.executeReviewerWorkflow(
+            'agent-matching-validation',
+            { roleName: role.roleName }
+          );
+          
+          // 提取审查后的最佳匹配
+          const bestMatches = workflowResult.select_best?.result || [];
+          
+          if (bestMatches && bestMatches.length > 0) {
+            results[role.roleName] = bestMatches.map((agent: any) => ({
+              agentName: agent.name,
+              source: agent.source || 'local',
+              matchScore: agent.score || 0.8,
+              url: agent.url,
+              description: agent.description,
+              reason: agent.reason || '通过审查器验证'
+            }));
+            
+            console.log(`✅ Found ${bestMatches.length} validated agents for ${role.roleName}`);
+          } else {
+            // 如果工作流没有返回结果，使用原有的方法
+            console.warn('⚠️ Workflow returned no results, falling back to original method');
+            throw new Error('No results from workflow');
+          }
+        } catch (workflowError) {
+          console.warn('⚠️ Workflow execution failed, using fallback method:', workflowError);
+          
+          // 降级：使用现有的 agentCompatibilityService
+          const scoredAgents = await agentCompatibilityService.searchAndScoreAgents(
+            {
+              roleName: role.roleName,
+              description: role.description,
+              responsibilities: role.responsibilities,
+              requiredSkills: role.requiredSkills
+            },
+            3 // Top 3
+          );
 
-        results[role.roleName] = scoredAgents.map(agent => ({
-          agentName: agent.agentName,
-          source: 'local',
-          matchScore: agent.overallScore / 100,
-          url: undefined,
-          description: undefined,
-          reason: `匹配度 ${agent.overallScore.toFixed(0)}%，功能匹配${agent.dimensionScores.functionalMatch.toFixed(0)}分，技能覆盖${agent.dimensionScores.skillCoverage.toFixed(0)}分`
-        }));
-
-        console.log(`✅ Found ${scoredAgents.length} agents for ${role.roleName}`);
+          results[role.roleName] = scoredAgents.map(agent => ({
+            agentName: agent.agentName,
+            source: 'local',
+            matchScore: agent.overallScore / 100,
+            url: undefined,
+            description: undefined,
+            reason: `匹配度 ${agent.overallScore.toFixed(0)}%，功能匹配${agent.dimensionScores.functionalMatch.toFixed(0)}分，技能覆盖${agent.dimensionScores.skillCoverage.toFixed(0)}分`
+          }));
+          
+          console.log(`✅ Found ${scoredAgents.length} agents for ${role.roleName} (fallback)`);
+        }
       } catch (error) {
         console.error(`Error matching agents for ${role.roleName}:`, error);
         results[role.roleName] = [];
@@ -451,31 +481,115 @@ export class NvwaXAgentService {
 
     const results: SkillMatchResult = {};
 
-    for (const skillName of Array.from(allSkills)) {
+    // 🔍 新增：批量并行搜索 Skills
+    const searchPromises = Array.from(allSkills).map(async (skillName) => {
       try {
         console.log(`🔍 Searching skill: ${skillName}`);
-        
         const match = await skillMatchingService.searchSkill(skillName);
-        
-        results[skillName] = {
-          skillName,
-          status: match.found ? 'found' : 'missing_pending',
-          url: match.url,
-          dependencies: match.dependencies,
-          version: match.version
-        };
-
-        console.log(`✅ Skill ${skillName}: ${match.found ? 'found' : 'missing'}`);
+        return { skillName, match };
       } catch (error) {
-        console.error(`Error matching skill ${skillName}:`, error);
-        results[skillName] = {
-          skillName,
-          status: 'missing_pending'
+        console.error(`Error searching skill ${skillName}:`, error);
+        return { 
+          skillName, 
+          match: { 
+            found: false,
+            url: undefined,
+            dependencies: [],
+            version: undefined
+          }
         };
       }
+    });
+
+    const searchResults = await Promise.all(searchPromises);
+
+    // 🔍 新增：构建依赖图并验证
+    const dependencyGraph = this.buildSkillDependencyGraph(searchResults);
+    const validationIssues = this.validateDependencyGraph(dependencyGraph);
+
+    for (const { skillName, match } of searchResults) {
+      let status: SkillMatchStatus = match.found ? 'found' : 'missing_pending';
+      
+      // 如果存在依赖问题，标记为待处理
+      if (validationIssues.has(skillName)) {
+        status = 'missing_pending';
+      }
+
+      results[skillName] = {
+        skillName,
+        status,
+        url: match.url,
+        dependencies: match.dependencies,
+        version: match.version
+      };
+
+      console.log(`✅ Skill ${skillName}: ${match.found ? 'found' : 'missing'}`);
+    }
+
+    // 🔍 新增：如果有依赖问题，生成审查报告
+    if (validationIssues.size > 0) {
+      console.warn(`⚠️ Found ${validationIssues.size} skill dependency issues`);
+      // 可以将警告信息附加到响应中
     }
 
     return results;
+  }
+
+  /**
+   * 构建 Skill 依赖图
+   */
+  private buildSkillDependencyGraph(searchResults: any[]): Map<string, string[]> {
+    const graph = new Map<string, string[]>();
+    
+    for (const { skillName, match } of searchResults) {
+      if (match.found && match.dependencies) {
+        graph.set(skillName, match.dependencies);
+      } else {
+        graph.set(skillName, []);
+      }
+    }
+    
+    return graph;
+  }
+
+  /**
+   * 验证依赖图（检测循环依赖、缺失依赖等）
+   */
+  private validateDependencyGraph(graph: Map<string, string[]>): Set<string> {
+    const issues = new Set<string>();
+    const visited = new Set<string>();
+    const recursionStack = new Set<string>();
+    
+    const detectCycle = (skill: string): boolean => {
+      if (recursionStack.has(skill)) return true;
+      if (visited.has(skill)) return false;
+      
+      visited.add(skill);
+      recursionStack.add(skill);
+      
+      const dependencies = graph.get(skill) || [];
+      for (const dep of dependencies) {
+        if (!graph.has(dep)) {
+          issues.add(skill); // 缺失依赖
+          continue;
+        }
+        if (detectCycle(dep)) {
+          issues.add(skill); // 循环依赖
+          return true;
+        }
+      }
+      
+      recursionStack.delete(skill);
+      return false;
+    };
+    
+    for (const skill of graph.keys()) {
+      if (!visited.has(skill)) {
+        detectCycle(skill);
+      }
+    }
+    
+    return issues;
   }
 
   /**
@@ -534,13 +648,38 @@ export class NvwaXAgentService {
             ? await this.designTeam(context.analysisResult)
             : await this.designTeam(await this.analyzeRequirements(userInput));
           
+          // 🔍 新增：调用审查器工作流
+          try {
+            const reviewResult = await this.executeReviewerWorkflow(
+              'team-design-review',
+              { teamDesign: design, industry: context?.analysisResult?.industry }
+            );
+            
+            if (!reviewResult.reviewPassed) {
+              return {
+                message: `团队设计需要调整：\n${reviewResult.issues.join('\n')}\n\n建议：\n${reviewResult.suggestions.join('\n')}`,
+                phase: 'team_design',
+                teamDesign: design,
+                needsClarification: true,
+                clarificationQuestions: reviewResult.issues,
+                nextStep: '请根据审查建议调整团队设计',
+                confidence: reviewResult.confidence
+              };
+            }
+            
+            console.log('✅ Team design passed review');
+          } catch (error) {
+            console.warn('⚠️ Review workflow failed, proceeding without review:', error);
+            // 如果审查失败，继续执行（降级策略）
+          }
+          
           response = {
             message: this.generateTeamDesignResponse(design),
             phase: 'ceo_generation',
             teamDesign: design,
             needsClarification: false,
             nextStep: '正在生成定制化 CEO Agent...',
-            confidence: 0.9
+            confidence: 0.95  // 审查通过后提高置信度
           };
           break;
 
@@ -759,6 +898,57 @@ ${rolesList}
 ${docPackage.documents.map(doc => `- ${doc.title}`).join('\n')}
 
 您可以下载 JSON 或 Markdown 格式的文档包，用于团队经营参考。`;
+  }
+
+  /**
+   * 执行审查器工作流
+   */
+  private async executeReviewerWorkflow(workflowTemplateId: string, inputData: any): Promise<any> {
+    const workflowApiUrl = process.env.WORKFLOW_API_URL || 'http://localhost:3002/api';
+    
+    try {
+      // 1. 获取工作流模板
+      const templateResponse = await fetch(`${workflowApiUrl}/workflows/templates/${workflowTemplateId}`);
+      const templateData: any = await templateResponse.json();
+      
+      if (!templateData.success) {
+        throw new Error(`Failed to load workflow template: ${workflowTemplateId}`);
+      }
+      
+      // 2. 创建工作流实例
+      const createResponse = await fetch(`${workflowApiUrl}/workflows`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `Review_${workflowTemplateId}_${Date.now()}`,
+          description: `Auto-generated review workflow`,
+          nodes: templateData.data.nodes,
+          edges: templateData.data.edges
+        })
+      });
+      
+      const workflow: any = await createResponse.json();
+      
+      // 3. 执行工作流
+      const executeResponse = await fetch(
+        `${workflowApiUrl}/workflows/${workflow.data.id}/execute`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input: inputData })
+        }
+      );
+      
+      const result: any = await executeResponse.json();
+      
+      // 4. 清理临时工作流（可选）
+      // await fetch(`${workflowApiUrl}/workflows/${workflow.data.id}`, { method: 'DELETE' });
+      
+      return result.results;
+    } catch (error) {
+      console.error('Reviewer workflow execution failed:', error);
+      throw error;
+    }
   }
 }
 

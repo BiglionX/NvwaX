@@ -595,7 +595,8 @@ export class VirtualCompanyCreationController {
     try {
       const { id } = req.params;
       const sessionId = Array.isArray(id) ? id[0] : id;
-      const userId = (req as any).user?.id;
+      // 支持普通用户和管理员
+      const userId = (req as any).user?.id || (req as any).admin?.id;
 
       if (!userId) {
         return res.status(401).json({
@@ -713,7 +714,8 @@ export class VirtualCompanyCreationController {
     try {
       const { id } = req.params;
       const sessionId = Array.isArray(id) ? id[0] : id;
-      const userId = (req as any).user?.id;
+      // 支持普通用户和管理员
+      const userId = (req as any).user?.id || (req as any).admin?.id;
 
       if (!userId) {
         return res.status(401).json({
@@ -816,7 +818,8 @@ export class VirtualCompanyCreationController {
     try {
       const { id } = req.params;
       const sessionId = Array.isArray(id) ? id[0] : id;
-      const userId = (req as any).user?.id;
+      // 支持普通用户和管理员
+      const userId = (req as any).user?.id || (req as any).admin?.id;
 
       if (!userId) {
         return res.status(401).json({
@@ -1115,6 +1118,108 @@ export class VirtualCompanyCreationController {
       res.status(500).json({
         success: false,
         error: 'Failed to trigger NvwaX match'
+      });
+    }
+  }
+
+  /**
+   * 发布虚拟公司到 Agent 广场
+   * POST /api/virtual-company/sessions/:id/publish-to-marketplace
+   */
+  async publishToMarketplace(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const sessionId = Array.isArray(id) ? id[0] : id;
+      // 支持普通用户和管理员
+      const userId = (req as any).user?.id || (req as any).admin?.id;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'User not authenticated'
+        });
+      }
+
+      console.log(`🚀 Publishing virtual company to marketplace for session ${sessionId}...`);
+
+      // 获取会话
+      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      if (!session) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session not found'
+        });
+      }
+
+      // 获取完整的团队配置
+      const pool = databaseService.getPool();
+      const result = await pool.query(
+        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM virtual_company_sessions WHERE id = $1',
+        [sessionId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session data not found'
+        });
+      }
+
+      const rowData = result.rows[0];
+      const teamDesign = rowData.team_design;
+      const ceoConfig = rowData.ceo_config;
+
+      if (!teamDesign || !ceoConfig) {
+        return res.status(400).json({
+          success: false,
+          error: 'Team configuration not complete'
+        });
+      }
+
+      // 将团队配置转换为 Team Skill 并发布到市场
+      // 这里需要调用 team_skills 表的插入逻辑
+      const { v4: uuidv4 } = await import('uuid');
+      const teamSkillId = uuidv4();
+      
+      // 从 CEO 配置中提取团队信息
+      const teamName = ceoConfig.teamType ? `${ceoConfig.teamType}团队` : 'AI团队';
+      const teamDescription = `由 NvwaX 创建的${teamName}，包含 ${teamDesign.roles?.length || 0} 个专业角色。`;
+      
+      // 插入到 team_skills 表，设置为公开
+      await pool.query(
+        `INSERT INTO team_skills 
+          (id, name, description, category, leader_config, roles, workflow, binding_rules, author_id, is_public, version, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        [
+          teamSkillId,
+          teamName,
+          teamDescription,
+          'virtual-company',
+          JSON.stringify(ceoConfig),
+          JSON.stringify(teamDesign.roles || []),
+          JSON.stringify({}), // workflow
+          JSON.stringify({}), // binding_rules
+          userId,
+          true, // is_public - 发布到市场
+          '1.0.0'
+        ]
+      );
+
+      console.log(`✅ Virtual company published to marketplace: ${teamSkillId}`);
+
+      res.json({
+        success: true,
+        data: {
+          teamSkillId,
+          teamName,
+          message: '虚拟公司已成功发布到 Agent 广场'
+        }
+      });
+    } catch (error) {
+      console.error('Error in publishToMarketplace:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to publish to marketplace'
       });
     }
   }

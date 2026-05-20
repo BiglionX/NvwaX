@@ -11,6 +11,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import { HumanMessage } from '@langchain/core/messages';
 import { orchestrator } from './agents/orchestrator.js';
 import { AGENT_TYPES } from './agents/agent-definitions.js';
+import { generateReviewPrompt } from './nodes/reviewer-prompts.js';
 
 // Load environment variables
 dotenv.config();
@@ -31,7 +32,8 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-console.log('✅ Database initialized at:', process.env.DATABASE_PATH || join(dataDir, 'workflows.db'));
+const dbPath = process.env.DATABASE_PATH || join(dataDir, 'workflows.db');
+console.log('✅ Database initialized at:', dbPath);
 
 // ==================== Routes ====================
 
@@ -414,20 +416,40 @@ async function llmNode(params) {
   
   console.log('🤖 Calling LLM with model:', model);
   
-  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
-    console.warn('⚠️ OpenAI API key not configured, returning mock response');
+  // Check for DeepSeek API key first
+  const hasDeepSeekKey = process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_API_KEY !== 'your_deepseek_api_key_here';
+  const hasOpenAIKey = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here';
+  
+  if (!hasDeepSeekKey && !hasOpenAIKey) {
+    console.warn('⚠️ No API key configured, returning mock response');
     return {
-      response: 'This is a mock LLM response. Please configure OPENAI_API_KEY in .env file.',
+      response: 'This is a mock LLM response. Please configure DEEPSEEK_API_KEY or OPENAI_API_KEY in .env file.',
       model: model
     };
   }
   
   try {
-    const chatModel = new ChatOpenAI({
-      modelName: model,
-      temperature: temperature,
-      openAIApiKey: process.env.OPENAI_API_KEY
-    });
+    let chatModel;
+    
+    // Use DeepSeek if available and model starts with 'deepseek'
+    if (hasDeepSeekKey && (model.startsWith('deepseek') || !hasOpenAIKey)) {
+      console.log('Using DeepSeek API');
+      chatModel = new ChatOpenAI({
+        modelName: model === 'deepseek-chat' ? 'deepseek-chat' : model,
+        temperature: temperature,
+        openAIApiKey: process.env.DEEPSEEK_API_KEY,
+        configuration: {
+          baseURL: 'https://api.deepseek.com/v1'
+        }
+      });
+    } else {
+      console.log('Using OpenAI API');
+      chatModel = new ChatOpenAI({
+        modelName: model,
+        temperature: temperature,
+        openAIApiKey: process.env.OPENAI_API_KEY
+      });
+    }
     
     const response = await chatModel.invoke([new HumanMessage(prompt)]);
     
@@ -512,6 +534,132 @@ async function dataTransformNode(params) {
   }
 }
 
+// Reviewer Node - Quality Gate
+async function reviewerNode(params) {
+  const { 
+    reviewType,        // 'team_design' | 'agent_match' | 'skill_match' | 'final_config' | 'nvwa_agent_config' | 'skill_dependency_check' | 'template_compatibility'
+    dataToReview,      // 待审查的数据
+    qualityCriteria,   // 质量标准配置
+    context           // 上下文信息
+  } = params;
+  
+  console.log(`🔍 Reviewing ${reviewType}...`);
+  
+  const prompt = generateReviewPrompt(reviewType, dataToReview, qualityCriteria);
+  
+  try {
+    const llmResult = await llmNode({ 
+      prompt, 
+      model: process.env.REVIEWER_MODEL || 'gpt-4', 
+      temperature: parseFloat(process.env.REVIEWER_TEMPERATURE) || 0.2  // 低温度保证审查一致性
+    });
+    
+    // 尝试解析 JSON 响应
+    let review;
+    try {
+      const jsonMatch = llmResult.response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        review = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('No valid JSON found in response');
+      }
+    } catch (parseError) {
+      console.error('Failed to parse review response:', parseError);
+      return {
+        reviewPassed: false,
+        issues: ['审查结果解析失败'],
+        suggestions: ['请重试或联系管理员'],
+        confidence: 0.0,
+        reviewDetails: { raw_response: llmResult.response }
+      };
+    }
+    
+    return {
+      reviewPassed: review.passed,
+      issues: review.issues || [],
+      suggestions: review.suggestions || [],
+      confidence: review.confidence || 0.8,
+      reviewDetails: review
+    };
+  } catch (error) {
+    console.error('Review failed:', error.message);
+    return {
+      reviewPassed: false,
+      issues: ['审查过程出错'],
+      suggestions: ['请重试或联系管理员'],
+      confidence: 0.0
+    };
+  }
+}
+
+// Parallel Search Node - Fan-out Pattern
+async function parallelSearchNode(params) {
+  const { 
+    searchTasks,     // 并行搜索任务数组
+    timeout = parseInt(process.env.PARALLEL_SEARCH_TIMEOUT) || 30000  // 超时时间（毫秒）
+  } = params;
+  
+  console.log(`⚡ Starting parallel search with ${searchTasks.length} tasks...`);
+  
+  const promises = searchTasks.map(async (task) => {
+    try {
+      const result = await Promise.race([
+        executeSearchTask(task),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), timeout)
+        )
+      ]);
+      
+      return {
+        taskId: task.id,
+        success: true,
+        result
+      };
+    } catch (error) {
+      console.warn(`⚠️ Search task ${task.id} failed:`, error.message);
+      return {
+        taskId: task.id,
+        success: false,
+        error: error.message
+      };
+    }
+  });
+  
+  const results = await Promise.all(promises);
+  
+  return {
+    totalTasks: searchTasks.length,
+    successfulTasks: results.filter(r => r.success).length,
+    failedTasks: results.filter(r => !r.success).length,
+    results: results.reduce((acc, r) => {
+      acc[r.taskId] = r;
+      return acc;
+    }, {})
+  };
+}
+
+// Helper function to execute individual search tasks
+async function executeSearchTask(task) {
+  switch (task.type) {
+    case 'github_search':
+      // TODO: Implement GitHub agent search
+      console.log('Searching GitHub for:', task.query);
+      return { source: 'github', query: task.query, results: [] };
+    case 'huggingface_search':
+      // TODO: Implement HuggingFace agent search
+      console.log('Searching HuggingFace for:', task.query);
+      return { source: 'huggingface', query: task.query, results: [] };
+    case 'skill_search':
+      return await skillhubClient.searchSkills({ 
+        query: task.query,
+        limit: task.limit || 10,
+        page: task.page || 1
+      });
+    default:
+      throw new Error(`Unknown search type: ${task.type}`);
+  }
+}
+
 // Node registry
 const nodeRegistry = {
   'skillhub_search': skillhubSearchNode,
@@ -523,7 +671,9 @@ const nodeRegistry = {
   'text_process': textProcessNode,
   'condition': conditionNode,
   'agent_router': agentRouterNode,
-  'data_transform': dataTransformNode
+  'data_transform': dataTransformNode,
+  'reviewer': reviewerNode,
+  'parallel_search': parallelSearchNode
 };
 
 // ==================== Workflow Execution ====================

@@ -5,7 +5,7 @@ export interface Agent {
   id: string;
   name: string;
   description: string;
-  source: 'github' | 'huggingface' | 'custom';
+  source: 'github' | 'huggingface' | 'gitee' | 'modelscope' | 'custom';
   url: string;
   download_url?: string;
   stars?: number;
@@ -43,20 +43,38 @@ export class AgentSearchService {
         };
       }
 
-      // 第二步：本地无结果，进行全网搜索
+      // 第二步：本地无结果，进行全网搜索（并行搜索多个源）
       console.log(`No local results, searching online for: ${query}`);
-      const results = await Promise.allSettled([
+      
+      // 并行搜索 GitHub、Gitee 和 ModelScope
+      const [githubResult, giteeResult, modelscopeResult] = await Promise.allSettled([
         this.searchGitHub(query),
-        this.searchHuggingFace(query)
+        this.searchGitee(query),
+        this.searchModelScope(query)
       ]);
-
+      
       const agents: Agent[] = [];
       
-      results.forEach(result => {
-        if (result.status === 'fulfilled') {
-          agents.push(...result.value);
-        }
-      });
+      if (githubResult.status === 'fulfilled') {
+        agents.push(...githubResult.value);
+        console.log(`✅ GitHub search: ${githubResult.value.length} results`);
+      } else {
+        console.warn('⚠️ GitHub search failed:', githubResult.reason);
+      }
+      
+      if (giteeResult.status === 'fulfilled') {
+        agents.push(...giteeResult.value);
+        console.log(`✅ Gitee search: ${giteeResult.value.length} results`);
+      } else {
+        console.warn('⚠️ Gitee search failed:', giteeResult.reason);
+      }
+      
+      if (modelscopeResult.status === 'fulfilled') {
+        agents.push(...modelscopeResult.value);
+        console.log(`✅ ModelScope search: ${modelscopeResult.value.length} results`);
+      } else {
+        console.warn('⚠️ ModelScope search failed:', modelscopeResult.reason);
+      }
 
       // 分页处理
       const start = (page - 1) * limit;
@@ -125,6 +143,75 @@ export class AgentSearchService {
       }));
     } catch (error) {
       console.error('Error searching HuggingFace:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 搜索 Gitee（码云）- 国内代码托管平台
+   */
+  private async searchGitee(query: string): Promise<Agent[]> {
+    try {
+      // Gitee API 文档: https://gitee.com/api/v5/swagger#/getV5SearchRepositories
+      const response = await axios.get('https://gitee.com/api/v5/search/repositories', {
+        params: {
+          q: `${query} agent ai`,
+          page: 1,
+          per_page: 10,
+          sort: 'stars_count',
+          order: 'desc'
+        },
+        timeout: 5000 // 5秒超时
+      });
+
+      return response.data.map((repo: any) => ({
+        id: `gitee-${repo.id}`,
+        name: repo.full_name || repo.path_with_namespace,
+        description: repo.description || '暂无描述',
+        source: 'gitee' as const,
+        url: repo.html_url || `https://gitee.com/${repo.namespace}/${repo.path}`,
+        stars: repo.stars_count || repo.watchers_count || 0,
+        tags: repo.language ? [repo.language] : [],
+        author: repo.namespace?.name || repo.owner?.login
+      }));
+    } catch (error) {
+      console.error('Error searching Gitee:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 搜索 ModelScope（魔搭社区）- 阿里达摩院 AI 模型平台
+   */
+  private async searchModelScope(query: string): Promise<Agent[]> {
+    try {
+      // ModelScope API: 搜索模型
+      const response = await axios.get('https://www.modelscope.cn/api/v1/models', {
+        params: {
+          search: query,
+          pageSize: 10,
+          pageNumber: 1,
+          sort: 'downloadCount',
+          direction: 'DESC'
+        },
+        timeout: 5000 // 5秒超时
+      });
+
+      // ModelScope API 返回格式可能不同，需要适配
+      const models = response.data.Data?.models || response.data.models || [];
+      
+      return models.map((model: any) => ({
+        id: `modelscope-${model.ModelId || model.id}`,
+        name: model.Name || model.modelName || model.id,
+        description: model.Summary || model.description || '暂无描述',
+        source: 'modelscope' as const,
+        url: `https://www.modelscope.cn/models/${model.ModelId || model.id}`,
+        downloads: model.DownloadCount || model.downloads || 0,
+        tags: model.Tags || model.tags || [],
+        author: model.Nickname || model.author || model.username
+      }));
+    } catch (error) {
+      console.error('Error searching ModelScope:', error);
       return [];
     }
   }

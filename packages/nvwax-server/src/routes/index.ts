@@ -8,6 +8,7 @@ import { teamSkillController } from '../controllers/team-skill.controller.js';
 import { userAuthMiddleware } from '../middleware/user-auth.middleware.js';
 import teamSkillRouter from './team-skill.routes.js';
 import nvwaLeaderRouter from './nvwa-leader.routes.js';
+import nvwaAgentRouter from './nvwa-agent.routes.js';
 import virtualCompanyRouter from './virtual-company.routes.js';
 import teamExecutionRouter from './team-execution.routes.js';
 import adminRouter from './admin.routes.js';
@@ -91,6 +92,9 @@ router.get('/team-skill-builds/:jobId', teamSkillController.getBuildStatus);
 
 // Nvwa Leader routes
 router.use('/nvwa', nvwaLeaderRouter);
+
+// Nvwa Agent routes (single agent creation)
+router.use('/nvwa-agent', nvwaAgentRouter);
 
 // Virtual Company Creation routes
 router.use('/virtual-company', virtualCompanyRouter);

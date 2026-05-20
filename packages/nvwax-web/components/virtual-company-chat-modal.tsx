@@ -68,6 +68,12 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
   const [isConfirming, setIsConfirming] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareContent, setShareContent] = useState({ title: '', content: '', url: '' });
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successData, setSuccessData] = useState<{
+    downloadUrl: string;
+    documentPackage?: Message['documentPackage'];
+  } | null>(null);
+  const [autoPublishToMarketplace, setAutoPublishToMarketplace] = useState(true); // 默认勾选自动发布
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 使用 SSE Hook 追踪进度
@@ -370,6 +376,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
         headers['Authorization'] = `Bearer ${token}`;
       }
       
+      // Step 1: 确认并保存团队
       const response = await fetch(`${API_URL}/virtual-company/sessions/${sessionId}/confirm`, {
         method: 'POST',
         headers,
@@ -383,15 +390,53 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
 
       console.log('✅ Team confirmed and saved:', data.data);
 
-      // 添加成功消息
+      // Step 2: 如果勾选了自动发布，则发布到市场
+      let publishResult = null;
+      if (autoPublishToMarketplace && sessionId) {
+        try {
+          console.log('🚀 Auto-publishing to marketplace...');
+          const publishResponse = await fetch(`${API_URL}/virtual-company/sessions/${sessionId}/publish-to-marketplace`, {
+            method: 'POST',
+            headers,
+          });
+
+          const publishData = await publishResponse.json();
+
+          if (publishResponse.ok && publishData.success) {
+            publishResult = publishData.data;
+            console.log('✅ Published to marketplace:', publishResult);
+          } else {
+            console.warn('⚠️ Auto-publish failed:', publishData.error);
+          }
+        } catch (publishError) {
+          console.error('Error auto-publishing:', publishError);
+          // 不阻断流程，继续显示成功消息
+        }
+      }
+
+      // 设置成功数据并显示弹窗（不再在对话中显示按钮）
+      setSuccessData({
+        downloadUrl: data.data.downloadUrl,
+        documentPackage: data.data.documentPackage
+      });
+      setShowSuccessModal(true);
+
+      // 添加成功消息（包含发布状态）
+      let successContent = `✅ 太棒了！团队已成功保存到我的Agent仓库！\n\n📦 文档包已生成，请查看右侧弹窗进行下一步操作。`;
+      
+      if (autoPublishToMarketplace && publishResult) {
+        successContent += `\n\n🎉 已自动发布到 Agent 广场！您现在可以在市场中看到这个团队了。`;
+      } else if (autoPublishToMarketplace && !publishResult) {
+        successContent += `\n\n⚠️ 自动发布失败，您可以稍后在我的 Agent 仓库中手动发布。`;
+      }
+      
       const successMessage: Message = {
         id: `system-confirm-success-${Date.now()}`,
         role: 'nvwax_agent',
-        content: `✅ 太棒了！团队已成功保存到我的Agent仓库！\n\n📦 文档包已生成，现在可以下载或集成到 ProClaw 工作流中。`,
+        content: successContent,
         timestamp: new Date(),
-        documentPackage: data.data.documentPackage,
-        showActionButtons: true,
-        downloadUrl: data.data.downloadUrl
+        documentPackage: data.data.documentPackage
+        // 注意：不再设置 showActionButtons 和 downloadUrl
       };
       setMessages(prev => [...prev, successMessage]);
 
@@ -740,6 +785,26 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                 {/* 显示确认按钮 - 更醒目的设计 */}
                 {message.role === 'nvwax_agent' && message.showConfirmButton && (
                   <div className="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    {/* 自动发布到市场选项 */}
+                    <div className="mb-4 p-3 bg-linear-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={autoPublishToMarketplace}
+                          onChange={(e) => setAutoPublishToMarketplace(e.target.checked)}
+                          className="mt-1 w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                        />
+                        <div className="flex-1">
+                          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            🚀 自动发布到 Agent 广场
+                          </span>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                            保存后自动将团队发布到公开市场，其他用户可以发现和使用
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                    
                     <button
                       onClick={handleConfirmAndSave}
                       disabled={isConfirming}
@@ -770,32 +835,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                   </div>
                 )}
 
-                {/* 显示操作按钮（下载 + 集成到ProClaw + 分享）- 更好的布局 */}
-                {message.role === 'nvwax_agent' && message.showActionButtons && message.downloadUrl && (
-                  <div className="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
-                    <button
-                      onClick={() => handleDownload(message.downloadUrl!)}
-                      className="w-full px-6 py-3.5 bg-linear-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-200 dark:hover:shadow-blue-900/30 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
-                    >
-                      <Send className="w-5 h-5" />
-                      <span>下载文档包</span>
-                    </button>
-                    <button
-                      onClick={() => handleIntegrateToProClaw(sessionId!)}
-                      className="w-full px-6 py-3.5 bg-linear-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white rounded-xl hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
-                    >
-                      <Building2 className="w-5 h-5" />
-                      <span>集成到 ProClaw</span>
-                    </button>
-                    <button
-                      onClick={handleShare}
-                      className="w-full px-6 py-3.5 bg-linear-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-orange-200 dark:hover:shadow-orange-900/30 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
-                    >
-                      <Share2 className="w-5 h-5" />
-                      <span>分享给朋友</span>
-                    </button>
-                  </div>
-                )}
+                {/* 注意：操作按钮已移至成功弹窗，不再在对话中显示 */}
 
                 {/* 显示澄清问题 - 更友好的样式 */}
                 {message.role === 'nvwax_agent' && message.clarificationQuestions && message.clarificationQuestions.length > 0 && (
@@ -871,6 +911,103 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
           </section>
         </div>
       </div>
+
+      {/* 创建成功弹窗 - 显示下一步操作 */}
+      {showSuccessModal && successData && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-60 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b bg-linear-to-r from-green-50 to-emerald-50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-linear-to-r from-green-500 to-emerald-500 rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">🎉 虚拟公司创建成功！</h2>
+                  <p className="text-sm text-gray-600">选择您的下一步操作</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              {/* 团队信息预览 */}
+              {successData.documentPackage && (
+                <div className="bg-linear-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4">
+                  <h3 className="font-bold text-purple-900 mb-2">
+                    {successData.documentPackage.packageInfo.teamName}
+                  </h3>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <p>📊 团队类型：{successData.documentPackage.packageInfo.teamType}</p>
+                    <p>📄 文档数量：{successData.documentPackage.packageInfo.totalDocuments} 个</p>
+                    <p>⏰ 生成时间：{new Date(successData.documentPackage.packageInfo.generatedAt).toLocaleString('zh-CN')}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* 操作按钮 */}
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    handleDownload(successData.downloadUrl);
+                    setShowSuccessModal(false);
+                  }}
+                  className="w-full px-6 py-3.5 bg-linear-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-200 dark:hover:shadow-blue-900/30 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
+                >
+                  <Send className="w-5 h-5" />
+                  <span>下载文档包</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    if (sessionId) {
+                      await handleIntegrateToProClaw(sessionId);
+                      setShowSuccessModal(false);
+                    }
+                  }}
+                  className="w-full px-6 py-3.5 bg-linear-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white rounded-xl hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
+                >
+                  <Building2 className="w-5 h-5" />
+                  <span>集成到 ProClaw</span>
+                </button>
+                <button
+                  onClick={() => {
+                    handleShare();
+                    setShowSuccessModal(false);
+                  }}
+                  className="w-full px-6 py-3.5 bg-linear-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-orange-200 dark:hover:shadow-orange-900/30 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
+                >
+                  <Share2 className="w-5 h-5" />
+                  <span>分享给朋友</span>
+                </button>
+              </div>
+
+              {/* 提示 */}
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-blue-700">
+                  💡 您可以稍后在我的 Agent 仓库中查看和管理这个虚拟公司。
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t bg-gray-50">
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 分享弹窗 */}
       {showShareModal && (

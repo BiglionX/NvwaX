@@ -100,6 +100,143 @@ export const agentWorkflowTemplates = {
       { from: 'search', to: 'analyze' },
       { from: 'analyze', to: 'detail' }
     ]
+  },
+  
+  'team-design-review': {
+    name: 'Team Design Review Workflow',
+    description: '审查团队设计的合理性和完整性',
+    nodes: [
+      {
+        id: 'validate_structure',
+        type: 'reviewer',
+        params: {
+          reviewType: 'team_design',
+          dataToReview: '{{input.teamDesign}}',
+          qualityCriteria: {
+            minRoles: 3,
+            maxRoles: 5,
+            requireWorkflow: true
+          }
+        }
+      },
+      {
+        id: 'check_completeness',
+        type: 'llm',
+        params: {
+          prompt: '检查团队设计中是否遗漏了关键角色：{{input.teamDesign}}\n\n行业标准参考：{{input.industry}}'
+        }
+      },
+      {
+        id: 'final_decision',
+        type: 'condition',
+        params: {
+          condition: 'validate_structure.reviewPassed && check_completeness.response.includes("complete")'
+        }
+      }
+    ],
+    edges: [
+      { from: 'validate_structure', to: 'check_completeness' },
+      { from: 'check_completeness', to: 'final_decision' }
+    ]
+  },
+  
+  'agent-matching-validation': {
+    name: 'Agent Matching Validation',
+    description: '验证 Agent 匹配结果的准确性和兼容性',
+    nodes: [
+      {
+        id: 'parallel_search',
+        type: 'parallel_search',
+        params: {
+          searchTasks: [
+            { id: 'github', type: 'github_search', query: '{{input.roleName}}' },
+            { id: 'hf', type: 'huggingface_search', query: '{{input.roleName}}' }
+          ]
+        }
+      },
+      {
+        id: 'score_review',
+        type: 'reviewer',
+        params: {
+          reviewType: 'agent_match',
+          dataToReview: '{{parallel_search.results}}'
+        }
+      },
+      {
+        id: 'select_best',
+        type: 'data_transform',
+        params: {
+          operation: 'extract_field',
+          field: 'bestMatch'
+        }
+      }
+    ],
+    edges: [
+      { from: 'parallel_search', to: 'score_review' },
+      { from: 'score_review', to: 'select_best' }
+    ]
+  },
+  
+  'nvwa-agent-config-review': {
+    name: 'Nvwa Agent Configuration Review',
+    description: '审查 Nvwa Agent 配置的完整性和合理性',
+    nodes: [
+      {
+        id: 'validate_config',
+        type: 'reviewer',
+        params: {
+          reviewType: 'nvwa_agent_config',
+          dataToReview: '{{input.agentConfig}}',
+          qualityCriteria: {
+            requiredFields: ['name', 'description', 'dataSources', 'outputs', 'skills'],
+            minSkills: 2,
+            maxSkills: 10
+          }
+        }
+      },
+      {
+        id: 'check_dependencies',
+        type: 'reviewer',
+        params: {
+          reviewType: 'skill_dependency_check',
+          dataToReview: '{{input.agentConfig.skills}}'
+        }
+      },
+      {
+        id: 'final_validation',
+        type: 'reviewer',
+        params: {
+          reviewType: 'final_config',
+          dataToReview: {
+            config: '{{input.agentConfig}}',
+            validation: '{{validate_config.result}}',
+            dependencies: '{{check_dependencies.result}}'
+          }
+        }
+      }
+    ],
+    edges: [
+      { from: 'validate_config', to: 'check_dependencies' },
+      { from: 'check_dependencies', to: 'final_validation' }
+    ]
+  },
+  
+  'nvwa-template-search': {
+    name: 'Nvwa Template Parallel Search',
+    description: '并行搜索多个源的 Agent 模板（包括国内源）',
+    nodes: [
+      {
+        id: 'search_agents',
+        type: 'data_transform',
+        params: {
+          operation: 'custom_function',
+          // 这个工作流会被 NvwaX Server 的 nvwa-agent.service.ts 直接调用
+          // 实际搜索在 agent-search.service.ts 中实现
+          note: 'This workflow is called by NvwaX Server, which handles multi-source search'
+        }
+      }
+    ],
+    edges: []
   }
 };
 

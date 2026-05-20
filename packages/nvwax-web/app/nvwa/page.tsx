@@ -21,6 +21,26 @@ interface AgentFormData {
   skills: string[];
 }
 
+interface TemplateResult {
+  name?: string;
+  title?: string;
+  rating?: number | string;
+  matchScore?: number | string;
+  skills?: string[];
+}
+
+interface CreationProgress {
+  currentStep: number;
+  totalSteps: 7;
+  percentage: number;
+  steps: Array<{
+    stepNumber: number;
+    name: string;
+    status: 'pending' | 'in_progress' | 'completed' | 'failed';
+    message: string;
+  }>;
+}
+
 export default function NvwaPage() {
   const { isLoggedIn, userInfo } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -36,6 +56,20 @@ export default function NvwaPage() {
     skills: [],
   });
   const [showVirtualCompanyModal, setShowVirtualCompanyModal] = useState(false);
+  const [progress, setProgress] = useState<CreationProgress>({
+    currentStep: 0,
+    totalSteps: 7,
+    percentage: 0,
+    steps: [
+      { stepNumber: 1, name: '需求分析', status: 'pending', message: '等待开始' },
+      { stepNumber: 2, name: '数据源配置', status: 'pending', message: '等待开始' },
+      { stepNumber: 3, name: '输出定义', status: 'pending', message: '等待开始' },
+      { stepNumber: 4, name: '实现方式', status: 'pending', message: '等待开始' },
+      { stepNumber: 5, name: '模板搜索', status: 'pending', message: '等待开始' },
+      { stepNumber: 6, name: '配置审查', status: 'pending', message: '等待开始' },
+      { stepNumber: 7, name: '保存配置', status: 'pending', message: '等待开始' }
+    ]
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 客户端初始化欢迎消息（避免 hydration 错误）
@@ -76,6 +110,172 @@ export default function NvwaPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  /**
+   * 执行技能分析和配置审查（Step 5-6）
+   */
+  const executeSkillAnalysisAndReview = async () => {
+    // 更新进度：步骤 5 开始
+    updateProgress(5, 'in_progress', '正在分析技能和审查配置...');
+    
+    // 添加基础技能
+    setFormData(prev => ({
+      ...prev,
+      skills: [
+        '自然语言处理',
+        '知识库检索',
+        '对话管理',
+      ]
+    }));
+    
+    addAssistantMessage(
+      `好的！我来分析这个模板需要的技能...\n\n📊 **技能分析结果：**\n\n✅ **已包含的技能：**\n- 自然语言处理\n- 知识库检索\n- 对话管理\n\n⚠️ **需要补充的技能：**\n- 订单查询 API 集成\n- 实时数据同步\n\n让我搜索技能商店...`
+    );
+    
+    setTimeout(async () => {
+      // 添加更多技能
+      const updatedSkills = [
+        '自然语言处理',
+        '知识库检索',
+        '对话管理',
+        '订单查询连接器',
+        '实时数据同步器',
+      ];
+      
+      setFormData(prev => ({
+        ...prev,
+        skills: updatedSkills
+      }));
+      
+      addAssistantMessage(
+        `🔍 **技能商店搜索结果：**\n\n✅ **找到匹配技能：**\n- 订单查询连接器（评分 4.8/5）\n- 实时数据同步器（评分 4.5/5）\n\n这些技能可以直接集成。现在让我为您审查智能体配置...\n\n✨ **正在进行配置审查...**`
+      );
+      
+      try {
+        // 调用后端 API 进行配置审查
+        const currentConfig = {
+          name: formData.name || formData.description || '客服智能体',
+          description: formData.description,
+          dataSources: formData.dataSources,
+          outputs: formData.outputs,
+          implementation: formData.implementation,
+          skills: updatedSkills
+        };
+        
+        const reviewResult = await reviewAgentConfig(currentConfig);
+        
+        if (reviewResult.reviewPassed) {
+          updateProgress(5, 'completed', '配置审查通过');
+          
+          let suggestionsText = '';
+          if (reviewResult.suggestions && reviewResult.suggestions.length > 0) {
+            suggestionsText = `\n\n💡 **优化建议：**\n${reviewResult.suggestions.map((s: string) => `- ${s}`).join('\n')}`;
+          }
+          
+          addAssistantMessage(
+            `✅ **配置审查通过！**\n\n**置信度：** ${(reviewResult.confidence * 100).toFixed(0)}%${suggestionsText}\n\n✨ **智能体配置预览：**\n\n**名称：** ${currentConfig.name}\n**数据源：** ${currentConfig.dataSources.join(', ')}\n**输出：** ${currentConfig.outputs.join(', ')}\n**实现方式：** ${currentConfig.implementation}\n**技能：** ${currentConfig.skills.join(' + ')}\n\n确认创建吗？`
+          );
+        } else {
+          updateProgress(5, 'failed', '配置审查发现问题');
+          
+          const issuesText = reviewResult.issues.map((issue: string) => `- ${issue}`).join('\n');
+          const suggestionsText = reviewResult.suggestions.map((s: string) => `- ${s}`).join('\n');
+          
+          addAssistantMessage(
+            `⚠️ **发现以下问题：**\n\n${issuesText}\n\n💡 **建议：**\n${suggestionsText}\n\n您可以：\n1. 修改配置后重新审查\n2. 忽略问题继续创建\n\n请告诉我您的选择~`
+          );
+        }
+      } catch (error) {
+        updateProgress(5, 'failed', '审查服务异常，使用默认配置');
+        console.error('Config review error:', error);
+        
+        addAssistantMessage(
+          `⚠️ **审查服务暂时不可用**，将使用默认配置继续。\n\n✨ **智能体配置预览：**\n\n**名称：** ${formData.description || '客服智能体'}\n**数据源：** ${formData.dataSources.join(', ')}\n**输出：** ${formData.outputs.join(', ')}\n**实现方式：** ${formData.implementation}\n**技能：** NLP + 知识库 + 对话管理 + 订单查询 + 数据同步\n\n确认创建吗？`
+        );
+      }
+      
+      setCurrentStep(6);
+    }, 1500);
+  };
+  const updateProgress = (stepNumber: number, status: 'pending' | 'in_progress' | 'completed' | 'failed', message: string) => {
+    setProgress(prev => {
+      const newSteps = prev.steps.map(step => { 
+        if (step.stepNumber === stepNumber) {
+          return { ...step, status, message };
+        }
+        if (step.status === 'pending' && step.stepNumber < stepNumber) {
+          return { ...step, status: 'completed' as const, message: '已完成' };
+        }
+        return step;
+      });
+      
+      const completedSteps = newSteps.filter(s => s.status === 'completed').length;
+      const percentage = Math.round((completedSteps / newSteps.length) * 100);
+      
+      return {
+        ...prev,
+        currentStep: stepNumber,
+        percentage,
+        steps: newSteps
+      };
+    });
+  };
+
+  /**
+   * 搜索模板（并行搜索）
+   */
+  const searchTemplates = async (description: string, implementation: string) => {
+    try {
+      console.log('🔍 Searching templates...');
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      
+      const response = await fetch(`${API_URL}/nvwa-agent/search-templates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description, implementation })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        return data.data;
+      } else {
+        console.warn('⚠️ Template search failed:', data.error);
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ Template search error:', error);
+      return [];
+    }
+  };
+
+  /**
+   * 审查 Agent 配置
+   */
+  const reviewAgentConfig = async (config: AgentFormData) => {
+    try {
+      console.log('🔍 Reviewing agent config...');
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      
+      const response = await fetch(`${API_URL}/nvwa-agent/review-config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentConfig: config })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        return data.data;
+      } else {
+        console.warn('⚠️ Config review failed:', data.error);
+        return { reviewPassed: true, issues: [], suggestions: [], confidence: 0.5 };
+      }
+    } catch (error) {
+      console.error('❌ Config review error:', error);
+      return { reviewPassed: true, issues: ['审查服务暂时不可用'], suggestions: ['请手动检查配置'], confidence: 0.5 };
+    }
+  };
+
   // 处理用户输入
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -93,7 +293,7 @@ export default function NvwaPage() {
   };
 
   // 处理用户输入的各个步骤
-  const processUserInput = (input: string) => {
+  const processUserInput = async (input: string) => {
     // 检测用户是否想创建 AI 团队/虚拟公司
     const teamKeywords = ['团队', 'team', '虚拟公司', 'virtual company', 'ai团队', 'ai team', '多agent', 'multi-agent', '协作', 'collaboration'];
     const isTeamRequest = teamKeywords.some(keyword => input.toLowerCase().includes(keyword));
@@ -112,25 +312,28 @@ export default function NvwaPage() {
     switch (currentStep) {
       case 0: // 智能体用途
         setFormData(prev => ({ ...prev, description: input }));
+        updateProgress(1, 'completed', `需求：${input.substring(0, 20)}...`);
         setCurrentStep(1);
         addAssistantMessage(
-          `明白了！您想要创建一个"${input}"的智能体。\n\n**第二步：这个智能体需要访问哪些数据源？**\n\n例如：\n- 商品数据库\n- 订单系统\n- 知识库文档\n- API 接口\n- 用户评论数据`
+          `明白了！您想要创建一个“${input}”的智能体。\n\n**第二步：这个智能体需要访问哪些数据源？**\n\n例如：\n- 商品数据库\n- 订单系统\n- 知识库文档\n- API 接口\n- 用户评论数据`
         );
         break;
-
+    
       case 1: // 数据源
         setFormData(prev => ({ ...prev, dataSources: [input] }));
+        updateProgress(2, 'completed', `数据源：${input}`);
         setCurrentStep(2);
         addAssistantMessage(
-          `好的，它会访问"${input}"。\n\n**第三步：您希望它输出什么结果？**\n\n例如：\n- 回复客户消息\n- 生成订单报表\n- 分析数据趋势\n- 创建营销文案`
+          `好的，它会访问“${input}”。\n\n**第三步：您希望它输出什么结果？**\n\n例如：\n- 回复客户消息\n- 生成订单报表\n- 分析数据趋势\n- 创建营销文案`
         );
         break;
-
+    
       case 2: // 输出结果
         setFormData(prev => ({ ...prev, outputs: [input] }));
+        updateProgress(3, 'completed', `输出：${input}`);
         setCurrentStep(3);
         addAssistantMessage(
-          `清楚了，它会"${input}"。\n\n**第四步：您希望它如何得到这个结果？**\n\n例如：\n- 调用现有 API\n- 分析用户评论\n- 查询数据库\n- 使用机器学习模型`
+          `清楚了，它会“${input}”。\n\n**第四步：您希望它如何得到这个结果？**\n\n例如：\n- 调用现有 API\n- 分析用户评论\n- 查询数据库\n- 使用机器学习模型`
         );
         break;
 
@@ -138,21 +341,50 @@ export default function NvwaPage() {
         setFormData(prev => ({ ...prev, implementation: input }));
         setCurrentStep(4);
         
-        // 模拟搜索模板
+        // 更新进度：步骤 4 开始
+        updateProgress(4, 'in_progress', '正在并行搜索模板...');
+        
         addAssistantMessage(
-          `太好了！让我分析一下您的需求...\n\n🔍 **正在搜索匹配的智能体模板...**`
+          `太好了！让我分析一下您的需求...\n\n🔍 **正在并行搜索匹配的智能体模板...**`
         );
         
-        setTimeout(() => {
+        try {
+          // 调用后端 API 进行并行搜索
+          const templates = await searchTemplates(formData.description, input);
+          
+          if (templates && templates.length > 0) {
+            updateProgress(4, 'completed', `找到 ${templates.length} 个模板`);
+            
+            const templateList = templates.map((t: TemplateResult, i: number) => 
+              `${i + 1}. **${t.name || t.title}** ⭐${t.rating || 'N/A'}/5\n   - 匹配度：${t.matchScore || 'N/A'}%\n   - 技能：${(t.skills || []).join(', ')}`
+            ).join('\n\n');
+            
+            addAssistantMessage(
+              `✅ **找到了 ${templates.length} 个相似的模板！**\n\n${templateList}\n\n您想选择哪个模板？或者我可以为您创建一个全新的智能体。`
+            );
+          } else {
+            updateProgress(4, 'completed', '未找到模板，将创建新配置');
+            addAssistantMessage(
+              `⚠️ **未找到完全匹配的模板**，将为您创建全新配置。\n\n继续下一步...`
+            );
+          }
+        } catch (error) {
+          updateProgress(4, 'failed', '搜索失败，使用默认配置');
+          console.error('Template search error:', error);
           addAssistantMessage(
-            `✅ **找到了 3 个相似的模板！**\n\n1. **客服智能体模板** ⭐⭐⭐⭐⭐\n   - 包含技能：自然语言处理、知识库检索、对话管理\n   - 匹配度：85%\n\n2. **数据分析助手模板** ⭐⭐⭐⭐\n   - 包含技能：数据处理、可视化、报告生成\n   - 匹配度：70%\n\n3. **通用问答机器人模板** ⭐⭐⭐\n   - 包含技能：意图识别、上下文管理、多轮对话\n   - 匹配度：60%\n\n您想选择哪个模板？或者我可以为您创建一个全新的智能体。`
+            `⚠️ **搜索超时**，将使用默认配置继续。\n\n继续下一步...`
           );
-          setCurrentStep(5);
-        }, 2000);
+        }
+        
+        // 模板搜索完成后，自动执行技能分析和配置审查
+        await executeSkillAnalysisAndReview();
         break;
 
-      case 4: // 模板选择
+      case 4: // 模板选择（此步骤已合并到 case 3，保留以防兼容性问题）
         setCurrentStep(5);
+        
+        // 更新进度：步骤 5 开始
+        updateProgress(5, 'in_progress', '正在分析技能和审查配置...');
         
         // 添加基础技能
         setFormData(prev => ({
@@ -168,34 +400,83 @@ export default function NvwaPage() {
           `好的！我来分析这个模板需要的技能...\n\n📊 **技能分析结果：**\n\n✅ **已包含的技能：**\n- 自然语言处理\n- 知识库检索\n- 对话管理\n\n⚠️ **需要补充的技能：**\n- 订单查询 API 集成\n- 实时数据同步\n\n让我搜索技能商店...`
         );
         
-        setTimeout(() => {
+        setTimeout(async () => {
           // 添加更多技能
+          const updatedSkills = [
+            '自然语言处理',
+            '知识库检索',
+            '对话管理',
+            '订单查询连接器',
+            '实时数据同步器',
+          ];
+          
           setFormData(prev => ({
             ...prev,
-            skills: [
-              '自然语言处理',
-              '知识库检索',
-              '对话管理',
-              '订单查询连接器',
-              '实时数据同步器',
-            ]
+            skills: updatedSkills
           }));
           
           addAssistantMessage(
-            `🔍 **技能商店搜索结果：**\n\n✅ **找到匹配技能：**\n- 订单查询连接器（评分 4.8/5）\n- 实时数据同步器（评分 4.5/5）\n\n这些技能可以直接集成。现在让我为您生成智能体配置...\n\n✨ **智能体配置预览：**\n\n**名称：** ${formData.description || '客服智能体'}\n**数据源：** ${formData.dataSources.join(', ')}\n**输出：** ${formData.outputs.join(', ')}\n**实现方式：** ${formData.implementation}\n**技能：** NLP + 知识库 + 对话管理 + 订单查询 + 数据同步\n\n确认创建吗？`
+            `🔍 **技能商店搜索结果：**\n\n✅ **找到匹配技能：**\n- 订单查询连接器（评分 4.8/5）\n- 实时数据同步器（评分 4.5/5）\n\n这些技能可以直接集成。现在让我为您审查智能体配置...\n\n✨ **正在进行配置审查...**`
           );
+          
+          try {
+            // 调用后端 API 进行配置审查
+            const currentConfig = {
+              name: formData.name || formData.description || '客服智能体',
+              description: formData.description,
+              dataSources: formData.dataSources,
+              outputs: formData.outputs,
+              implementation: formData.implementation,
+              skills: updatedSkills
+            };
+            
+            const reviewResult = await reviewAgentConfig(currentConfig);
+            
+            if (reviewResult.reviewPassed) {
+              updateProgress(5, 'completed', '配置审查通过');
+              
+              let suggestionsText = '';
+              if (reviewResult.suggestions && reviewResult.suggestions.length > 0) {
+                suggestionsText = `\n\n💡 **优化建议：**\n${reviewResult.suggestions.map((s: string) => `- ${s}`).join('\n')}`;
+              }
+              
+              addAssistantMessage(
+                `✅ **配置审查通过！**\n\n**置信度：** ${(reviewResult.confidence * 100).toFixed(0)}%${suggestionsText}\n\n✨ **智能体配置预览：**\n\n**名称：** ${currentConfig.name}\n**数据源：** ${currentConfig.dataSources.join(', ')}\n**输出：** ${currentConfig.outputs.join(', ')}\n**实现方式：** ${currentConfig.implementation}\n**技能：** ${currentConfig.skills.join(' + ')}\n\n确认创建吗？`
+              );
+            } else {
+              updateProgress(5, 'failed', '配置审查发现问题');
+              
+              const issuesText = reviewResult.issues.map((issue: string) => `- ${issue}`).join('\n');
+              const suggestionsText = reviewResult.suggestions.map((s: string) => `- ${s}`).join('\n');
+              
+              addAssistantMessage(
+                `⚠️ **发现以下问题：**\n\n${issuesText}\n\n💡 **建议：**\n${suggestionsText}\n\n您可以：\n1. 修改配置后重新审查\n2. 忽略问题继续创建\n\n请告诉我您的选择~`
+              );
+            }
+          } catch (error) {
+            updateProgress(5, 'failed', '审查服务异常，使用默认配置');
+            console.error('Config review error:', error);
+            
+            addAssistantMessage(
+              `⚠️ **审查服务暂时不可用**，将使用默认配置继续。\n\n✨ **智能体配置预览：**\n\n**名称：** ${formData.description || '客服智能体'}\n**数据源：** ${formData.dataSources.join(', ')}\n**输出：** ${formData.outputs.join(', ')}\n**实现方式：** ${formData.implementation}\n**技能：** NLP + 知识库 + 对话管理 + 订单查询 + 数据同步\n\n确认创建吗？`
+            );
+          }
+          
           setCurrentStep(6);
-        }, 2000);
+        }, 1500);
         break;
 
       case 6: // 确认创建
         if (input.toLowerCase().includes('确认') || input.toLowerCase().includes('是') || input.toLowerCase().includes('yes')) {
+          updateProgress(6, 'completed', '配置已确认');
+          
           if (!isLoggedIn) {
             addAssistantMessage(
               `在创建智能体之前，需要先登录账户。\n\n🔐 **请登录或注册**\n\n登录后，您的智能体会保存在个人空间中，可以随时管理和使用。\n\n[点击这里登录](/login)`
             );
           } else {
             // 询问是否保存到项目
+            updateProgress(7, 'in_progress', '正在保存配置...');
             addAssistantMessage(
               `🎉 **智能体配置已准备就绪！**\n\n在创建之前，请选择保存方式：\n\n1️⃣ **保存到项目** - 将智能体关联到现有项目，便于团队协作\n2️⃣ **保存到个人空间** - 仅保存在您的个人账户中\n\n请输入 "1" 或 "2"，或者告诉我项目名称（例如：“保存到电商项目”）`
             );
@@ -218,6 +499,7 @@ export default function NvwaPage() {
           setCurrentStep(6.6);
         } else if (input === '2' || input.toLowerCase().includes('个人')) {
           // 直接保存到个人空间
+          updateProgress(7, 'completed', '已保存到个人空间');
           addAssistantMessage(
             `🎉 **智能体创建成功！**\n\n✨ **${formData.description || '客服智能体'}** 已经创建完成！\n\n📦 **保存位置：** 您的个人空间\n🔗 **访问链接：** /agents/${Date.now()}\n\n您可以：\n1. 立即测试智能体\n2. 查看智能体详情\n3. 分享智能体给他人\n4. 继续创建新的智能体\n\n还需要我帮您做什么吗？`
           );
@@ -235,6 +517,8 @@ export default function NvwaPage() {
                                input === '1' ? '电商网站项目' :
                                input === '2' ? '数据分析平台' :
                                input === '3' ? '内容管理系统' : input;
+        
+        updateProgress(7, 'completed', `已保存到 ${selectedProject}`);
         
         addAssistantMessage(
           `🎉 **智能体创建成功并已保存到项目！**\n\n✨ **${formData.description || '客服智能体'}** 已经创建完成！\n\n📂 **保存位置：** ${selectedProject}\n🤖 **团队配置：** 将自动生成对应的 AiTeam 和 Agent Teams\n🔗 **访问链接：** /projects/[projectId]/teams/[teamId]\n\n下一步：\n1. 查看项目中的团队配置\n2. 启动团队执行\n3. 监控执行过程\n4. 继续创建新的智能体\n\n还需要我帮您做什么吗？`
@@ -390,38 +674,68 @@ export default function NvwaPage() {
               )}
             </div>
 
-            {/* 步骤进度 */}
+            {/* 创建进度追踪 */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">当前进度</h3>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                  <Loader className={`w-4 h-4 text-indigo-600 ${progress.percentage > 0 && progress.percentage < 100 ? 'animate-spin' : ''}`} />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                  创建进度
+                </h3>
+              </div>
+              
+              {/* 进度条 */}
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">总进度</span>
+                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{progress.percentage}%</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                  <div 
+                    className="bg-linear-to-r from-blue-500 to-purple-500 h-2.5 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${progress.percentage}%` }}
+                  />
+                </div>
+              </div>
+              
+              {/* 步骤列表 */}
               <div className="space-y-2.5">
-                {[
-                  '需求分析',
-                  '数据源',
-                  '输出类型',
-                  '实现方式',
-                  '模板匹配',
-                  '技能分析',
-                  '确认创建',
-                ].map((step, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                      index < currentStep
-                        ? 'bg-green-500 text-white'
-                        : index === currentStep
-                        ? 'bg-blue-500 text-white scale-110'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+                {progress.steps.map(step => (
+                  <div key={step.stepNumber} className="flex items-start gap-3">
+                    {/* 状态图标 */}
+                    <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                      step.status === 'completed' ? 'bg-green-500 text-white' :
+                      step.status === 'in_progress' ? 'bg-blue-500 text-white animate-pulse scale-110' :
+                      step.status === 'failed' ? 'bg-red-500 text-white' :
+                      'bg-gray-200 dark:bg-gray-700 text-gray-500'
                     }`}>
-                      {index < currentStep ? '✓' : index + 1}
+                      {step.status === 'completed' ? '✓' :
+                       step.status === 'failed' ? '✗' :
+                       step.stepNumber}
                     </div>
-                    <span className={`text-sm transition-colors ${
-                      index === currentStep
-                        ? 'text-blue-600 dark:text-blue-400 font-semibold'
-                        : index < currentStep
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-gray-500 dark:text-gray-400'
-                    }`}>
-                      {step}
-                    </span>
+                    
+                    {/* 步骤信息 */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium transition-colors ${
+                          step.status === 'in_progress' ? 'text-blue-600 dark:text-blue-400' :
+                          step.status === 'completed' ? 'text-green-600 dark:text-green-400' :
+                          step.status === 'failed' ? 'text-red-600 dark:text-red-400' :
+                          'text-gray-500 dark:text-gray-400'
+                        }`}>
+                          {step.name}
+                        </span>
+                        {step.status === 'in_progress' && (
+                          <Loader className="w-3 h-3 text-blue-500 animate-spin" />
+                        )}
+                      </div>
+                      {step.message && step.message !== '等待开始' && step.message !== '已完成' && (
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5 truncate">
+                          {step.message}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

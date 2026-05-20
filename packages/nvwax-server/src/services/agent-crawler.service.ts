@@ -246,14 +246,10 @@ export class AgentCrawlerService {
       }
     }
     
-    // HuggingFace: 尝试爬取（可能因网络问题失败）
-    try {
-      const hfAgents = await this.crawlFromHuggingFace('agent', 100);
-      totalHF = hfAgents.length;
-    } catch (error) {
-      console.error('HuggingFace crawl failed:', error);
-      console.log('  ⚠️  Skipping HuggingFace due to network issues');
-    }
+    // HuggingFace: 已禁用（国内访问不稳定）
+    // TODO: 未来可以添加国内源（如 Gitee、ModelScope 等）
+    console.log('⚠️  Skipping HuggingFace crawl (network issues in China)');
+    totalHF = 0;
 
     console.log(`Full crawl completed: ${totalGitHub} from GitHub, ${totalHF} from HuggingFace`);
     

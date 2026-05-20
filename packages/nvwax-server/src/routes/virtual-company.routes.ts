@@ -14,6 +14,7 @@ router.get('/sessions/:id', virtualCompanyCreationController.getSession);
 router.post('/sessions/:id/message', virtualCompanyCreationController.sendMessage);
 router.post('/sessions/:id/nvwax-match', virtualCompanyCreationController.triggerNvwaXMatch);
 router.post('/sessions/:id/confirm', virtualCompanyCreationController.confirmAndSaveTeam);
+router.post('/sessions/:id/publish-to-marketplace', virtualCompanyCreationController.publishToMarketplace);
 router.get('/sessions/:id/download', virtualCompanyCreationController.downloadDocumentPackage);
 router.post('/sessions/:id/integrate-proclaw', virtualCompanyCreationController.integrateToProClaw);
 router.put('/sessions/:id/requirements', virtualCompanyCreationController.updateRequirements);
