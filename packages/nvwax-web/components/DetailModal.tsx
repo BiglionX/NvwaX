@@ -1,8 +1,10 @@
 'use client';
 
-import { X, Calendar, Tag, Download, Star, Users, FileText, Settings } from 'lucide-react';
+import { X, Calendar, Tag, Download, Star, Users, FileText, Settings, ChevronRight, ChevronDown, Zap, User } from 'lucide-react';
 import type { Agent } from '@/lib/api/agents';
 import type { AiTeam } from '@/lib/api/aiteams';
+import { useState } from 'react';
+import { agentApi } from '@/lib/api/agents';
 
 interface DetailModalProps {
   isOpen: boolean;
@@ -17,6 +19,11 @@ export default function DetailModal({
   resourceType,
   resource
 }: DetailModalProps) {
+  const [showSkills, setShowSkills] = useState(true);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [agentDetails, setAgentDetails] = useState<Record<string, Agent>>({});
+  const [loadingAgents, setLoadingAgents] = useState<Set<string>>(new Set());
+  
   if (!isOpen) return null;
 
   const isAgent = resourceType === 'agent';
@@ -31,6 +38,36 @@ export default function DetailModal({
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // 获取 Agent 详情
+  const fetchAgentDetails = async (agentId: string) => {
+    if (agentDetails[agentId]) return; // 已缓存
+    
+    setLoadingAgents(prev => new Set(prev).add(agentId));
+    try {
+      const response = await agentApi.getAgentById(agentId);
+      if (response.success && response.data) {
+        setAgentDetails(prev => ({
+          ...prev,
+          [agentId]: response.data
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch agent details:', error);
+    } finally {
+      setLoadingAgents(prev => {
+        const next = new Set(prev);
+        next.delete(agentId);
+        return next;
+      });
+    }
+  };
+
+  // 处理 Agent 点击
+  const handleAgentClick = (agentId: string) => {
+    setSelectedAgentId(agentId);
+    fetchAgentDetails(agentId);
   };
 
   return (
@@ -54,8 +91,10 @@ export default function DetailModal({
           </button>
         </div>
 
-        {/* 内容 */}
-        <div className="p-6 space-y-6">
+        {/* 内容 - 左右两栏布局 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+          {/* 左侧主内容区 - 占2列 */}
+          <div className="lg:col-span-2 space-y-6">
           {/* 基本信息 */}
           <section>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -180,21 +219,54 @@ export default function DetailModal({
                 <div className="mt-4">
                   <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-3">团队成员</h4>
                   <div className="space-y-2">
-                    {aiteam.members.map((member, index) => (
-                      <div key={index} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg flex items-center justify-between">
-                        <div>
-                          <div className="font-medium text-gray-900 dark:text-white">{member.role}</div>
-                          {member.responsibilities && (
-                            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                              {member.responsibilities}
+                    {aiteam.members.map((member, index) => {
+                      const isSelected = selectedAgentId === member.agentId;
+                      const agentDetail = agentDetails[member.agentId];
+                      const isLoading = loadingAgents.has(member.agentId);
+                      
+                      return (
+                        <div 
+                          key={index} 
+                          onClick={() => handleAgentClick(member.agentId)}
+                          className={`p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-purple-100 dark:bg-purple-900/30 border-2 border-purple-500 dark:border-purple-400'
+                              : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border-2 border-transparent'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                              isSelected
+                                ? 'bg-purple-600 dark:bg-purple-500'
+                                : 'bg-purple-100 dark:bg-purple-900/40'
+                            }`}>
+                              <User size={20} className={isSelected ? 'text-white' : 'text-purple-600 dark:text-purple-400'} />
                             </div>
-                          )}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-gray-900 dark:text-white">{member.role}</div>
+                              {member.responsibilities && (
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                                  {member.responsibilities}
+                                </div>
+                              )}
+                              {isLoading && (
+                                <div className="text-xs text-purple-600 dark:text-purple-400 mt-1 animate-pulse">
+                                  加载中...
+                                </div>
+                              )}
+                              {!isLoading && agentDetail?.skills && agentDetail.skills.length > 0 && (
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  {agentDetail.skills.length} 个 Skills
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <ChevronRight size={18} className={`shrink-0 ${
+                            isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'
+                          }`} />
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          Agent ID: {member.agentId.slice(0, 8)}...
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -222,6 +294,75 @@ export default function DetailModal({
               </div>
             </div>
           </section>
+          </div>
+
+          {/* 右侧边栏 - Skills 列表或 Agent Skills */}
+          {(
+            (isAgent && agent && agent.skills && agent.skills.length > 0) ||
+            (!isAgent && selectedAgentId && agentDetails[selectedAgentId]?.skills && agentDetails[selectedAgentId].skills.length > 0)
+          ) && (
+            <div className="lg:col-span-1">
+              <div className="sticky top-24">
+                <div className="bg-linear-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl border-2 border-violet-200 dark:border-violet-800 overflow-hidden">
+                  {/* 标题栏 - 可点击展开/收起 */}
+                  <button
+                    onClick={() => setShowSkills(!showSkills)}
+                    className="w-full p-4 flex items-center justify-between hover:bg-violet-100/50 dark:hover:bg-violet-800/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Zap className="text-violet-600 dark:text-violet-400" size={20} />
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {!isAgent && selectedAgentId ? 'Agent Skills' : '使用的 Skills'}
+                      </h3>
+                      <span className="px-2 py-1 bg-violet-600 dark:bg-violet-500 text-white text-xs rounded-full">
+                        {!isAgent && selectedAgentId 
+                          ? agentDetails[selectedAgentId].skills.length
+                          : agent?.skills?.length || 0
+                        }
+                      </span>
+                    </div>
+                    {showSkills ? (
+                      <ChevronDown size={20} className="text-gray-600 dark:text-gray-400" />
+                    ) : (
+                      <ChevronRight size={20} className="text-gray-600 dark:text-gray-400" />
+                    )}
+                  </button>
+
+                  {/* Skills 列表内容 */}
+                  {showSkills && (
+                    <div className="p-4 pt-0 space-y-2">
+                      {(() => {
+                        const skills = !isAgent && selectedAgentId
+                          ? agentDetails[selectedAgentId].skills
+                          : agent?.skills || [];
+                        
+                        return skills.map((skill, index) => (
+                          <div
+                            key={index}
+                            className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-violet-200 dark:border-violet-700 hover:shadow-md transition-shadow group"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 bg-linear-to-br from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                                <Zap size={16} className="text-violet-600 dark:text-violet-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-gray-900 dark:text-white text-sm truncate">
+                                  {skill}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  Skill #{index + 1}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 底部按钮 */}

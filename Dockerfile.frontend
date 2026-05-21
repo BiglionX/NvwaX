@@ -37,8 +37,9 @@ RUN npm install -g pnpm
 COPY package.json pnpm-workspace.yaml .npmrc ./
 COPY packages/nvwax-web/package*.json ./packages/nvwax-web/
 
-# Install production dependencies
-RUN pnpm install --prod
+# Install production dependencies + typescript (required by Next.js at runtime)
+RUN pnpm install --prod && \
+    pnpm add --save-exact --save-dev typescript@5.8.2
 
 # Copy built files
 COPY --from=frontend-builder /app/packages/nvwax-web/.next ./packages/nvwax-web/.next
