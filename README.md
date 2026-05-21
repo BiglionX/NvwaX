@@ -7,8 +7,9 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=for-the-badge&logo=typescript)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue?style=for-the-badge&logo=postgresql)
-![Version](https://img.shields.io/badge/Version-v1.5.0-orange?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v2.0.0-orange?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen?style=for-the-badge)
+![Deployment](https://img.shields.io/badge/Deployment-Vercel%20%2B%20Railway-blue?style=for-the-badge)
 
 **开源的 AI Agent 搜索、发现和管理平台**
 
@@ -25,11 +26,12 @@ NvwaX 是一个现代化的 AI Agent 平台，提供全网 Agent 和技能的搜
 ### ✨ 核心亮点
 
 - 🔍 **智能搜索**: 支持全文搜索、搜索建议、历史记录、热门搜索
-- 🤖 **Nvwa 智能体工厂**: 对话式创建智能体，8步引导流程
+- 🤖 **Nvwa 智能体工厂**: 对话式创建智能体，7步引导流程，可视化进度追踪（NEW! v2.0）
+-  **虚拟公司打包**: CEO Agent 动态生成 + 团队经营配置文档生成（NEW! v2.0）
 - 🎁 **悬赏系统**: 发布、领取、提交、验证完整的悬赏流程
 - 🏢 **虚拟公司打包**: Team Skill 异步打包，多平台支持（NEW!）
 - 👑 **Admin 后台升级**: Agent管理、虚拟公司监控、通知中心、审计日志（NEW! v1.5.0）
-- 🌐 **多数据源**: GitHub、Gitee、百度、阿里、腾讯等
+- 🌐 **多数据源**: GitHub、Gitee（码云）、ModelScope（魔搭）、百度、阿里、腾讯等（NEW! v2.0）
 - 👥 **团队管理**: 创建和管理 AiTeam 和 Agent Teams
 - 🚀 **工作流引擎**: 基于 LangChain.js 的工作流编排
 - 📦 **Web Component SDK**: Lit-based 可嵌入组件（NEW!）
@@ -39,19 +41,44 @@ NvwaX 是一个现代化的 AI Agent 平台，提供全网 Agent 和技能的搜
 
 ---
 
-## 🆕 最新更新 (v1.5.0)
+## 🆕 最新更新 (v2.0.0)
 
-**更新日期**: 2026-05-18
+**更新日期**: 2026-05-20
 
-### ✨ Admin 后台重大升级
+### ✨ Nvwa Agent 工作流重构（重大升级）
 
-- **🤖 Agent 管理模块** - 查看和管理用户创建的 AI 智能体，支持搜索和分页（NEW!）
-- **🏢 虚拟公司监控** - 实时监控 Team Skill 打包任务状态和进度（NEW!）
-- **🔔 通知中心** - 向全站用户发送系统公告，支持优先级设置（NEW!）
-- **📋 审计日志** - 追踪管理员操作记录与系统安全事件（NEW!）
-- **⚙️ 系统管理增强** - 系统健康检查、缓存清理、数据库备份（NEW!）
+- ** 可视化进度追踪** - 左侧面板实时显示 7 步骤进度（0-100%）
+- **⚡ 自动化流程** - Step 4-6 完全自动化（模板搜索 → 技能分析 → 配置审查）
+- **🇳 国内源支持** - 新增 Gitee（码云）和 ModelScope（魔搭）并行搜索
+- ** 性能优化** - 跳过 HuggingFace，搜索时间 < 5s
+- **🎯 智能匹配** - 基于名称、描述、标签的综合评分算法
+- **🎨 UI/UX 优化** - 实时需求信息面板、标签式展示、Markdown 渲染
 
-> 📖 详细文档: [ADMIN-UPGRADE-SUMMARY.md](./ADMIN-UPGRADE-SUMMARY.md) | [ADMIN-TEST-GUIDE.md](./ADMIN-TEST-GUIDE.md)
+>  详细文档: [PHASE2-NVWA-AGENT-WORKFLOW-REFACTOR.md](./docs/PHASE2-NVWA-AGENT-WORKFLOW-REFACTOR.md) | [DOMESTIC-SOURCES-SEARCH-IMPLEMENTATION.md](./docs/DOMESTIC-SOURCES-SEARCH-IMPLEMENTATION.md) | [FRONTEND-INTEGRATION-TEST-REPORT.md](./docs/FRONTEND-INTEGRATION-TEST-REPORT.md)
+
+###  虚拟公司 CEO Agent 动态生成（Phase 2 完成）
+
+- **👔 CEO 模板库** - 4 种管理风格的 CEO 模板
+- **🧠 智能推断** - 根据团队类型自动生成 CEO 配置
+- **💼 Skills 配置** - 每个 CEO 自动配置 3 个默认技能
+- **✨ System Prompt 生成** - AI 驱动的个性化提示词
+- **👁️ 实时预览** - 前端组件展示 CEO 配置详情
+
+>  详细文档: [PHASE2-FINAL-SUMMARY.md](./docs/PHASE2-FINAL-SUMMARY.md)
+
+### 📄 团队经营配置文档生成（Phase 3 完成）
+
+- **📦 文档包生成** - 4 种文档类型（团队章程、运营指南、决策流程、绩效指标）
+- **📥 多格式导出** - 支持 JSON 和 Markdown 格式下载
+- **👁️ 内容预览** - 前端组件实时预览文档内容
+- **💾 本地保存** - 一键下载完整文档包
+
+> 📖 详细文档: [PHASE3-FINAL-SUMMARY.md](./docs/PHASE3-FINAL-SUMMARY.md)
+
+### 🐛 重要修复
+
+- **✅ React 渲染错误修复** - 修复 "Objects are not valid as a React child" 错误
+- **✅ Railway 部署兼容** - 优化类型安全，确保生产环境稳定运行
 
 ---
 
@@ -64,7 +91,7 @@ NvwaX 是一个现代化的 AI Agent 平台，提供全网 Agent 和技能的搜
 - **🔔 通知系统** - 完整的站内通知功能，支持多种通知类型和优先级（NEW!）
 - **🤖 Nvwa Agent API** - 智能体 CRUD 后端 API，支持用户管理自己的智能体（NEW!）
 - **📊 执行监控页面** - 团队执行监控界面，实时显示 Leader Agent 执行结果（NEW!）
-- **🏢 虚拟公司打包系统** - Team Skill 异步打包，支持 Windows/macOS/Linux
+- 🏢 **虚拟公司打包系统** - CEO Agent 动态生成 + 团队经营配置文档生成
 - **📦 Web Component SDK** - 基于 Lit 的可嵌入组件 (@nvwax/agent-marketplace, @nvwax/agent-studio)
 - **🔧 代码质量全面提升** - 零 TypeScript 错误，零 ESLint 警告
 - **🎨 Tailwind CSS v4** - 迁移到最新规范，50+ 处更新
@@ -92,7 +119,7 @@ NvwaX 是一个现代化的 AI Agent 平台，提供全网 Agent 和技能的搜
 
 ### 安装步骤
 
-```bash
+```
 # 1. 克隆仓库
 git clone https://github.com/BigLionX/NvwaX.git
 cd NvwaX
@@ -124,7 +151,7 @@ npm run dev
 
 #### 方案一：Vercel + Railway（最简单）
 
-```bash
+```
 # 1. 部署后端到 Railway
 # - 访问 https://railway.app
 # - 创建 PostgreSQL 数据库
@@ -147,7 +174,7 @@ vercel env add NEXT_PUBLIC_API_URL production
 
 #### 方案二：Docker Compose（本地/私有服务器）
 
-```bash
+```
 # 1. 配置环境变量
 cp .env.example .env
 # 编辑 .env 文件，设置密码和密钥
@@ -177,12 +204,15 @@ docker-compose exec backend npm run db:migrate
 | 数据源 | 数量 | 状态 |
 |--------|------|------|
 | GitHub | 186+ | ✅ 已集成 |
-| Gitee | 15+ | ✅ 已集成 |
+| Gitee（码云） | 15+ | ✅ 已集成（NEW!） |
+| ModelScope（魔搭） | 20+ | ✅ 已集成（NEW!） |
 | 百度 | 16 | ✅ 已集成 |
 | 阿里 | 16 | ✅ 已集成 |
 | 腾讯 | 9 | ✅ 已集成 |
 | 华为 | 6 | ✅ 已集成 |
 | 京东 | 7 | ✅ 已集成 |
+
+> 💡 **国内源并行搜索**：同时搜索 GitHub、Gitee、ModelScope，提升国内网络访问速度
 
 ### 👤 用户系统
 
@@ -203,18 +233,22 @@ docker-compose exec backend npm run db:migrate
 - ✅ 搜索增强（建议、历史、热门、高亮）
 - ✅ 我的悬赏（发布/领取管理）
 
-### 🤖 Nvwa 智能体工厂
+### 🤖 Nvwa 智能体工厂（v2.0 重大升级）
 
-- ✅ 对话式需求分析（8步流程）
+- ✅ 对话式需求分析（7步流程）
+- ✅ **可视化进度追踪** - 左侧面板实时显示进度（0-100%）（NEW!）
 - ✅ 左右分栏布局（信息+对话）
 - ✅ 实时需求信息展示
+- ✅ **自动化工作流** - Step 4-6 完全自动化（NEW!）
 - ✅ 技能自动推荐
+- ✅ **多源并行搜索** - GitHub + Gitee + ModelScope（NEW!）
 - ✅ 进度可视化
 - ✅ 模板匹配
 - ✅ 登录验证集成
 - ✅ 响应式设计
-- ✅ **Agent CRUD API** - 创建、查询、更新、删除智能体（NEW!）
-- ✅ **执行监控页面** - 实时显示 Leader Agent 执行结果（NEW!）
+- ✅ **智能匹配评分** - 基于名称、描述、标签的综合算法（NEW!）
+- ✅ **Agent CRUD API** - 创建、查询、更新、删除智能体
+- ✅ **执行监控页面** - 实时显示 Leader Agent 执行结果
 
 ### 🔔 通知系统（NEW!）
 
@@ -228,7 +262,17 @@ docker-compose exec backend npm run db:migrate
 - ✅ 深色模式支持
 - ✅ 响应式设计
 
-### 🛠️ Admin 后台
+### 🏢 虚拟公司系统（Phase 2-3 完成）
+
+- ✅ **CEO Agent 动态生成** - 4 种管理风格模板
+- ✅ **智能团队推断** - 根据描述自动匹配团队类型
+- ✅ **Skills 自动配置** - 每个 CEO 配置 3 个默认技能
+- ✅ **System Prompt 生成** - AI 驱动的个性化提示词
+- ✅ **团队经营配置文档** - 4 种文档类型自动生成
+- ✅ **多格式导出** - JSON / Markdown 格式下载
+- ✅ **实时预览组件** - 前端展示配置和文档详情
+
+### ️ Admin 后台
 
 - ✅ 数据看板
 - ✅ 爬虫管理
@@ -334,7 +378,7 @@ NvwaX/
 
 ### 开发流程
 
-```bash
+```
 # 1. Fork 并克隆
 git clone https://github.com/YOUR_USERNAME/NvwaX.git
 
@@ -368,47 +412,35 @@ git push origin feature/your-feature
 
 ## 📊 数据统计
 
-- **240+** Agent 元数据
-- **5** 大科技公司支持
-- **82.5%** 高质量项目 (>1000 stars)
-- **100%** 数据新鲜度 (7天内更新)
-- **7,350+** 代码行数 (+2,000 新增)
+- **18,000+** 代码行数
 - **5,000+** 文档行数
-- **25+** API 端点 (+11 新增)
-- **95%** 功能完成度 (+10%)
+- **30+** API 端点
+- **95%** 功能完成度
+- **3** 个完整阶段交付
 
 ---
 
 ## 🗺️ 路线图
 
-### v1.0 (已完成 ✅)
+### v2.0 (已完成 ✅)
 
-- ✅ 基础架构搭建
-- ✅ 用户认证系统
-- ✅ Agent 搜索功能
-- ✅ 多数据源集成
-- ✅ Admin 后台
-- ✅ 悬赏系统核心
-- ✅ 搜索增强功能
-- ✅ Nvwa 智能体工厂
+- ✅ Nvwa Agent 工作流重构
+- ✅ 可视化进度追踪（7步骤）
+- ✅ 国内源支持（Gitee + ModelScope）
+- ✅ CEO Agent 动态生成
+- ✅ 团队经营配置文档生成
+- ✅ 自动化工作流（Step 4-6）
+- ✅ 智能匹配评分算法
 
-### v1.1 (已完成 ✅)
+### v2.1 (计划中 📋)
 
-- ✅ 通知系统完善
-- ✅ WebSocket 实时推送（规划中）
-- 🔄 邮件通知集成
-- 🔄 工作流引擎优化
-- 🔄 性能优化
-
-### v1.2 (计划中 📋)
-
-- 📋 评价系统（星级评分）
+-  评价系统（星级评分）
 - 📋 数据统计图表
 - 📋 批量操作
 - 📋 动态技能列表
 - 📋 智能推荐
 
-### v2.0 (远期规划 🎯)
+### v3.0 (远期规划 🎯)
 
 - 🎯 AI Agent 执行引擎
 - 🎯 可视化工作流编辑器
