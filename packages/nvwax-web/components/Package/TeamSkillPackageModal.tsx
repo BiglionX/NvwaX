@@ -152,7 +152,15 @@ export default function TeamSkillPackageModal({
 
   const handleDownload = () => {
     if (buildJob?.downloadUrl) {
-      window.location.href = `http://localhost:3001${buildJob.downloadUrl}`;
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const BACKEND_ORIGIN = (() => {
+        try {
+          return new URL(API_BASE).origin;
+        } catch {
+          return 'http://localhost:3001';
+        }
+      })();
+      window.location.href = `${BACKEND_ORIGIN}${buildJob.downloadUrl}`;
     }
   };
 

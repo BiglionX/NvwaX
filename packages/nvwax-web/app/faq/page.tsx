@@ -73,7 +73,7 @@ export default function FAQPage() {
     {
       category: '技术问题',
       question: '后端服务端口是多少？',
-      answer: '后端 API 服务运行在 http://localhost:3001，前端应用运行在 http://localhost:3000。请确保两个服务都在运行。'
+      answer: `后端 API 服务运行在 ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}，前端应用运行在 http://localhost:3000。请确保两个服务都在运行。`
     },
     {
       category: '技术问题',

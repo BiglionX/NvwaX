@@ -26,6 +26,8 @@ interface APICategory {
   endpoints: APIEndpoint[];
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
 export default function APIDocsPage() {
   const [copiedEndpoint, setCopiedEndpoint] = useState<string | null>(null);
 
@@ -190,11 +192,11 @@ export default function APIDocsPage() {
         <div className="flex items-start justify-between mb-3">
           <h3 className="font-semibold text-blue-900 dark:text-blue-300">基础 URL</h3>
           <button
-            onClick={() => copyToClipboard('http://localhost:3001/api')}
+            onClick={() => copyToClipboard(API_BASE_URL)}
             className="p-2 hover:bg-white dark:hover:bg-gray-800 rounded-lg transition-colors"
             title="复制"
           >
-            {copiedEndpoint === 'http://localhost:3001/api' ? (
+            {copiedEndpoint === API_BASE_URL ? (
               <Check size={18} className="text-green-600" />
             ) : (
               <Copy size={18} className="text-gray-500" />
@@ -202,7 +204,7 @@ export default function APIDocsPage() {
           </button>
         </div>
         <code className="text-sm bg-white dark:bg-gray-800 px-4 py-3 rounded-lg block font-mono border border-blue-200 dark:border-blue-800">
-          http://localhost:3001/api
+          {API_BASE_URL}
         </code>
         <p className="mt-3 text-sm text-blue-700 dark:text-blue-300">
           💡 提示：所有 API 请求都需要添加此前缀

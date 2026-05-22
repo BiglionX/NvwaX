@@ -3,6 +3,18 @@
 import { useState } from 'react';
 import axios from 'axios';
 
+// 从 NEXT_PUBLIC_API_URL 提取后端基础地址
+// NEXT_PUBLIC_API_URL 格式: http://host:port/api
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const BACKEND_BASE = (() => {
+  try {
+    const url = new URL(API_BASE);
+    return url.origin; // e.g. http://43.156.133.180:3001
+  } catch {
+    return 'http://localhost:3001';
+  }
+})();
+
 export default function TestConnection() {
   const [result, setResult] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -13,11 +25,11 @@ export default function TestConnection() {
     
     try {
       // 测试健康检查
-      const healthResponse = await axios.get('http://localhost:3001/health');
+      const healthResponse = await axios.get(`${BACKEND_BASE}/health`);
       console.log('Health check:', healthResponse.data);
       
       // 测试登录 API
-      const loginResponse = await axios.post('http://localhost:3001/api/auth/login', {
+      const loginResponse = await axios.post(`${API_BASE}/auth/login`, {
         email: '1055603323@qq.com',
         password: '123456'
       });
@@ -29,7 +41,7 @@ export default function TestConnection() {
       if (err.response) {
         setResult(`❌ Server Error\nStatus: ${err.response.status}\nData: ${JSON.stringify(err.response.data)}`);
       } else if (err.request) {
-        setResult(`❌ Network Error\nNo response received. Check if backend is running on port 3001.`);
+        setResult(`❌ Network Error\nNo response received. Check if backend is running.`);
       } else {
         setResult(`❌ Error: ${err.message || 'Unknown error'}`);
       }
@@ -62,8 +74,8 @@ export default function TestConnection() {
         )}
         
         <div className="mt-6 text-sm text-gray-600 dark:text-gray-400">
-          <p>Expected backend URL: http://localhost:3001</p>
-          <p>Check if the backend server is running.</p>
+          <p>Expected backend URL: {BACKEND_BASE}</p>
+          <p>API Base URL: {API_BASE}</p>
         </div>
       </div>
     </div>

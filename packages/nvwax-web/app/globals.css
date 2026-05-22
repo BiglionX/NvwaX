@@ -154,3 +154,28 @@ body {
   background: rgba(139, 92, 246, 0.2);
   color: var(--text-primary);
 }
+
+/* ============================================
+   自定义动画关键帧
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

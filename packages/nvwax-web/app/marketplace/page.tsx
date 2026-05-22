@@ -1,25 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { searchApi, Agent } from '@/lib/api/search';
 import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
 import { Star, Download, ExternalLink, Users, Search, X } from 'lucide-react';
 import Link from 'next/link';
-import VirtualCompanyChatModal from '@/components/virtual-company-chat-modal';
 import LoadingState from '@/components/Layout/LoadingState';
 import { Button, Input, Space, Container, Card, Badge, Tag } from '@/components/UI';
 
 type Category = 'all' | 'agents' | 'virtual-company';
 
 export default function MarketplacePage() {
-  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
   // 搜索防抖
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -134,21 +129,6 @@ export default function MarketplacePage() {
           </Button>
         ))}
       </Space>
-
-      {/* Featured Section for Virtual Companies */}
-      {selectedCategory === 'virtual-company' && (
-        <Card className="mb-8 bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-lg">
-          <h2 className="text-2xl font-bold mb-2">🏢 虚拟公司</h2>
-          <p className="mb-4">组建你的 AI 团队，像真实公司一样协作工作</p>
-          <Button
-            variant="primary"
-            onClick={() => setShowCreateModal(true)}
-            className="bg-white text-purple-600 hover:bg-gray-50"
-          >
-            ✨ 创建虚拟公司
-          </Button>
-        </Card>
-      )}
 
       {/* Featured Section for Agents */}
       {selectedCategory === 'agents' && (
@@ -303,16 +283,6 @@ export default function MarketplacePage() {
         </Card>
       )}
 
-      {/* 虚拟公司创建弹窗（对话式） */}
-      {showCreateModal && (
-        <VirtualCompanyChatModal
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={(teamSkillId) => {
-            setShowCreateModal(false);
-            router.push(`/team-skills/${teamSkillId}`);
-          }}
-        />
-      )}
     </Container>
   );
 }
