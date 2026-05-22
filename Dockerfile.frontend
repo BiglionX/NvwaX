@@ -23,6 +23,8 @@ COPY packages/nvwax-sdk/ ./packages/nvwax-sdk/
 
 # Build Next.js app
 WORKDIR /app/packages/nvwax-web
+ARG NEXT_PUBLIC_API_URL=https://nvwax.proclaw.cc/api
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN pnpm build
 
 # Production stage for frontend

@@ -53,11 +53,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://nvwax.proclaw.cc/api}
     container_name: nvwax-frontend
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: http://backend:3001
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://nvwax.proclaw.cc/api}
       PORT: 3000
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
