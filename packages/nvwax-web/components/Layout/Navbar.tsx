@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, FileText, User, LogIn, LogOut, Menu, X, Award, ClipboardList, Sparkles, Store } from 'lucide-react';
+import { Home, User, LogIn, LogOut, Menu, X, Award, ClipboardList, Sparkles, Store } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import NotificationDropdown from '../notification-dropdown';
