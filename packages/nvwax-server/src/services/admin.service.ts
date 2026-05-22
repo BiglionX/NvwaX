@@ -1,5 +1,6 @@
 import { databaseService } from './database.service.js';
 import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
 
 export interface Admin {
   id: string;
@@ -26,10 +27,11 @@ export class AdminService {
   // 创建管理员
   async createAdmin(username: string, password: string, email: string, name?: string, role: string = 'admin'): Promise<Admin> {
     const id = uuidv4();
-    // 注意：实际应用中应该对密码进行哈希加密
+    // 对密码进行 bcrypt 哈希加密
+    const hashedPassword = await bcrypt.hash(password, 10);
     await this.pool.query(
       'INSERT INTO admins (id, username, password, email, name, role) VALUES ($1, $2, $3, $4, $5, $6)',
-      [id, username, password, email, name || null, role]
+      [id, username, hashedPassword, email, name || null, role]
     );
     
     return (await this.getAdminById(id))!;
@@ -63,12 +65,18 @@ export class AdminService {
     
     console.log('[AdminService] Admin found:', !!admin);
     if (admin) {
-      console.log('[AdminService] Stored password:', admin.password);
-      console.log('[AdminService] Password match:', admin.password === password);
-    }
-    
-    if (!admin || admin.password !== password) {
-      console.log('[AdminService] Login failed');
+      console.log('[AdminService] Stored password hash:', admin.password.substring(0, 20) + '...');
+      
+      // 使用 bcrypt 验证密码
+      const passwordMatch = await bcrypt.compare(password, admin.password);
+      console.log('[AdminService] Password match:', passwordMatch);
+      
+      if (!passwordMatch) {
+        console.log('[AdminService] Login failed - password mismatch');
+        return null;
+      }
+    } else {
+      console.log('[AdminService] Login failed - admin not found');
       return null;
     }
 
