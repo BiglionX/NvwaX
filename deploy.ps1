@@ -12,6 +12,7 @@ Write-Host ""
 $ServerUser = "ubuntu"
 $ServerHost = "43.156.133.180"
 $ServerDir = "/opt/nvwax"
+$SSHKeyPath = "$env:USERPROFILE\.ssh\id_ed25519"  # SSH 私钥路径
 
 # 1. 提示用户确认
 Write-Host "准备部署到服务器: $ServerHost" -ForegroundColor Yellow
@@ -67,7 +68,9 @@ curl -f http://localhost:3000 || echo ' Frontend not ready yet'
 echo ' Deployment completed!'
 "@
 
-ssh ${ServerUser}@${ServerHost} $DeployCommand
+# 使用 SSH 密钥连接
+Write-Host " Using SSH key authentication" -ForegroundColor Green
+ssh -i $SSHKeyPath ${ServerUser}@${ServerHost} $DeployCommand
 
 Write-Host ""
 Write-Host "======================================" -ForegroundColor Cyan
