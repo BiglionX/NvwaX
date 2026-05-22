@@ -33,7 +33,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: postgresql://${DB_USER:-nvwax}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-nvwax}
+      DATABASE_URL: postgresql://${DB_USER:-nvwax}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-nvwax}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:-change-this-to-a-secure-random-string}
       REDIS_URL: redis://redis:6379
     ports:
