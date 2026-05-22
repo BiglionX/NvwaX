@@ -1,0 +1,74 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'docs-archive/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H 43.156.133.180 >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          ssh ubuntu@43.156.133.180 << 'EOF'
+            set -e
+            
+            echo "🚀 Starting deployment..."
+            
+            # 进入项目目录
+            cd /opt/nvwax
+            
+            # 拉取最新代码
+            echo "📥 Pulling latest code..."
+            git pull origin main
+            
+            # 停止旧容器
+            echo " Stopping old containers..."
+            docker-compose down
+            
+            # 重新构建并启动
+            echo " Building and starting containers..."
+            docker-compose up -d --build
+            
+            # 等待服务启动
+            echo "⏳ Waiting for services to start..."
+            sleep 10
+            
+            # 检查服务状态
+            echo "✅ Checking service status..."
+            docker-compose ps
+            
+            # 检查健康状态
+            echo "🏥 Checking health..."
+            curl -f http://localhost:3001/health || echo "Backend health check failed"
+            curl -f http://localhost:3000/api/health || echo "Frontend health check failed"
+            
+            echo "🎉 Deployment completed successfully!"
+          EOF
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ Deployment successful!"
+          else
+            echo " Deployment failed!"
+          fi
