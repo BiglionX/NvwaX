@@ -16,7 +16,7 @@ export default function Footer() {
     ],
     resources: [
       { label: '文档', href: 'https://github.com/BigLionX/NvwaX#readme', external: true },
-      { label: 'API 文档', href: '/api/docs', external: false },
+      // { label: 'API 文档', href: '/api/docs', external: false }, // API 文档页面暂未实现
       { label: '常见问题', href: '/faq', external: false },
       { label: '示例代码', href: 'https://github.com/BigLionX/NvwaX/tree/main/examples', external: true },
       { label: '更新日志', href: 'https://github.com/BigLionX/NvwaX/releases', external: true },

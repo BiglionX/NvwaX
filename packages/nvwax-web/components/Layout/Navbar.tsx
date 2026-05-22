@@ -13,7 +13,7 @@ const navItems = [
   { label: 'Nvwa', icon: Sparkles, path: '/nvwa' },
   { label: 'Agent广场', icon: Store, path: '/marketplace' },
   { label: '悬赏', icon: Award, path: '/bounties' },
-  { label: 'API', icon: FileText, path: '/api/docs' },
+  // { label: 'API', icon: FileText, path: '/api/docs' }, // API 文档页面暂未实现
 ];
 
 export default function Navbar() {

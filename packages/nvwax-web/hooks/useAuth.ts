@@ -20,16 +20,19 @@ export function useAuth() {
         const token = localStorage.getItem('user_token') || localStorage.getItem('token');
         const userInfoStr = localStorage.getItem('user_info') || localStorage.getItem('userInfo');
         
-        console.log('useAuth checkAuth - token exists:', !!token, 'userInfo exists:', !!userInfoStr);
+        // 清理不一致的状态
+        if (userInfoStr && !token) {
+          console.warn('useAuth: Found userInfo but no token, cleaning up localStorage');
+          localStorage.removeItem('user_info');
+          localStorage.removeItem('userInfo');
+        }
         
         if (token && userInfoStr) {
           const user = JSON.parse(userInfoStr);
-          console.log('useAuth: User logged in:', user.email || user.name);
           // 同时更新两个状态，React 会批处理
           setUserInfo(user);
           setIsLoggedIn(true);
         } else {
-          console.log('useAuth: No user found in localStorage');
           // 先设置未登录状态，再清空用户信息
           setIsLoggedIn(false);
           setUserInfo(null);
