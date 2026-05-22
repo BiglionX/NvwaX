@@ -16,19 +16,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H 43.156.133.180 >> ~/.ssh/known_hosts
-
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: 43.156.133.180
           username: ubuntu
-          password: ${{ secrets.SERVER_PASSWORD }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             set -e
             echo "🚀 Starting deployment..."
