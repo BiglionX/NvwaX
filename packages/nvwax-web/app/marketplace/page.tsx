@@ -35,7 +35,7 @@ export default function MarketplacePage() {
     enabled: selectedCategory === 'all' || selectedCategory === 'agents'
   });
 
-  // 查询 Team Skills（虚拟公司）
+  // 查询 Team Skills（虚拟公司/团队）
   const { data: teamSkillsData, isLoading: loadingTeamSkills } = useQuery({
     queryKey: ['team-skills', selectedCategory, debouncedSearch],
     queryFn: () => {
@@ -43,17 +43,13 @@ export default function MarketplacePage() {
         // 有搜索关键词时，使用搜索 API
         return teamSkillApi.searchTeamSkills({
           query: debouncedSearch,
-          category: selectedCategory === 'virtual-company' ? 'virtual-company' : undefined,
           isPublic: true,
           page: 1,
           limit: 30
         });
-      } else if (selectedCategory === 'all' || selectedCategory === 'agents') {
-        return teamSkillApi.getMarketplaceTeamSkills(1, 30);
-      } else {
-        // 只查询虚拟公司类型
-        return teamSkillApi.getTeamSkillsByCategory('virtual-company', 1, 30);
       }
+      // "全部"、"智能体"、"虚拟公司"都获取所有公开的 team_skills
+      return teamSkillApi.getMarketplaceTeamSkills(1, 30);
     },
     enabled: selectedCategory !== 'agents'
   });
