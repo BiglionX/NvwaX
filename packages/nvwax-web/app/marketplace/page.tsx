@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { searchApi, Agent } from '@/lib/api/search';
 import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
-import { Star, Download, ExternalLink, Users, Search, X } from 'lucide-react';
+import { Star, Download, ExternalLink, Users, Search, X, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import LoadingState from '@/components/Layout/LoadingState';
 import { Button, Input, Space, Container, Card, Badge, Tag } from '@/components/UI';
@@ -115,6 +115,52 @@ export default function MarketplacePage() {
           </div>
         )}
       </div>
+
+      {/* 热门 Agent - 迁移自首页 */}
+      {selectedCategory === 'all' && agentsData?.data && (
+        <Card className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <TrendingUp className="text-orange-500" size={20} />
+              热门 Agent
+            </h2>
+            <Link href="/search?q=ai%20agent">
+              <Button variant="ghost" size="sm">
+                查看全部
+              </Button>
+            </Link>
+          </div>
+          <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {agentsData.data.slice(0, 6).map((agent: Agent) => (
+              <Link
+                key={agent.id}
+                href={`/search?q=${encodeURIComponent(agent.name)}`}
+                className="block"
+              >
+                <Card padding="md" variant="clickable" className="h-full hover:border-violet-500 transition-colors">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1 mb-2">
+                    {agent.name}
+                  </h3>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                    {agent.description || '暂无描述'}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="default" size="sm">
+                      {agent.source || 'Unknown'}
+                    </Badge>
+                    {agent.stars && (
+                      <div className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
+                        <Star size={12} fill="currentColor" />
+                        <span>{agent.stars.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* 分类筛选器 */}
       <Space size="small" className="mb-6 overflow-x-auto pb-2">

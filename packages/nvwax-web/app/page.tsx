@@ -1,18 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { Search, Star, ArrowRight, Sparkles, TrendingUp, Layers } from 'lucide-react';
-import { searchApi, Agent } from '@/lib/api/search';
+import { Search, Sparkles, Layers, TrendingUp, Star } from 'lucide-react';
 import { 
   Container, 
   Card, 
   Button, 
   Input,
-  Badge,
-  Skeleton,
   Space,
   Tag,
   Divider
@@ -22,12 +17,6 @@ export default function Home() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<string>('all');
-
-  // 获取热门 Agents（按星级排序）
-  const { data: trendingAgents, isLoading: loadingTrending } = useQuery({
-    queryKey: ['trending-agents'],
-    queryFn: () => searchApi.searchAgents('', 1, 6),
-  });
 
   // 处理搜索
   const handleSearch = (e: React.FormEvent) => {
@@ -116,75 +105,6 @@ export default function Home() {
         </Space>
       </div>
 
-      {/* Trending Agents Preview */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <TrendingUp className="text-orange-500" size={24} />
-              热门 Agent
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">按星级排序的热门项目</p>
-          </div>
-          <Link href="/marketplace">
-            <Button variant="ghost" rightIcon={<ArrowRight size={16} />}>
-              查看全部
-            </Button>
-          </Link>
-        </div>
-
-        {loadingTrending ? (
-          <div className="grid md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-3 gap-6">
-            {trendingAgents?.data?.slice(0, 6).map((agent: Agent) => (
-              <Link
-                key={agent.id}
-                href={`/search?q=${encodeURIComponent(agent.name)}`}
-                className="block"
-              >
-                <Card padding="lg" variant="clickable" className="h-full">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
-                      {agent.name}
-                    </h3>
-                    {agent.stars && (
-                      <Badge variant="warning">
-                        <Star size={14} fill="currentColor" className="inline mr-1" />
-                        {agent.stars.toLocaleString()}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                    {agent.description || '暂无描述'}
-                  </p>
-                  <div className="flex items-center justify-between text-xs">
-                    <Tag variant="default" size="sm">
-                      {agent.source || 'Unknown'}
-                    </Tag>
-                    {agent.url && (
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(agent.url, '_blank', 'noopener,noreferrer');
-                        }}
-                        className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                      >
-                        查看 →
-                      </span>
-                    )}
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Quick Start Guide */}
       <Card className="bg-linear-to-r from-violet-500 to-purple-600 text-white" padding="lg">
         <h2 className="text-2xl font-bold mb-6">快速开始</h2>
@@ -258,16 +178,5 @@ export default function Home() {
         </div>
       </Card>
     </Container>
-  );
-}
-
-// Skeleton Card Component for Loading State
-function SkeletonCard() {
-  return (
-    <Card padding="lg">
-      <Skeleton variant="text" width="60%" height="24px" className="mb-3" />
-      <Skeleton variant="text" width="100%" height="16px" className="mb-2" />
-      <Skeleton variant="text" width="66%" height="16px" />
-    </Card>
   );
 }

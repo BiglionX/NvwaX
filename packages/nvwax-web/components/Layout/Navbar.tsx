@@ -36,12 +36,12 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-3">
-              <div className="relative w-10 h-10">
+              <div className="relative w-7 h-7">
                 <Image
                   src="/logo.png"
                   alt="NvwaX Logo"
                   fill
-                  sizes="(max-width: 768px) 40px, 40px"
+                  sizes="(max-width: 768px) 28px, 28px"
                   className="object-contain"
                   priority
                 />
