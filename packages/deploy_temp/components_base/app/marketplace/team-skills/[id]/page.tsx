@@ -6,14 +6,14 @@ import { teamSkillApi } from '@/lib/api/team-skills';
 import { 
   ArrowLeft, Users, Workflow, Shield,
   Package, Sparkles, CheckCircle, Clock, Zap,
-  Monitor, Share2, X
+  Monitor, Share2, ExternalLink, Loader, X
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import TeamSkillPackageModal from '@/components/Package/TeamSkillPackageModal';
 import VirtualCompanyChat from '@/components/virtual-company-chat';
 import ShareModal from '@/components/ShareModal';
-import { downloadTeamConfig } from '@/lib/api/proclaw';
+import { proClawService, ProClawExportResult } from '@/lib/api/proclaw';
 
 // 辅助函数：安全解析 JSON
 const safeParseJSON = (value: unknown) => {
@@ -35,7 +35,9 @@ export default function TeamSkillDetailPage() {
   const [showChat, setShowChat] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showProClawModal, setShowProClawModal] = useState(false);
-  const [proClawDownloaded, setProClawDownloaded] = useState(false);
+  const [proClawLoading, setProClawLoading] = useState(false);
+  const [proClawResult, setProClawResult] = useState<ProClawExportResult | null>(null);
+  const [proClawError, setProClawError] = useState<string | null>(null);
 
   // 查询团队技能详情
   const { data, isLoading, error } = useQuery({
@@ -52,29 +54,49 @@ export default function TeamSkillDetailPage() {
   const bindingRules = safeParseJSON(skill?.bindingRules);
   const steps = workflow?.steps || [];
 
-  // ProClaw 导出处理 - 下载配置文件
-  const handleExportToProClaw = () => {
-    const success = downloadTeamConfig({
-      teamName: skill?.name || 'AI Team',
-      teamConfig: {
-        id: skill?.id,
-        name: skill?.name,
-        description: skill?.description,
-        category: skill?.category,
-        leaderConfig: leaderConfig,
-        roles: roles,
-        workflow: workflow,
-        bindingRules: bindingRules,
-      },
-      metadata: {
-        source: 'nvwax-marketplace',
-        createdAt: new Date().toISOString(),
-      },
-    });
-
-    if (success) {
-      setProClawDownloaded(true);
+  // ProClaw 导出处理
+  const handleExportToProClaw = async () => {
+    setProClawLoading(true);
+    setProClawError(null);
+    setProClawResult(null);
+    try {
+      const token = localStorage.getItem('proclaw_token') || '';
+      proClawService.setToken(token);
+      
+      const result = await proClawService.exportToProClaw({
+        teamName: skill?.name || 'AI Team',
+        teamConfig: {
+          id: skill?.id,
+          name: skill?.name,
+          description: skill?.description,
+          category: skill?.category,
+          leaderConfig: leaderConfig,
+          roles: roles,
+          workflow: workflow,
+          bindingRules: bindingRules,
+        },
+        metadata: {
+          source: 'nvwax-marketplace',
+          createdAt: new Date().toISOString(),
+        },
+      });
+      setProClawResult(result);
+      if (result.success) {
+        // 保存 token 供后续使用
+        if (result.proClawAppId) {
+          localStorage.setItem('proclaw_team_id', result.proClawAppId);
+        }
+      }
+    } catch (err) {
+      setProClawError(err instanceof Error ? err.message : '导出失败，请重试');
+    } finally {
+      setProClawLoading(false);
     }
+  };
+
+  const handleOpenProClaw = () => {
+    const teamId = proClawResult?.proClawAppId || localStorage.getItem('proclaw_team_id') || '';
+    window.open(`https://proclaw.cc${teamId ? `?app=${teamId}` : ''}`, '_blank');
   };
 
   if (isLoading) {
@@ -443,7 +465,8 @@ export default function TeamSkillDetailPage() {
               <button
                 onClick={() => {
                   setShowProClawModal(false);
-                  setProClawDownloaded(false);
+                  setProClawResult(null);
+                  setProClawError(null);
                 }}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
@@ -452,16 +475,16 @@ export default function TeamSkillDetailPage() {
             </div>
 
             <div className="p-5 space-y-4">
-              {!proClawDownloaded ? (
+              {!proClawResult && !proClawError && (
                 <>
                   <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl">
                     <h3 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">
-                      🚀 导出团队到 ProClaw
+                      🚀 一键导出到 ProClaw 桌面应用
                     </h3>
                     <p className="text-sm text-indigo-700 dark:text-indigo-300">
                       ProClaw 是一款桌面级 AI 协作平台（
                       <a href="https://proclaw.cc" target="_blank" rel="noopener noreferrer" className="underline font-medium">proclaw.cc</a>
-                      ），下载配置文件后在 ProClaw 中导入，即可在桌面端使用所有 AI 团队成员。
+                      ），将此团队配置导入后，即可在桌面端使用所有 AI 团队成员，获得更流畅、更专业的协作体验。
                     </p>
                   </div>
 
@@ -479,55 +502,83 @@ export default function TeamSkillDetailPage() {
                       <span>快捷启动，无需打开浏览器</span>
                     </div>
                   </div>
-
-                  {/* 操作步骤 */}
-                  <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg text-sm text-gray-600 dark:text-gray-400">
-                    <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      📋 导入步骤：
-                    </p>
-                    <ol className="list-decimal list-inside space-y-1 text-xs">
-                      <li>点击下方按钮下载配置文件</li>
-                      <li>打开 ProClaw 桌面应用</li>
-                      <li>进入「AI团队」页面，点击「导入团队」</li>
-                      <li>选择刚下载的 .proclaw-team.json 文件</li>
-                    </ol>
-                  </div>
                 </>
-              ) : (
+              )}
+
+              {proClawError && (
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                  <p className="text-sm text-red-700 dark:text-red-300">{proClawError}</p>
+                </div>
+              )}
+
+              {proClawResult && proClawResult.success && (
                 <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
                   <div className="flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
                     <div>
-                      <h3 className="font-semibold text-green-800 dark:text-green-200">配置文件已下载！</h3>
+                      <h3 className="font-semibold text-green-800 dark:text-green-200">导出成功！</h3>
                       <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                        请在 ProClaw 桌面应用中打开「AI团队」页面，点击「导入团队」选择刚下载的配置文件即可完成导入。
+                        {proClawResult.message || '团队已成功导出到 ProClaw，可在桌面应用中打开使用。'}
                       </p>
+                      <button
+                        onClick={handleOpenProClaw}
+                        className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <ExternalLink size={16} />
+                        在 ProClaw 中打开
+                      </button>
                     </div>
                   </div>
                 </div>
               )}
-            </div>
 
-            <div className="p-5 border-t border-gray-200 dark:border-gray-700 flex gap-3">
-              <button
-                onClick={() => {
-                  setShowProClawModal(false);
-                  setProClawDownloaded(false);
-                }}
-                className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-colors"
-              >
-                {proClawDownloaded ? '关闭' : '取消'}
-              </button>
-              {!proClawDownloaded && (
-                <button
-                  onClick={handleExportToProClaw}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg"
-                >
-                  <Monitor size={18} />
-                  下载配置文件
-                </button>
+              {proClawResult && !proClawResult.success && (
+                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    {proClawResult.message || '导出时遇到问题，请重试或直接访问 proclaw.cc 手动导入。'}
+                  </p>
+                  <button
+                    onClick={handleOpenProClaw}
+                    className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    <ExternalLink size={16} />
+                    前往 ProClaw 手动导入
+                  </button>
+                </div>
               )}
             </div>
+
+            {!proClawResult && (
+              <div className="p-5 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowProClawModal(false);
+                    setProClawError(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-colors"
+                  disabled={proClawLoading}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleExportToProClaw}
+                  disabled={proClawLoading}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {proClawLoading ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      导出中...
+                    </>
+                  ) : (
+                    <>
+                      <Monitor size={18} />
+                      导出到 ProClaw
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -535,7 +586,7 @@ export default function TeamSkillDetailPage() {
       {/* 右下角固定浮动按钮 */}
       <div className="fixed bottom-8 right-8 flex flex-col gap-3 z-40">
         <button
-          onClick={() => { setProClawDownloaded(false); setShowProClawModal(true); }}
+          onClick={() => setShowProClawModal(true)}
           className="group flex items-center gap-2 px-5 py-3 bg-white dark:bg-gray-800 border-2 border-indigo-500 hover:border-indigo-600 text-indigo-700 dark:text-indigo-300 font-medium rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1"
           title="集成到 ProClaw 桌面应用"
         >

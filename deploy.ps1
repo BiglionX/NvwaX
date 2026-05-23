@@ -11,7 +11,7 @@ Write-Host ""
 # 配置
 $ServerUser = "ubuntu"
 $ServerHost = "43.156.133.180"
-$ServerDir = "/opt/nvwax"
+$ServerDir = "$HOME/NvwaX"
 $SSHKeyPath = "$env:USERPROFILE\.ssh\id_ed25519"  # SSH 私钥路径
 
 # 1. 提示用户确认
@@ -75,5 +75,5 @@ ssh -i $SSHKeyPath ${ServerUser}@${ServerHost} $DeployCommand
 Write-Host ""
 Write-Host "======================================" -ForegroundColor Cyan
 Write-Host "  部署完成！" -ForegroundColor Green
-Write-Host "  访问: http://${ServerHost}:3000" -ForegroundColor Green
+Write-Host "  访问: https://nvwax.proclaw.cc" -ForegroundColor Green
 Write-Host "======================================" -ForegroundColor Cyan

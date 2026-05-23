@@ -1,0 +1,88 @@
+# Build stage for backend
+FROM node:20-alpine AS backend-builder
+
+WORKDIR /app
+
+# 强制清除缓存标记 - 版本 20260427-v3
+ARG CACHE_BUST=3
+
+# 安装 Python 和构建工具（用于编译 better-sqlite3 等原生模块）
+RUN apk add --no-cache python3 py3-pip make g++
+
+# Install pnpm
+RUN npm install -g pnpm@8.15.0
+
+# Copy monorepo package files
+COPY package.json pnpm-workspace.yaml .npmrc ./
+COPY packages/nvwax-server/package*.json ./packages/nvwax-server/
+
+# Install dependencies (explicitly disable frozen-lockfile to fix Railway build)
+RUN pnpm install --no-frozen-lockfile
+
+# Copy source code (exclude node_modules)
+COPY packages/nvwax-server/src ./packages/nvwax-server/src
+COPY packages/nvwax-server/tsconfig.json ./packages/nvwax-server/tsconfig.json
+COPY packages/nvwax-server/migrations ./packages/nvwax-server/migrations
+
+# Build TypeScript
+WORKDIR /app/packages/nvwax-server
+RUN pnpm build
+
+# Production stage for backend
+FROM node:20-alpine AS backend-production
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm@8.15.0
+
+# 安装 Python 和构建工具（用于编译 better-sqlite3 等原生模块）
+RUN apk add --no-cache python3 py3-pip make g++
+
+# Copy monorepo package files
+COPY package.json pnpm-workspace.yaml .npmrc ./
+COPY packages/nvwax-server/package*.json ./packages/nvwax-server/
+
+# Install production dependencies
+RUN pnpm install --prod
+
+# Copy built files
+COPY --from=backend-builder /app/packages/nvwax-server/dist ./packages/nvwax-server/dist
+COPY --from=backend-builder /app/packages/nvwax-server/migrations ./packages/nvwax-server/migrations
+
+# Create exports directory and set permissions before switching to non-root user
+RUN mkdir -p /app/packages/nvwax-server/exports && \
+    chmod -R 777 /app/packages/nvwax-server/exports
+
+# Create startup script before switching to non-root user
+COPY <<'EOF' /app/start.sh
+#!/bin/sh
+set -e
+echo "=== NvwaX Backend Starting ==="
+echo "Working directory: $(pwd)"
+echo "Files in current directory:"
+ls -la
+echo "Files in dist directory:"
+ls -la dist/ || echo "dist directory not found!"
+echo "Environment variables:"
+env | grep -E '(PORT|NODE_ENV|DATABASE_URL|JWT_SECRET)' || true
+echo "Starting Node.js application..."
+exec node dist/app.js
+EOF
+
+RUN chmod +x /app/start.sh
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nvwax -u 1001
+
+USER nvwax
+
+WORKDIR /app/packages/nvwax-server
+
+EXPOSE 3001
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
+
+CMD ["/app/start.sh"]

@@ -1,0 +1,64 @@
+# Build stage for frontend
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /app
+
+# 强制清除缓存标记
+ARG CACHE_BUST=1
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy monorepo package files
+COPY package.json pnpm-workspace.yaml .npmrc ./
+COPY packages/nvwax-web/package*.json ./packages/nvwax-web/
+COPY packages/nvwax-sdk/package*.json ./packages/nvwax-sdk/
+
+# Install dependencies (explicitly disable frozen-lockfile)
+RUN pnpm install --no-frozen-lockfile
+
+# Copy source code
+COPY packages/nvwax-web/ ./packages/nvwax-web/
+COPY packages/nvwax-sdk/ ./packages/nvwax-sdk/
+
+# Build Next.js app
+WORKDIR /app/packages/nvwax-web
+RUN pnpm build
+
+# Production stage for frontend
+FROM node:20-alpine AS frontend-production
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy monorepo package files
+COPY package.json pnpm-workspace.yaml .npmrc ./
+COPY packages/nvwax-web/package*.json ./packages/nvwax-web/
+
+# Install dependencies (including TypeScript for Next.js runtime)
+RUN pnpm install --no-frozen-lockfile
+
+# Copy built files
+COPY --from=frontend-builder /app/packages/nvwax-web/.next ./packages/nvwax-web/.next
+COPY --from=frontend-builder /app/packages/nvwax-web/public ./packages/nvwax-web/public
+COPY --from=frontend-builder /app/packages/nvwax-web/next.config.ts ./packages/nvwax-web/next.config.ts
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nvwax -u 1001
+
+USER nvwax
+
+WORKDIR /app/packages/nvwax-web
+
+EXPOSE 3000
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+
+CMD ["pnpm", "start"]
