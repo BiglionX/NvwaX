@@ -242,6 +242,56 @@ class DatabaseService {
         )
       `);
 
+      // 创建通知表
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS notifications (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id TEXT NOT NULL,
+          type VARCHAR(50) NOT NULL,
+          title VARCHAR(255) NOT NULL,
+          message TEXT NOT NULL,
+          data JSONB DEFAULT '{}'::jsonb,
+          is_read BOOLEAN DEFAULT false,
+          priority VARCHAR(20) DEFAULT 'normal',
+          expires_at TIMESTAMP WITH TIME ZONE,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // 创建虚拟公司会话表
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS virtual_company_sessions (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          user_id TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'initiated',
+          conversation_history JSONB DEFAULT '[]'::jsonb,
+          requirements JSONB DEFAULT '{}'::jsonb,
+          selected_roles JSONB DEFAULT '[]'::jsonb,
+          team_design JSONB DEFAULT '{}'::jsonb,
+          ceo_config JSONB DEFAULT '{}'::jsonb,
+          agent_matches JSONB DEFAULT '{}'::jsonb,
+          skill_matches JSONB DEFAULT '{}'::jsonb,
+          progress JSONB DEFAULT '{"currentStep":0,"totalSteps":7,"percentage":0,"steps":[]}'::jsonb,
+          final_team_skill_id TEXT,
+          document_package_url TEXT,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          completed_at TIMESTAMP WITH TIME ZONE
+        )
+      `);
+
+      // 确保虚拟公司会话表的额外列存在（兼容旧表）
+      try {
+        await client.query(`ALTER TABLE virtual_company_sessions ADD COLUMN IF NOT EXISTS team_design JSONB DEFAULT '{}'::jsonb`);
+        await client.query(`ALTER TABLE virtual_company_sessions ADD COLUMN IF NOT EXISTS ceo_config JSONB DEFAULT '{}'::jsonb`);
+        await client.query(`ALTER TABLE virtual_company_sessions ADD COLUMN IF NOT EXISTS agent_matches JSONB DEFAULT '{}'::jsonb`);
+        await client.query(`ALTER TABLE virtual_company_sessions ADD COLUMN IF NOT EXISTS skill_matches JSONB DEFAULT '{}'::jsonb`);
+        await client.query(`ALTER TABLE virtual_company_sessions ADD COLUMN IF NOT EXISTS document_package_url TEXT`);
+      } catch (error) {
+        console.log('Virtual company sessions extra columns already exist or not needed');
+      }
+
       // 创建索引以提高查询性能
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
@@ -262,6 +312,18 @@ class DatabaseService {
         CREATE INDEX IF NOT EXISTS idx_executions_agent_team ON agent_team_executions(agent_team_id);
         CREATE INDEX IF NOT EXISTS idx_executions_status ON agent_team_executions(status);
         CREATE INDEX IF NOT EXISTS idx_executions_created_at ON agent_team_executions(created_at DESC);
+        
+        -- 通知表索引
+        CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+        CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
+        CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
+        CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read) WHERE is_read = FALSE;
+        
+        -- 虚拟公司会话表索引
+        CREATE INDEX IF NOT EXISTS idx_vcs_user_id ON virtual_company_sessions(user_id);
+        CREATE INDEX IF NOT EXISTS idx_vcs_status ON virtual_company_sessions(status);
+        CREATE INDEX IF NOT EXISTS idx_vcs_created_at ON virtual_company_sessions(created_at DESC);
       `);
 
       console.log('✓ Database schema initialized successfully');
