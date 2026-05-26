@@ -186,9 +186,8 @@ export default function MarketplacePage() {
             )}
           </h2>
           {loadingAgents ? (
-            <div className="flex items-center justify-center py-12 mb-8">
-              <Loading size="lg" />
-              <span className="ml-3 text-gray-500 dark:text-gray-400">搜索智能体中...</span>
+            <div className="mb-8">
+              <Loading text="搜索智能体中..." />
             </div>
           ) : agentsData?.data ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -258,9 +257,8 @@ export default function MarketplacePage() {
             )}
           </h2>
           {loadingTeamSkills ? (
-            <div className="flex items-center justify-center py-12 mb-8">
-              <Loading size="lg" />
-              <span className="ml-3 text-gray-500 dark:text-gray-400">搜索虚拟公司中...</span>
+            <div className="mb-8">
+              <Loading text="搜索虚拟公司中..." />
             </div>
           ) : teamSkillsData?.data?.data ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
