@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { searchApi, Agent } from '@/lib/api/search';
 import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
-import { Star, Download, ExternalLink, Users, Search, X, TrendingUp } from 'lucide-react';
+import { Star, Download, ExternalLink, Users, Search, X, TrendingUp, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { Button, Input, Space, Container, Card, Badge, Tag, Loading } from '@/components/UI';
+import { Button, Input, Space, Container, Card, Badge, Tag, Loading, Modal } from '@/components/UI';
 
 type Category = 'all' | 'agents' | 'virtual-company';
 
@@ -14,6 +14,7 @@ export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
   // 搜索防抖
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -186,8 +187,12 @@ export default function MarketplacePage() {
             )}
           </h2>
           {loadingAgents ? (
-            <div className="mb-8">
-              <Loading text="搜索智能体中..." />
+            <div className="flex items-center justify-center py-8 mb-8 gap-3 text-gray-400 dark:text-gray-500">
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm">搜索中...</span>
             </div>
           ) : agentsData?.data ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -257,8 +262,12 @@ export default function MarketplacePage() {
             )}
           </h2>
           {loadingTeamSkills ? (
-            <div className="mb-8">
-              <Loading text="搜索虚拟公司中..." />
+            <div className="flex items-center justify-center py-8 mb-8 gap-3 text-gray-400 dark:text-gray-500">
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm">搜索中...</span>
             </div>
           ) : teamSkillsData?.data?.data ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -311,7 +320,7 @@ export default function MarketplacePage() {
         </>
       )}
 
-      {/* 空状态 */}
+      {/* 空状态 - 搜索无结果时弹出创建建议 */}
       {!isLoading && (() => {
         if (selectedCategory === 'all') {
           return !agentsData?.data?.length && !teamSkillsData?.data?.data?.length;
@@ -329,12 +338,61 @@ export default function MarketplacePage() {
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
               {debouncedSearch ? '未找到匹配的结果' : '暂无数据'}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              {debouncedSearch ? '请尝试其他关键词' : 'Agent 广场数据正在加载中'}
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {debouncedSearch ? `没有找到与"${debouncedSearch}"相关的内容` : 'Agent 广场数据正在加载中'}
             </p>
+            {debouncedSearch && (
+              <Button
+                variant="primary"
+                icon={<Plus size={18} />}
+                onClick={() => setShowCreateModal(true)}
+              >
+                创建一个"{debouncedSearch}"
+              </Button>
+            )}
           </div>
         </Card>
       )}
+
+      {/* 创建建议弹窗 */}
+      <Modal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title={`创建 "${debouncedSearch}"`}
+        subtitle="未在 Agent 广场找到匹配结果，是否创建一个新的？"
+        size="md"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+              取消
+            </Button>
+            <Link href="/nvwa" onClick={() => setShowCreateModal(false)}>
+              <Button icon={<Plus size={16} />}>
+                去创建
+              </Button>
+            </Link>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="p-4 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
+            <h4 className="font-semibold text-violet-900 dark:text-violet-300 mb-1 flex items-center gap-2">
+              <span className="text-lg">🤖</span> 创建智能体
+            </h4>
+            <p className="text-sm text-violet-700 dark:text-violet-400">
+              使用 AI 辅助快速构建单个智能体，可配置技能、数据源和输出格式
+            </p>
+          </div>
+          <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+            <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-1 flex items-center gap-2">
+              <Users size={18} /> 创建虚拟公司
+            </h4>
+            <p className="text-sm text-blue-700 dark:text-blue-400">
+              构建由多个 AI 角色组成的虚拟公司团队，支持角色协作和任务分配
+            </p>
+          </div>
+        </div>
+      </Modal>
 
     </Container>
   );
