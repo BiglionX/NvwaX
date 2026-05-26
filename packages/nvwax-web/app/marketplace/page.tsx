@@ -6,7 +6,7 @@ import { searchApi, Agent } from '@/lib/api/search';
 import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
 import { Star, Download, ExternalLink, Users, Search, X, TrendingUp, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { Button, Input, Space, Container, Card, Badge, Tag, Loading, Modal } from '@/components/UI';
+import { Button, Input, Space, Container, Card, Badge, Tag, Modal } from '@/components/UI';
 
 type Category = 'all' | 'agents' | 'virtual-company';
 
