@@ -6,8 +6,7 @@ import { searchApi, Agent } from '@/lib/api/search';
 import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
 import { Star, Download, ExternalLink, Users, Search, X, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import LoadingState from '@/components/Layout/LoadingState';
-import { Button, Input, Space, Container, Card, Badge, Tag } from '@/components/UI';
+import { Button, Input, Space, Container, Card, Badge, Tag, Loading } from '@/components/UI';
 
 type Category = 'all' | 'agents' | 'virtual-company';
 
@@ -62,10 +61,6 @@ export default function MarketplacePage() {
   ];
 
   const isLoading = loadingAgents || loadingTeamSkills;
-
-  if (isLoading) {
-    return <LoadingState />;
-  }
 
   return (
     <Container size="lg" className="py-6">
@@ -181,15 +176,23 @@ export default function MarketplacePage() {
       )}
 
       {/* Agents Grid */}
-      {(selectedCategory === 'all' || selectedCategory === 'agents') && agentsData?.data && (
+      {(selectedCategory === 'all' || selectedCategory === 'agents') && (
         <>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <span className="text-2xl">🤖</span>
             智能体
-            <span className="text-sm font-normal text-gray-500 dark:text-gray-400">({agentsData.data.length} 个)</span>
+            {agentsData?.data && (
+              <span className="text-sm font-normal text-gray-500 dark:text-gray-400">({agentsData.data.length} 个)</span>
+            )}
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {agentsData.data.map((agent: Agent) => (
+          {loadingAgents ? (
+            <div className="flex items-center justify-center py-12 mb-8">
+              <Loading size="lg" />
+              <span className="ml-3 text-gray-500 dark:text-gray-400">搜索智能体中...</span>
+            </div>
+          ) : agentsData?.data ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {agentsData.data.map((agent: Agent) => (
               <Card key={agent.id} className="hover:-translate-y-1 hover:shadow-xl transition-all group">
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">{agent.name}</h3>
@@ -238,19 +241,28 @@ export default function MarketplacePage() {
               </Card>
             ))}
           </div>
+          ) : null}
         </>
       )}
 
       {/* Team Skills Grid - 只显示虚拟公司 */}
-      {(selectedCategory === 'all' || selectedCategory === 'virtual-company') && teamSkillsData?.data?.data && (
+      {(selectedCategory === 'all' || selectedCategory === 'virtual-company') && (
         <>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <span className="text-2xl"></span>
             虚拟公司
-            <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
-              ({teamSkillsData.data.data?.length || 0} 个)
-            </span>
+            {teamSkillsData?.data?.data && (
+              <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                ({teamSkillsData.data.data?.length || 0} 个)
+              </span>
+            )}
           </h2>
+          {loadingTeamSkills ? (
+            <div className="flex items-center justify-center py-12 mb-8">
+              <Loading size="lg" />
+              <span className="ml-3 text-gray-500 dark:text-gray-400">搜索虚拟公司中...</span>
+            </div>
+          ) : teamSkillsData?.data?.data ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {teamSkillsData.data.data?.map((skill: TeamSkill) => (
               <Link
@@ -297,11 +309,12 @@ export default function MarketplacePage() {
               </Link>
             ))}
           </div>
+          ) : null}
         </>
       )}
 
       {/* 空状态 */}
-      {(() => {
+      {!isLoading && (() => {
         if (selectedCategory === 'all') {
           return !agentsData?.data?.length && !teamSkillsData?.data?.data?.length;
         }
