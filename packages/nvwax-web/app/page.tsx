@@ -17,9 +17,40 @@ export default function Home() {
   };
 
   return (
-    <div className="stars-bg min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-16">
+    <>
+      {/* 全屏固定星空背景 */}
+      <div className="fixed inset-0 -z-10 stars-bg" />
+
+      {/* 星云光晕层 */}
+      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
+        {/* 大星云 - 右上 */}
+        <div
+          className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full opacity-30 animate-[drift_12s_ease-in-out_infinite]"
+          style={{
+            background: 'radial-gradient(circle, rgba(59,130,246,0.25) 0%, rgba(59,130,246,0.1) 40%, transparent 70%)',
+            filter: 'blur(60px)'
+          }}
+        />
+        {/* 小星云 - 左下 */}
+        <div
+          className="absolute -bottom-20 -left-20 w-[350px] h-[350px] rounded-full opacity-25 animate-[drift_15s_ease-in-out_infinite_2s]"
+          style={{
+            background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, rgba(139,92,246,0.08) 40%, transparent 70%)',
+            filter: 'blur(50px)'
+          }}
+        />
+        {/* 流星 */}
+        <div
+          className="absolute top-10 left-1/2 w-[2px] h-[2px] rounded-full bg-white animate-[shootingStar_6s_linear_infinite]"
+          style={{
+            boxShadow: '0 0 4px 2px rgba(255,255,255,0.3)',
+          }}
+        />
+      </div>
+
       {/* 主内容 */}
-      <div className="relative z-10 w-full max-w-3xl mx-auto text-center animate-[fadeIn_0.8s_ease-out]">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-16">
+        <div className="w-full max-w-3xl mx-auto text-center animate-[fadeIn_0.8s_ease-out]">
         {/* Logo / 品牌标识 */}
         <div className="mb-8 inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-linear-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/30 ring-1 ring-white/10">
           <Bot size={40} className="text-white" />
@@ -105,6 +136,10 @@ export default function Home() {
           })}
         </div>
       </div>
-    </div>
+
+        {/* 底部渐隐过渡 */}
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-linear-to-b from-transparent to-[#080b1a] pointer-events-none" />
+      </div>
+    </>
   );
 }

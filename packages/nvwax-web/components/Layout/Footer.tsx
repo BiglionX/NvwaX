@@ -2,10 +2,15 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { Heart, Mail } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const pathname = usePathname();
+
+  // 是否在首页（用于切换暗色星空样式）
+  const isHome = pathname === '/';
 
   const footerLinks = {
     product: [
@@ -35,7 +40,11 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
+    <footer className={`${
+      isHome
+        ? 'bg-transparent border-t border-white/5'
+        : 'bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700'
+    } mt-auto transition-colors duration-300`}>
       {/* Main Footer */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -51,9 +60,13 @@ export default function Footer() {
                   className="object-contain"
                 />
               </div>
-              <span className="text-xl font-bold bg-linear-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">NvwaX</span>
+              <span className={`text-xl font-bold ${
+                isHome ? 'text-white' : 'bg-linear-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent'
+              }`}>NvwaX</span>
             </Link>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className={`text-sm mb-4 ${
+              isHome ? 'text-slate-400' : 'text-gray-600 dark:text-gray-400'
+            }`}>
               开源的 AI Agent 搜索、发现和管理平台
             </p>
             <div className="flex items-center gap-3">
@@ -78,7 +91,9 @@ export default function Footer() {
 
           {/* Product */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+            <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
+              isHome ? 'text-white' : 'text-gray-900 dark:text-white'
+            }`}>
               产品
             </h3>
             <ul className="space-y-3">
@@ -86,7 +101,11 @@ export default function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    className={`text-sm transition-colors ${
+                      isHome
+                        ? 'text-slate-400 hover:text-blue-400'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                    }`}
                   >
                     {link.label}
                   </Link>
@@ -97,7 +116,9 @@ export default function Footer() {
 
           {/* Resources */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+            <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
+              isHome ? 'text-white' : 'text-gray-900 dark:text-white'
+            }`}>
               资源
             </h3>
             <ul className="space-y-3">
@@ -107,7 +128,11 @@ export default function Footer() {
                     href={link.href}
                     target={link.external ? '_blank' : undefined}
                     rel={link.external ? 'noopener noreferrer' : undefined}
-                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    className={`text-sm transition-colors ${
+                      isHome
+                        ? 'text-slate-400 hover:text-blue-400'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                    }`}
                   >
                     {link.label}
                   </a>
@@ -118,7 +143,9 @@ export default function Footer() {
 
           {/* Community */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+            <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
+              isHome ? 'text-white' : 'text-gray-900 dark:text-white'
+            }`}>
               社区
             </h3>
             <ul className="space-y-3">
@@ -130,7 +157,11 @@ export default function Footer() {
                       href={link.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      className={`flex items-center gap-2 text-sm transition-colors ${
+                        isHome
+                          ? 'text-slate-400 hover:text-blue-400'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                      }`}
                     >
                       {Icon && <Icon size={16} />}
                       {link.label}
@@ -143,9 +174,13 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
+        <div className={`mt-12 pt-8 border-t ${
+          isHome ? 'border-white/10' : 'border-gray-200 dark:border-gray-700'
+        }`}>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className={`text-sm ${
+              isHome ? 'text-slate-400' : 'text-gray-600 dark:text-gray-400'
+            }`}>
               © {currentYear} NvwaX. All rights reserved.
             </div>
             
@@ -156,14 +191,20 @@ export default function Footer() {
                   href={link.href}
                   target={link.external ? '_blank' : undefined}
                   rel={link.external ? 'noopener noreferrer' : undefined}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className={`text-sm transition-colors ${
+                    isHome
+                      ? 'text-slate-400 hover:text-blue-400'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
                 >
                   {link.label}
                 </a>
               ))}
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <div className={`flex items-center gap-2 text-sm ${
+              isHome ? 'text-slate-400' : 'text-gray-600 dark:text-gray-400'
+            }`}>
               <span>Made with</span>
               <Heart size={16} className="text-red-500 fill-current" />
               <span>by Open Source Community</span>
