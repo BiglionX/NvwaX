@@ -75,7 +75,7 @@ export default function Select({
             appearance-none cursor-pointer
             ${error 
               ? 'border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500/20' 
-              : 'border-gray-200 dark:border-gray-700 focus:border-violet-500 focus:ring-violet-500/20'
+              : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500/20'
             }
             outline-none transition-all duration-200
             text-gray-900 dark:text-white

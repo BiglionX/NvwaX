@@ -111,8 +111,8 @@ export default function Accordion({
               ${item.disabled
                 ? 'border-gray-200 dark:border-gray-700 opacity-50'
                 : expanded
-                  ? 'border-violet-300 dark:border-violet-700 shadow-lg shadow-violet-200/50 dark:shadow-violet-900/30'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700'
+                  ? 'border-blue-300 dark:border-blue-700 shadow-lg shadow-blue-200/50 dark:shadow-blue-900/30'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
               }
             `}
           >
@@ -125,11 +125,11 @@ export default function Accordion({
                 w-full px-6 py-4
                 flex items-center justify-between
                 text-left
-                focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-inset rounded-xl
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset rounded-xl
                 ${item.disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
               `}
             >
-              <span className={`font-medium ${expanded ? 'text-violet-700 dark:text-violet-300' : 'text-gray-900 dark:text-white'}`}>
+              <span className={`font-medium ${expanded ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}>
                 {item.title}
               </span>
               
@@ -143,7 +143,7 @@ export default function Accordion({
                   className={`
                     transition-colors
                     ${expanded 
-                      ? 'text-violet-600 dark:text-violet-400' 
+                      ? 'text-blue-600 dark:text-blue-400' 
                       : 'text-gray-400'
                     }
                   `}

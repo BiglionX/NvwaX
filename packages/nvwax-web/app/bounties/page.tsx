@@ -68,7 +68,7 @@ export default function BountiesPage() {
         </div>
         <Link
           href="/bounties/create"
-          className="px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all flex items-center gap-2 shadow-lg"
+          className="px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl transition-all flex items-center gap-2 shadow-lg"
         >
           <Plus size={20} />
           发布悬赏

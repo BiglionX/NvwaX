@@ -129,7 +129,7 @@ export default function PackageModal({
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-linear-to-br from-blue-500 to-purple-600 rounded-lg">
+            <div className="p-2 bg-linear-to-br from-blue-500 to-blue-700 rounded-lg">
               <Package className="text-white" size={24} />
             </div>
             <div>
@@ -285,7 +285,7 @@ export default function PackageModal({
                   className={`h-full transition-all duration-500 ${
                     buildJob.status === 'failed' ? 'bg-red-500' :
                     buildJob.status === 'completed' ? 'bg-green-500' :
-                    'bg-linear-to-r from-blue-500 to-purple-600'
+                    'bg-linear-to-r from-blue-500 to-blue-700'
                   }`}
                   style={{ width: `${buildJob.progress}%` }}
                 />
@@ -328,7 +328,7 @@ export default function PackageModal({
             <button
               onClick={handleBuild}
               disabled={isLoading || !packageInfo}
-              className="px-6 py-2 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-2 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all disabled:opacity-50 flex items-center gap-2"
             >
               {isLoading ? (
                 <>

@@ -193,7 +193,7 @@ export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoG
       {/* 面板 */}
       <div className="relative ml-auto w-full max-w-2xl h-full bg-white dark:bg-gray-900 shadow-2xl flex flex-col animate-slide-in-right">
         {/* 头部 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-violet-600 to-indigo-600 text-white shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-blue-700 to-indigo-600 text-white shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center">
               <Sparkles size={20} className="text-yellow-300" />
@@ -215,7 +215,7 @@ export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoG
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
           {isCreatingSession && (
             <div className="flex items-center justify-center py-12">
-              <Loader2 size={32} className="animate-spin text-violet-500" />
+              <Loader2 size={32} className="animate-spin text-blue-500" />
             </div>
           )}
 
@@ -223,7 +223,7 @@ export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoG
             <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {/* AI 头像 */}
               {msg.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0 mt-1">
+                <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0 mt-1">
                   <Bot size={16} className="text-white" />
                 </div>
               )}
@@ -234,7 +234,7 @@ export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoG
                 <div
                   className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                     msg.role === 'user'
-                      ? 'bg-violet-600 text-white rounded-tr-md'
+                      ? 'bg-blue-600 text-white rounded-tr-md'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-md'
                   }`}
                 >
@@ -256,7 +256,7 @@ export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoG
                     </p>
                     <div className="grid gap-2">
                       {msg.results.map((agent) => (
-                        <Card key={agent.id} padding="sm" variant="clickable" className="hover:border-violet-400 transition-colors">
+                        <Card key={agent.id} padding="sm" variant="clickable" className="hover:border-blue-400 transition-colors">
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
                               <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
@@ -290,7 +290,7 @@ export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoG
                               href={agent.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1 mt-2"
+                              className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 mt-2"
                             >
                               <ExternalLink size={12} />
                               查看详情
@@ -309,7 +309,7 @@ export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoG
                       <button
                         key={idx}
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className="px-3 py-1.5 text-xs rounded-full border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors"
+                        className="px-3 py-1.5 text-xs rounded-full border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
                         disabled={isLoading}
                       >
                         {suggestion}
@@ -352,12 +352,12 @@ export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoG
           {/* 加载指示器 */}
           {isLoading && (
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center shrink-0">
                 <Bot size={16} className="text-white" />
               </div>
               <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-tl-md px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Loader2 size={14} className="animate-spin text-violet-500" />
+                  <Loader2 size={14} className="animate-spin text-blue-500" />
                   <span className="text-sm text-gray-500 dark:text-gray-400">正在搜索...</span>
                 </div>
               </div>
@@ -377,13 +377,13 @@ export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoG
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="描述你需要的 Agent，如：帮我找一个文案写作的 AI..."
-              className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 outline-none text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all"
+              className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all"
               disabled={isLoading || isCreatingSession}
             />
             <button
               onClick={() => sendMessage()}
               disabled={!inputValue.trim() || isLoading || isCreatingSession}
-              className="w-10 h-10 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white flex items-center justify-center transition-colors shrink-0"
+              className="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white flex items-center justify-center transition-colors shrink-0"
             >
               <Send size={18} />
             </button>

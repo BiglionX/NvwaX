@@ -93,9 +93,9 @@ export default function Switch({
           relative ${currentSize.track}
           rounded-full
           transition-colors duration-200
-          focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
           ${checked
-            ? 'bg-linear-to-r from-violet-500 to-purple-600'
+            ? 'bg-linear-to-r from-blue-600 to-blue-700'
             : 'bg-gray-300 dark:bg-gray-600'
           }
           ${disabled ? 'cursor-not-allowed' : ''}

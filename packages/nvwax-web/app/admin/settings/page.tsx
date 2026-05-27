@@ -128,7 +128,7 @@ export default function SettingsPage() {
         {/* System Info */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center gap-3 mb-6">
-            <RefreshCw className="text-purple-600 dark:text-purple-400" size={24} />
+            <RefreshCw className="text-blue-600 dark:text-blue-400" size={24} />
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">系统信息</h2>
           </div>
 
@@ -205,7 +205,7 @@ export default function SettingsPage() {
                 {/* 运行时间 */}
                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
-                    <Server className="text-purple-500" size={20} />
+                    <Server className="text-blue-500" size={20} />
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">运行时间</span>
                   </div>
                   <p className="text-lg font-bold text-gray-900 dark:text-white">

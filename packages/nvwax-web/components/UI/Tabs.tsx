@@ -106,13 +106,13 @@ export default function Tabs({
                 ${variant === 'default' || variant === 'pills' ? 'rounded-lg' : 'rounded-none'}
                 ${isActive
                   ? variant === 'default'
-                    ? 'bg-white dark:bg-gray-700 text-violet-700 dark:text-violet-300 shadow-sm'
+                    ? 'bg-white dark:bg-gray-700 text-blue-700 dark:text-blue-300 shadow-sm'
                     : variant === 'pills'
-                      ? 'bg-white dark:bg-gray-700 text-violet-700 dark:text-violet-300 shadow-sm rounded-full'
-                      : 'text-violet-700 dark:text-violet-300'
+                      ? 'bg-white dark:bg-gray-700 text-blue-700 dark:text-blue-300 shadow-sm rounded-full'
+                      : 'text-blue-700 dark:text-blue-300'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }
-                focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
               `}
             >
               {/* 图标 */}
@@ -125,7 +125,7 @@ export default function Tabs({
               {variant === 'underline' && isActive && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-600 dark:bg-violet-400"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"
                   initial={false}
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />

@@ -87,7 +87,7 @@ export default function Stepper({
                     ${isCompleted
                       ? 'bg-linear-to-br from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200/50 dark:shadow-green-900/30'
                       : isCurrent
-                        ? 'bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-200/50 dark:shadow-violet-900/30 ring-4 ring-violet-100 dark:ring-violet-900/30'
+                        ? 'bg-linear-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50 dark:shadow-blue-900/30 ring-4 ring-blue-100 dark:ring-blue-900/30'
                         : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
                     }
                   `}
@@ -154,7 +154,7 @@ export default function Stepper({
                   ${isCompleted
                     ? 'bg-linear-to-br from-green-500 to-emerald-500 text-white shadow-lg shadow-green-200/50 dark:shadow-green-900/30'
                     : isCurrent
-                      ? 'bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-200/50 dark:shadow-violet-900/30 ring-4 ring-violet-100 dark:ring-violet-900/30'
+                      ? 'bg-linear-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50 dark:shadow-blue-900/30 ring-4 ring-blue-100 dark:ring-blue-900/30'
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
                   }
                 `}

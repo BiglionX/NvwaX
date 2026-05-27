@@ -144,7 +144,7 @@ export default function TeamSkillsPage() {
                 <div className="flex items-start justify-between mb-4">
                   <span className={`px-3 py-1 text-xs font-medium rounded-full ${
                     skill.category === 'development' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
-                    skill.category === 'research' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' :
+                    skill.category === 'research' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
                     skill.category === 'content' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
                     skill.category === 'analysis' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' :
                     'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
@@ -233,7 +233,7 @@ export default function TeamSkillsPage() {
       )}
 
       {/* CTA Section */}
-      <div className="mt-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+      <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white">
         <div className="max-w-3xl">
           <h2 className="text-3xl font-bold mb-4">
             没有找到合适的模板？

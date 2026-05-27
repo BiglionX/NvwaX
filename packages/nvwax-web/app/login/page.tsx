@@ -147,12 +147,12 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-violet-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-sky-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <Card padding="lg" shadow>
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-violet-500 to-purple-600 rounded-2xl mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-blue-500 to-blue-700 rounded-2xl mb-4">
               <Mail className="text-white" size={32} />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -226,7 +226,7 @@ function LoginForm() {
               还没有账户？{' '}
               <Link
                 href="/register"
-                className="text-violet-600 dark:text-violet-400 hover:underline font-medium"
+                className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
               >
                 立即注册
               </Link>
@@ -252,9 +252,9 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-violet-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-sky-50 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-300">加载中...</p>
         </div>
       </div>

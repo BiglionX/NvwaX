@@ -82,7 +82,7 @@ const CEOConfigPreview: React.FC<CEOConfigPreviewProps> = ({ config, onDownload 
           {config.skills.map((skill, index) => (
             <span
               key={index}
-              className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
+              className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
             >
               {skill}
             </span>

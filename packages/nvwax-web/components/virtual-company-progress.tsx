@@ -22,7 +22,7 @@ export default function VirtualCompanyProgress({
   if (!progress) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-6 h-6 text-purple-500 animate-spin" />
+        <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
         <span className="ml-2 text-gray-600">加载进度...</span>
       </div>
     );
@@ -92,11 +92,11 @@ export default function VirtualCompanyProgress({
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-700">总体进度</span>
-          <span className="text-sm font-semibold text-purple-600">{progress.percentage}%</span>
+          <span className="text-sm font-semibold text-blue-600">{progress.percentage}%</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
           <div
-            className="bg-linear-to-r from-purple-500 to-pink-500 h-full rounded-full transition-all duration-500 ease-out"
+            className="bg-linear-to-r from-blue-600 to-blue-700 h-full rounded-full transition-all duration-500 ease-out"
             style={{ width: `${progress.percentage}%` }}
           />
         </div>

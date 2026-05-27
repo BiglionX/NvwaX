@@ -228,7 +228,7 @@ function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, han
           <textarea
             value={editForm.bio}
             onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
-            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-violet-500 text-gray-900 dark:text-white text-sm"
+            className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white text-sm"
             rows={3}
             placeholder="介绍一下自己..."
           />
@@ -290,17 +290,17 @@ function StatsCards({ stats }: StatsCardsProps) {
       label: '项目数',
       value: stats?.projectCount || 0,
       icon: Folder,
-      color: 'from-violet-500 to-violet-600',
-      bgColor: 'bg-violet-50 dark:bg-violet-900/20',
-      iconColor: 'text-violet-600 dark:text-violet-400'
+      color: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      iconColor: 'text-blue-600 dark:text-blue-400'
     },
     {
       label: 'AiTeam 数',
       value: stats?.teamCount || 0,
       icon: Users,
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
-      iconColor: 'text-purple-600 dark:text-purple-400'
+      color: 'from-blue-600 to-blue-700',
+      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      iconColor: 'text-blue-600 dark:text-blue-400'
     },
     {
       label: 'Agent Team 数',
@@ -317,7 +317,7 @@ function StatsCards({ stats }: StatsCardsProps) {
       {statsData.map((stat, index) => {
         const Icon = stat.icon;
         return (
-          <Card key={index} className="hover:border-violet-300 dark:hover:border-violet-700 transition-all">
+          <Card key={index} className="hover:border-blue-300 dark:hover:border-blue-700 transition-all">
             <div className="flex items-center justify-between mb-3">
               <div className={`w-10 h-10 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
                 <Icon className={stat.iconColor} size={20} />
@@ -336,8 +336,8 @@ function StatsCards({ stats }: StatsCardsProps) {
 // 最近活动组件
 function RecentActivity() {
   const activities = [
-    { type: 'project', message: '创建了新项目 "AI Agent 平台"', time: '2 小时前', icon: Folder, color: 'text-violet-600' },
-    { type: 'team', message: '加入了 AiTeam "前端开发组"', time: '1 天前', icon: Users, color: 'text-purple-600' },
+    { type: 'project', message: '创建了新项目 "AI Agent 平台"', time: '2 小时前', icon: Folder, color: 'text-blue-600' },
+    { type: 'team', message: '加入了 AiTeam "前端开发组"', time: '1 天前', icon: Users, color: 'text-blue-600' },
     { type: 'agent', message: '收藏了 Agent "Code Review Bot"', time: '3 天前', icon: Bot, color: 'text-blue-600' }
   ];
 
@@ -345,10 +345,10 @@ function RecentActivity() {
     <Card>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <Activity className="text-violet-600" size={20} />
+          <Activity className="text-blue-600" size={20} />
           最近活动
         </h3>
-        <Link href="/activity" prefetch={false} className="text-sm text-violet-600 dark:text-violet-400 hover:underline font-medium">
+        <Link href="/activity" prefetch={false} className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium">
           查看全部
         </Link>
       </div>

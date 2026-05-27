@@ -22,7 +22,7 @@ export default function SettingsPage() {
       <Card>
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Shield className="text-violet-600" size={20} />
+            <Shield className="text-blue-600" size={20} />
             安全设置
           </h2>
         </div>
@@ -58,7 +58,7 @@ export default function SettingsPage() {
       <Card>
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Bell className="text-violet-600" size={20} />
+            <Bell className="text-blue-600" size={20} />
             通知设置
           </h2>
         </div>

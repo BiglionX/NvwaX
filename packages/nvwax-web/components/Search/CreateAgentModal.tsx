@@ -130,7 +130,7 @@ export default function CreateAgentModal({
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-linear-to-br from-blue-500 to-purple-600 rounded-lg">
+            <div className="p-2 bg-linear-to-br from-blue-500 to-blue-700 rounded-lg">
               <Sparkles className="text-white" size={24} />
             </div>
             <div>
@@ -198,7 +198,7 @@ export default function CreateAgentModal({
                             {skill.name}
                           </h4>
                           {skill.category && (
-                            <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full">
+                            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs rounded-full">
                               {skill.category}
                             </span>
                           )}
@@ -241,7 +241,7 @@ export default function CreateAgentModal({
           </div>
 
           {/* Tips */}
-          <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="bg-linear-to-r from-blue-50 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
             <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2 flex items-center gap-2">
               <Database size={16} />
               提示
@@ -270,7 +270,7 @@ export default function CreateAgentModal({
             <button
               onClick={handleCreateAgent}
               disabled={!agentName || selectedSkills.length === 0 || isCreating}
-              className="px-6 py-2 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2"
+              className="px-6 py-2 bg-linear-to-r from-blue-500 to-blue-700 text-white rounded-lg hover:from-blue-600 hover:to-blue-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2"
             >
               {isCreating ? (
                 <>

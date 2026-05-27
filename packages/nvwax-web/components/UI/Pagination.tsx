@@ -113,7 +113,7 @@ export default function Pagination({
               p-2 rounded-lg transition-colors
               ${current === 1
                 ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed'
-                : 'text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+                : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
               }
             `}
             aria-label="首页"
@@ -130,7 +130,7 @@ export default function Pagination({
             p-2 rounded-lg transition-colors
             ${current === 1
               ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed'
-              : 'text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+              : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
             }
           `}
           aria-label="上一页"
@@ -150,8 +150,8 @@ export default function Pagination({
                   className={`
                     min-w-9 h-9 px-3 rounded-lg font-medium transition-all duration-200
                     ${page === current
-                      ? 'bg-linear-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-200/50 dark:shadow-violet-900/30'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+                      ? 'bg-linear-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200/50 dark:shadow-blue-900/30'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
                     }
                   `}
                 >
@@ -170,7 +170,7 @@ export default function Pagination({
             p-2 rounded-lg transition-colors
             ${current === total
               ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed'
-              : 'text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+              : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
             }
           `}
           aria-label="下一页"
@@ -187,7 +187,7 @@ export default function Pagination({
               p-2 rounded-lg transition-colors
               ${current === total
                 ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed'
-                : 'text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+                : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
               }
             `}
             aria-label="末页"
@@ -214,7 +214,7 @@ export default function Pagination({
                 }
               }
             }}
-            className="w-16 px-2 py-1.5 text-sm border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:border-violet-500 dark:focus:border-violet-600 bg-white dark:bg-gray-800"
+            className="w-16 px-2 py-1.5 text-sm border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:border-blue-500 dark:focus:border-blue-600 bg-white dark:bg-gray-800"
           />
           <span className="text-sm text-gray-600 dark:text-gray-400">页</span>
         </div>

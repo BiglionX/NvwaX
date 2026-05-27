@@ -32,9 +32,9 @@ export default function Loading({
         <div className="text-center">
           <div className="relative inline-block">
             {/* 外圈 */}
-            <div className="w-16 h-16 border-4 border-violet-200 dark:border-violet-900 rounded-full"></div>
+            <div className="w-16 h-16 border-4 border-blue-200 dark:border-blue-900 rounded-full"></div>
             {/* 内圈旋转 */}
-            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="absolute top-0 left-0 w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
           </div>
           {text && (
             <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">{text}</p>
@@ -47,7 +47,7 @@ export default function Loading({
   return (
     <div className={`flex items-center justify-center py-12 ${className}`}>
       <div className="text-center">
-        <Loader2 size={32} className="animate-spin text-violet-600 dark:text-violet-400 mx-auto" />
+        <Loader2 size={32} className="animate-spin text-blue-600 dark:text-blue-400 mx-auto" />
         {text && (
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">{text}</p>
         )}

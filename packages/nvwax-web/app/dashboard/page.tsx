@@ -172,7 +172,7 @@ function OverviewTab({ data }: { data: ProjectData }) {
     { label: '总任务数', value: data.progress.totalTasks, color: 'blue' },
     { label: '已完成', value: data.progress.completedTasks, color: 'green' },
     { label: '进行中', value: data.progress.inProgressTasks, color: 'yellow' },
-    { label: '完成率', value: `${data.progress.completionRate}%`, color: 'purple' },
+    { label: '完成率', value: `${data.progress.completionRate}%`, color: 'blue' },
     { label: '测试覆盖率', value: `${data.testCoverage.lines}%`, color: 'indigo' },
     { label: '团队成员', value: data.teamStats.members, color: 'pink' }
   ];
@@ -276,9 +276,9 @@ function ProgressTab({ data }: { data: ProjectData }) {
             <p className="text-sm text-gray-600 dark:text-gray-400">Pull Requests</p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">{data.teamStats.pullRequests}</p>
           </div>
-          <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400">Code Reviews</p>
-            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{data.teamStats.codeReviews}</p>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{data.teamStats.codeReviews}</p>
           </div>
         </div>
       </div>
@@ -389,7 +389,7 @@ function TeamTab({ data }: { data: ProjectData }) {
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">活跃成员</p>
           </div>
           <div className="text-center p-4">
-            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{data.teamStats.commitsThisWeek}</p>
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{data.teamStats.commitsThisWeek}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">本周 Commits</p>
           </div>
           <div className="text-center p-4">

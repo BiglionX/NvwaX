@@ -211,7 +211,7 @@ export default function FAQPage() {
                   >
                     <button
                       onClick={() => setOpenIndex(isOpen ? null : globalIdx)}
-                      className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-linear-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all group"
+                      className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-linear-to-r hover:from-blue-50 hover:to-blue-50 dark:hover:from-blue-900/20 dark:hover:to-blue-900/20 transition-all group"
                     >
                       <span className="font-medium text-gray-900 dark:text-white pr-4 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {faq.question}
@@ -249,7 +249,7 @@ export default function FAQPage() {
 
       {/* Footer */}
       <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
-        <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-8 text-center">
+        <div className="bg-linear-to-r from-blue-50 to-sky-50 dark:from-blue-900/20 dark:to-blue-900/20 rounded-xl p-8 text-center">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             还没找到答案？
           </h3>

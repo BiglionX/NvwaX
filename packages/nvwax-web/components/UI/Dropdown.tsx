@@ -112,12 +112,12 @@ export default function Dropdown({
           border-2 rounded-xl
           flex items-center justify-between
           transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
           ${error 
             ? 'border-red-300 dark:border-red-700 hover:border-red-400' 
             : isOpen
-              ? 'border-violet-500 dark:border-violet-600 shadow-lg shadow-violet-200/50 dark:shadow-violet-900/30'
-              : 'border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700'
+              ? 'border-blue-500 dark:border-blue-600 shadow-lg shadow-blue-200/50 dark:shadow-blue-900/30'
+              : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
           }
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         `}
@@ -171,7 +171,7 @@ export default function Dropdown({
                     transition-colors duration-150
                     focus:outline-none
                     ${option.value === value
-                      ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
+                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                       : option.disabled
                         ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
                         : 'text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -191,7 +191,7 @@ export default function Dropdown({
                   {/* 选中标记 */}
                   {option.value === value && (
                     <svg 
-                      className="w-5 h-5 text-violet-600 dark:text-violet-400 shrink-0" 
+                      className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" 
                       fill="currentColor" 
                       viewBox="0 0 20 20"
                     >

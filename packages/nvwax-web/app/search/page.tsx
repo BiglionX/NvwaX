@@ -25,7 +25,7 @@ export default function SearchPage() {
     enabled: activeTab === 'skills' && query.length > 0
   });
 
-  // 当 Agent 搜索无结果时，获取 Skill 推荐
+  // �?Agent 搜索无结果时，获�?Skill 推荐
   const { data: recommendationsData, isLoading: loadingRecommendations } = useQuery({
     queryKey: ['recommend-skills', query],
     queryFn: () => searchApi.recommendSkills(query, 5),
@@ -100,7 +100,7 @@ export default function SearchPage() {
       <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">{skill.description}</p>
       
       {skill.category && (
-        <span className="inline-block px-3 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 text-xs rounded-full mb-4">
+        <span className="inline-block px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs rounded-full mb-4">
           {skill.category}
         </span>
       )}
@@ -112,7 +112,7 @@ export default function SearchPage() {
       )}
 
       <button className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium">
-        添加到项目
+        添加到项�?
       </button>
     </div>
   );
@@ -121,7 +121,7 @@ export default function SearchPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Agent & Skill 搜索</h1>
-        <p className="text-gray-600 dark:text-gray-300">智能搜索：优先本地数据库，无结果则全网搜索</p>
+        <p className="text-gray-600 dark:text-gray-300">智能搜索：优先本地数据库，无结果则全网搜�?/p>
       </div>
 
       {/* Search Input */}
@@ -131,7 +131,7 @@ export default function SearchPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="输入关键词搜索 Agent 或 Skill..."
+            placeholder="输入关键词搜�?Agent �?Skill..."
             className="w-full px-4 py-3 pl-12 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white"
           />
           <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -167,19 +167,19 @@ export default function SearchPage() {
         {activeTab === 'agents' && (
           <>
             {loadingAgents ? (
-              <div className="col-span-full text-center py-12 text-gray-500">加载中...</div>
+              <div className="col-span-full text-center py-12 text-gray-500">加载�?..</div>
             ) : agentsData?.data?.length > 0 ? (
               <>
                 {agentsData.data.map(renderAgentCard)}
                 {/* 显示数据来源提示 */}
                 {agentsData.fromLocal && (
                   <div className="col-span-full text-center py-4 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    ✓ 从本地数据库找到 {agentsData.total} 个结果
+                    �?从本地数据库找到 {agentsData.total} 个结�?
                   </div>
                 )}
                 {!agentsData.fromLocal && (
                   <div className="col-span-full text-center py-4 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    🌐 从全网搜索找到 {agentsData.total} 个结果
+                    🌐 从全网搜索找�?{agentsData.total} 个结�?
                   </div>
                 )}
               </>
@@ -187,13 +187,14 @@ export default function SearchPage() {
               <div className="col-span-full">
                 <div className="text-center py-12 text-gray-500">
                   <SearchIcon size={48} className="mx-auto mb-4 opacity-50" />
-                  <p className="text-lg mb-4">未找到相关 Agent</p>
+                  <p className="text-lg mb-4">未找到相�?Agent</p>
                   <button
                     onClick={handleNoResults}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all font-medium"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-medium"
                   >
                     <Plus size={20} />
-                    创建自己的 Agent
+                    创建自己�?Agent
+
                   </button>
                 </div>
                 
@@ -207,7 +208,7 @@ export default function SearchPage() {
                     <div className="flex items-center gap-2 mb-4">
                       <Sparkles size={20} className="text-yellow-500" />
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        推荐使用的 Skills
+                        推荐使用�?Skills
                       </h3>
                     </div>
                     <div className="grid md:grid-cols-2 gap-4">
@@ -228,7 +229,7 @@ export default function SearchPage() {
                             {skill.description}
                           </p>
                           {skill.category && (
-                            <span className="inline-block px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs rounded-full">
+                            <span className="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs rounded-full">
                               {skill.category}
                             </span>
                           )}
@@ -238,7 +239,7 @@ export default function SearchPage() {
                     <div className="mt-4 text-center">
                       <button
                         onClick={handleNoResults}
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all font-medium"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-medium"
                       >
                         <Sparkles size={20} />
                         使用这些 Skills 创建 Agent
@@ -248,7 +249,7 @@ export default function SearchPage() {
                 )}
               </div>
             ) : (
-              <div className="col-span-full text-center py-12 text-gray-500">输入关键词开始搜索</div>
+              <div className="col-span-full text-center py-12 text-gray-500">输入关键词开始搜�?/div>
             )}
           </>
         )}
@@ -256,13 +257,13 @@ export default function SearchPage() {
         {activeTab === 'skills' && (
           <>
             {loadingSkills ? (
-              <div className="col-span-full text-center py-12 text-gray-500">加载中...</div>
+              <div className="col-span-full text-center py-12 text-gray-500">加载�?..</div>
             ) : skillsData?.data?.length > 0 ? (
               skillsData.data.map(renderSkillCard)
             ) : query ? (
-              <div className="col-span-full text-center py-12 text-gray-500">未找到相关 Skill</div>
+              <div className="col-span-full text-center py-12 text-gray-500">未找到相�?Skill</div>
             ) : (
-              <div className="col-span-full text-center py-12 text-gray-500">输入关键词开始搜索</div>
+              <div className="col-span-full text-center py-12 text-gray-500">输入关键词开始搜�?/div>
             )}
           </>
         )}
@@ -277,14 +278,14 @@ export default function SearchPage() {
             disabled={page === 1}
             className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 text-gray-900 dark:text-white"
           >
-            上一页
+            上一�?
           </button>
-          <span className="px-4 py-2 text-gray-700 dark:text-gray-300">第 {page} 页</span>
+          <span className="px-4 py-2 text-gray-700 dark:text-gray-300">�?{page} �?/span>
           <button
             onClick={() => setPage(p => p + 1)}
             className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
           >
-            下一页
+            下一�?
           </button>
         </div>
       )}

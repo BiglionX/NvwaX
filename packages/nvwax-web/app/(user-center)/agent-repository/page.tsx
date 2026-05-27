@@ -180,7 +180,7 @@ export default function AgentRepositoryPage() {
       {/* 页面标题和操作栏 */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <Folder className="text-violet-600" size={24} />
+          <Folder className="text-blue-600" size={24} />
           我的Agent仓库
         </h2>
         <div className="flex gap-3">
@@ -439,11 +439,11 @@ function AgentCard({
     <Card padding="lg" className="hover:-translate-y-1 hover:shadow-xl transition-all group">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 bg-linear-to-br from-violet-100 to-violet-50 dark:from-violet-900/40 dark:to-violet-800/30 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-            <Folder className="text-violet-600 dark:text-violet-400" size={28} />
+          <div className="w-14 h-14 bg-linear-to-br from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/30 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm">
+            <Folder className="text-blue-600 dark:text-blue-400" size={28} />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
               {agent.name}
             </h3>
             <div className="flex items-center gap-2 text-xs">
@@ -594,11 +594,11 @@ function AiTeamCard({
     <Card padding="lg" className="hover:-translate-y-1 hover:shadow-xl transition-all group">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 bg-linear-to-br from-purple-100 to-purple-50 dark:from-purple-900/40 dark:to-purple-800/30 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm">
-            <Users className="text-purple-600 dark:text-purple-400" size={28} />
+          <div className="w-14 h-14 bg-linear-to-br from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/30 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm">
+            <Users className="text-blue-600 dark:text-blue-400" size={28} />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
               {aiteam.name}
             </h3>
             <div className="flex items-center gap-2 text-xs">
@@ -702,7 +702,7 @@ function CreateResourceModal({
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <Card padding="lg" className="max-w-md w-full shadow-2xl">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-          <Plus className="text-violet-600" size={24} />
+          <Plus className="text-blue-600" size={24} />
           创建新资源
         </h2>
         <form onSubmit={handleSubmit}>
@@ -717,12 +717,12 @@ function CreateResourceModal({
                 onClick={() => setForm({ ...form, type: 'agent' })}
                 className={`p-4 border-2 rounded-xl transition-all ${
                   form.type === 'agent'
-                    ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-                    : 'border-gray-300 dark:border-gray-600 hover:border-violet-300'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-blue-300'
                 }`}
               >
-                <Folder className={`mx-auto mb-2 ${form.type === 'agent' ? 'text-violet-600' : 'text-gray-400'}`} size={24} />
-                <div className={`text-sm font-medium ${form.type === 'agent' ? 'text-violet-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                <Folder className={`mx-auto mb-2 ${form.type === 'agent' ? 'text-blue-600' : 'text-gray-400'}`} size={24} />
+                <div className={`text-sm font-medium ${form.type === 'agent' ? 'text-blue-600' : 'text-gray-700 dark:text-gray-300'}`}>
                   Agent
                 </div>
                 <div className="text-xs text-gray-500 mt-1">单个智能体</div>
@@ -732,12 +732,12 @@ function CreateResourceModal({
                 onClick={() => setForm({ ...form, type: 'aiteam' })}
                 className={`p-4 border-2 rounded-xl transition-all ${
                   form.type === 'aiteam'
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                    : 'border-gray-300 dark:border-gray-600 hover:border-purple-300'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-blue-300'
                 }`}
               >
-                <Users className={`mx-auto mb-2 ${form.type === 'aiteam' ? 'text-purple-600' : 'text-gray-400'}`} size={24} />
-                <div className={`text-sm font-medium ${form.type === 'aiteam' ? 'text-purple-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                <Users className={`mx-auto mb-2 ${form.type === 'aiteam' ? 'text-blue-600' : 'text-gray-400'}`} size={24} />
+                <div className={`text-sm font-medium ${form.type === 'aiteam' ? 'text-blue-600' : 'text-gray-700 dark:text-gray-300'}`}>
                   AiTeam
                 </div>
                 <div className="text-xs text-gray-500 mt-1">多Agent团队</div>
@@ -765,7 +765,7 @@ function CreateResourceModal({
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 text-gray-900 dark:text-white transition-all resize-none"
+              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 dark:text-white transition-all resize-none"
               placeholder="输入描述（可选）"
               rows={3}
             />

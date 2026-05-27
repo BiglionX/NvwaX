@@ -51,7 +51,7 @@ export default function Footer() {
                   className="object-contain"
                 />
               </div>
-              <span className="text-xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">NvwaX</span>
+              <span className="text-xl font-bold bg-linear-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">NvwaX</span>
             </Link>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               开源的 AI Agent 搜索、发现和管理平台

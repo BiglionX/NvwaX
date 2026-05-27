@@ -103,7 +103,7 @@ export default function ProjectDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <Link
           href="/nvwa"
-          className="group bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all"
+          className="group bg-gradient-to-br from-indigo-500 to-blue-700 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all"
         >
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -141,8 +141,8 @@ export default function ProjectDetailPage() {
             className="block bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700 p-6"
           >
             <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                <Users className="text-purple-600 dark:text-purple-400" size={24} />
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <Users className="text-blue-600 dark:text-blue-400" size={24} />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
@@ -156,7 +156,7 @@ export default function ProjectDetailPage() {
             </div>
 
             <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+              <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
                 查看团队 →
               </span>
             </div>
@@ -263,7 +263,7 @@ export default function ProjectDetailPage() {
                       </h3>
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         template.category === 'development' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
-                        template.category === 'research' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' :
+                        template.category === 'research' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
                         template.category === 'content' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
                         'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                       }`}>

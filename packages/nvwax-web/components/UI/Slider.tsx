@@ -147,7 +147,7 @@ export default function Slider({
             </label>
           )}
           {showValue && (
-            <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">
+            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
               {value}
             </span>
           )}
@@ -167,7 +167,7 @@ export default function Slider({
         onKeyDown={handleKeyDown}
         className={`
           relative h-2 rounded-full cursor-pointer
-          focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       >
@@ -176,7 +176,7 @@ export default function Slider({
         
         {/* 填充轨道 */}
         <div
-          className="absolute h-full bg-linear-to-r from-violet-500 to-purple-600 rounded-full transition-all duration-150"
+          className="absolute h-full bg-linear-to-r from-blue-600 to-blue-700 rounded-full transition-all duration-150"
           style={{ width: `${percentage}%` }}
         />
         
@@ -185,7 +185,7 @@ export default function Slider({
           className={`
             absolute top-1/2 -translate-y-1/2 -translate-x-1/2
             w-5 h-5 bg-white rounded-full
-            border-2 border-violet-600
+            border-2 border-blue-600
             shadow-lg
             transition-all duration-150
             ${isDragging ? 'scale-125 shadow-xl' : ''}

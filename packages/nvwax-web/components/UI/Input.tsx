@@ -64,7 +64,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
     if (success) {
       return 'border-green-300 dark:border-green-700 focus:border-green-500 focus:ring-green-500/20';
     }
-    return 'border-gray-200 dark:border-gray-700 focus:border-violet-500 focus:ring-violet-500/20';
+    return 'border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500/20';
   };
   
   return (

@@ -193,7 +193,7 @@ export default function EditModal({
                       className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium ${
                         resourceType === 'agent'
                           ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                          : 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                          : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                       }`}
                     >
                       {tag}
@@ -224,7 +224,7 @@ export default function EditModal({
             <button
               type="submit"
               disabled={isSaving || !formData.name.trim()}
-              className="flex-1 px-4 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-1 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isSaving ? (
                 <>

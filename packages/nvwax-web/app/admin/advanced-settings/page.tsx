@@ -122,7 +122,7 @@ export default function AdminAdvancedSettingsPage() {
           {/* 运行时间 */}
           <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <Server className="text-purple-500" size={20} />
+              <Server className="text-blue-500" size={20} />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">运行时间</span>
             </div>
             <p className="text-lg font-bold text-gray-900 dark:text-white">

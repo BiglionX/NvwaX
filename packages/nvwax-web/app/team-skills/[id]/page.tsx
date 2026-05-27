@@ -70,7 +70,7 @@ export default function TeamSkillDetailPage() {
             <div className="flex items-center gap-3 mb-4">
               <span className={`px-4 py-2 text-sm font-medium rounded-full ${
                 skill.category === 'development' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
-                skill.category === 'research' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' :
+                skill.category === 'research' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
                 skill.category === 'content' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
                 skill.category === 'analysis' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' :
                 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
@@ -168,7 +168,7 @@ export default function TeamSkillDetailPage() {
           {/* Team Roles */}
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-              <Users className="text-purple-500" size={24} />
+              <Users className="text-blue-500" size={24} />
               团队成员 ({skill.roles?.length || 0})
             </h2>
 
@@ -197,7 +197,7 @@ export default function TeamSkillDetailPage() {
                       <ul className="space-y-1">
                         {role.responsibilities.map((resp: string, rIdx: number) => (
                           <li key={rIdx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                            <CheckCircle size={14} className="text-purple-500 mt-0.5 shrink-0" />
+                            <CheckCircle size={14} className="text-blue-500 mt-0.5 shrink-0" />
                             <span>{resp}</span>
                           </li>
                         ))}
@@ -332,7 +332,7 @@ export default function TeamSkillDetailPage() {
           </div>
 
           {/* CTA */}
-          <div className="bg-linear-to-br from-blue-600 to-purple-600 rounded-xl p-6 text-white">
+          <div className="bg-linear-to-br from-blue-600 to-blue-700 rounded-xl p-6 text-white">
             <h3 className="text-xl font-bold mb-3">
               准备好开始了吗？
             </h3>

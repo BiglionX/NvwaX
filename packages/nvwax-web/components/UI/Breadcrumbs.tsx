@@ -53,7 +53,7 @@ export default function Breadcrumbs({
             <li>
               <Link
                 href="/"
-                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 <Home size={18} />
               </Link>
@@ -81,7 +81,7 @@ export default function Breadcrumbs({
                       text-sm font-medium
                       ${isLast
                         ? 'text-gray-900 dark:text-white'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
                       }
                       transition-colors
                     `}
@@ -98,7 +98,7 @@ export default function Breadcrumbs({
                       flex items-center gap-1.5
                       text-sm font-medium
                       ${isLast
-                        ? 'text-violet-700 dark:text-violet-300'
+                        ? 'text-blue-700 dark:text-blue-300'
                         : 'text-gray-600 dark:text-gray-400'
                       }
                     `}

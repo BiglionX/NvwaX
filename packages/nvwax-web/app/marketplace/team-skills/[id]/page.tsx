@@ -133,7 +133,7 @@ export default function TeamSkillDetailPage() {
                 {skill.name}
               </h1>
               {skill.category === 'virtual-company' && (
-                <span className="px-3 py-1 text-sm rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 flex items-center gap-1">
+                <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 flex items-center gap-1">
                   <Sparkles size={14} />
                   虚拟公司
                 </span>
@@ -148,7 +148,7 @@ export default function TeamSkillDetailPage() {
           <div className="flex gap-3">
             <button
               onClick={() => setShowPackageModal(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
               <Package size={20} />
               打包下载
@@ -248,7 +248,7 @@ export default function TeamSkillDetailPage() {
           {/* 工作流程 */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Workflow className="text-purple-500" size={24} />
+              <Workflow className="text-blue-500" size={24} />
               工作流程
             </h2>
             <div className="space-y-3">
@@ -257,7 +257,7 @@ export default function TeamSkillDetailPage() {
                   key={idx}
                   className="flex items-start gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow"
                 >
-                  <div className="shrink-0 w-10 h-10 rounded-full bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                  <div className="shrink-0 w-10 h-10 rounded-full bg-linear-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-bold">
                     {step.step}
                   </div>
                   <div className="flex-1">
@@ -358,7 +358,7 @@ export default function TeamSkillDetailPage() {
           {/* 操作按钮 */}
           <div className="space-y-3">
             <button
-              className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+              className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
               onClick={() => setShowPackageModal(true)}
             >
               <Package size={20} />
@@ -432,7 +432,7 @@ export default function TeamSkillDetailPage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-auto overflow-hidden">
             <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-linear-to-br from-indigo-500 to-purple-600 rounded-lg">
+                <div className="p-2 bg-linear-to-br from-indigo-500 to-blue-700 rounded-lg">
                   <Monitor className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -521,7 +521,7 @@ export default function TeamSkillDetailPage() {
               {!proClawDownloaded && (
                 <button
                   onClick={handleExportToProClaw}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-indigo-600 to-blue-700 hover:from-indigo-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg"
                 >
                   <Monitor size={18} />
                   下载配置文件

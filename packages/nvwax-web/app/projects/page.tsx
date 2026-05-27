@@ -105,7 +105,7 @@ export default function ProjectsPage() {
         
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
+          className="flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
         >
           <Plus size={20} />
           新建项目
@@ -133,7 +133,7 @@ export default function ProjectsPage() {
                   {projects.reduce((sum: number, project: Project) => sum + (project.aiTeamCount || 0), 0)}
                 </p>
               </div>
-              <Users className="text-purple-600" size={32} />
+              <Users className="text-blue-600" size={32} />
             </div>
           </div>
           
@@ -165,7 +165,7 @@ export default function ProjectsPage() {
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
           >
             <Plus size={20} />
             创建新项目
@@ -283,7 +283,7 @@ export default function ProjectsPage() {
                   <button
                     type="submit"
                     disabled={createProjectMutation.isPending}
-                    className="flex-1 px-4 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {createProjectMutation.isPending ? (
                       <>

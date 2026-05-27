@@ -74,10 +74,10 @@ export default function Checkbox({
           rounded-md border-2
           flex items-center justify-center
           transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
           ${checked || indeterminate
-            ? 'bg-linear-to-br from-violet-500 to-purple-600 border-violet-600'
-            : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-violet-400'
+            ? 'bg-linear-to-br from-blue-600 to-blue-700 border-blue-600'
+            : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-blue-400'
           }
           ${disabled ? 'cursor-not-allowed' : ''}
         `}

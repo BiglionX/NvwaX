@@ -79,7 +79,7 @@ export default function DetailModal({
             {isAgent ? (
               <FileText className="text-blue-600" size={28} />
             ) : (
-              <Users className="text-purple-600" size={28} />
+              <Users className="text-blue-600" size={28} />
             )}
             {resource.name}
           </h2>
@@ -160,7 +160,7 @@ export default function DetailModal({
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
                       isAgent
                         ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                        : 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                        : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                     }`}
                   >
                     {tag}
@@ -187,7 +187,7 @@ export default function DetailModal({
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">{resource.rating.toFixed(1)}</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">评分</div>
               </div>
-              <div className="p-4 bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl text-center">
+              <div className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl text-center">
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">{resource.reviewCount}</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">评价数</div>
               </div>
@@ -230,17 +230,17 @@ export default function DetailModal({
                           onClick={() => handleAgentClick(member.agentId)}
                           className={`p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all ${
                             isSelected
-                              ? 'bg-purple-100 dark:bg-purple-900/30 border-2 border-purple-500 dark:border-purple-400'
+                              ? 'bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-500 dark:border-blue-400'
                               : 'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border-2 border-transparent'
                           }`}
                         >
                           <div className="flex items-start gap-3 flex-1">
                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                               isSelected
-                                ? 'bg-purple-600 dark:bg-purple-500'
-                                : 'bg-purple-100 dark:bg-purple-900/40'
+                                ? 'bg-blue-600 dark:bg-blue-500'
+                                : 'bg-blue-100 dark:bg-blue-900/40'
                             }`}>
-                              <User size={20} className={isSelected ? 'text-white' : 'text-purple-600 dark:text-purple-400'} />
+                              <User size={20} className={isSelected ? 'text-white' : 'text-blue-600 dark:text-blue-400'} />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-gray-900 dark:text-white">{member.role}</div>
@@ -250,7 +250,7 @@ export default function DetailModal({
                                 </div>
                               )}
                               {isLoading && (
-                                <div className="text-xs text-purple-600 dark:text-purple-400 mt-1 animate-pulse">
+                                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 animate-pulse">
                                   加载中...
                                 </div>
                               )}
@@ -262,7 +262,7 @@ export default function DetailModal({
                             </div>
                           </div>
                           <ChevronRight size={18} className={`shrink-0 ${
-                            isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'
+                            isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
                           }`} />
                         </div>
                       );
@@ -303,18 +303,18 @@ export default function DetailModal({
           ) && (
             <div className="lg:col-span-1">
               <div className="sticky top-24">
-                <div className="bg-linear-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 rounded-xl border-2 border-violet-200 dark:border-violet-800 overflow-hidden">
+                <div className="bg-linear-to-br from-blue-50 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/20 rounded-xl border-2 border-blue-200 dark:border-blue-800 overflow-hidden">
                   {/* 标题栏 - 可点击展开/收起 */}
                   <button
                     onClick={() => setShowSkills(!showSkills)}
-                    className="w-full p-4 flex items-center justify-between hover:bg-violet-100/50 dark:hover:bg-violet-800/30 transition-colors"
+                    className="w-full p-4 flex items-center justify-between hover:bg-blue-100/50 dark:hover:bg-blue-800/30 transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <Zap className="text-violet-600 dark:text-violet-400" size={20} />
+                      <Zap className="text-blue-600 dark:text-blue-400" size={20} />
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                         {!isAgent && selectedAgentId ? 'Agent Skills' : '使用的 Skills'}
                       </h3>
-                      <span className="px-2 py-1 bg-violet-600 dark:bg-violet-500 text-white text-xs rounded-full">
+                      <span className="px-2 py-1 bg-blue-600 dark:bg-blue-500 text-white text-xs rounded-full">
                         {!isAgent && selectedAgentId 
                           ? agentDetails[selectedAgentId].skills.length
                           : agent?.skills?.length || 0
@@ -339,11 +339,11 @@ export default function DetailModal({
                         return skills.map((skill, index) => (
                           <div
                             key={index}
-                            className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-violet-200 dark:border-violet-700 hover:shadow-md transition-shadow group"
+                            className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-blue-200 dark:border-blue-700 hover:shadow-md transition-shadow group"
                           >
                             <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 bg-linear-to-br from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                                <Zap size={16} className="text-violet-600 dark:text-violet-400" />
+                              <div className="w-8 h-8 bg-linear-to-br from-blue-100 to-blue-100 dark:from-blue-900/40 dark:to-blue-900/40 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                                <Zap size={16} className="text-blue-600 dark:text-blue-400" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium text-gray-900 dark:text-white text-sm truncate">
@@ -369,7 +369,7 @@ export default function DetailModal({
         <div className="sticky bottom-0 bg-white dark:bg-gray-800 p-6 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onClose}
-            className="w-full px-4 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
+            className="w-full px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
           >
             关闭
           </button>

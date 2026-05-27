@@ -218,7 +218,7 @@ export default function MarketplacePage() {
               onClick={() => {
                 setShowAiSearch(true);
               }}
-              className="md:hidden w-10 h-10 rounded-xl bg-violet-600 hover:bg-violet-700 text-white flex items-center justify-center shrink-0 transition-colors"
+              className="md:hidden w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shrink-0 transition-colors"
             >
               <Sparkles size={20} />
             </button>
@@ -230,17 +230,17 @@ export default function MarketplacePage() {
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Search size={16} />
             <span>搜索结果：</span>
-            <span className="font-medium text-violet-600 dark:text-violet-400">{debouncedSearch}</span>
+            <span className="font-medium text-blue-600 dark:text-blue-400">{debouncedSearch}</span>
             <button
               onClick={() => setSearchQuery('')}
-              className="text-violet-600 dark:text-violet-400 hover:underline font-medium"
+              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
               清除搜索
             </button>
             <span className="text-gray-300 dark:text-gray-600">|</span>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-800/40 transition-colors font-medium"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors font-medium"
             >
               <Plus size={14} />
               未找到合适的？立即创建
@@ -270,7 +270,7 @@ export default function MarketplacePage() {
                 href={`/search?q=${encodeURIComponent(agent.name)}`}
                 className="block"
               >
-                <Card padding="md" variant="clickable" className="h-full hover:border-violet-500 transition-colors">
+                <Card padding="md" variant="clickable" className="h-full hover:border-blue-500 transition-colors">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1 mb-2">
                     {agent.name}
                   </h3>
@@ -340,7 +340,7 @@ export default function MarketplacePage() {
               {agentsData.data.map((agent: Agent) => (
               <Card key={agent.id} className="hover:-translate-y-1 hover:shadow-xl transition-all group">
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">{agent.name}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{agent.name}</h3>
                   <Badge variant={agent.source === 'github' ? 'default' : 'warning'}>
                     {agent.source}
                   </Badge>
@@ -420,7 +420,7 @@ export default function MarketplacePage() {
               >
                 <Card className="hover:-translate-y-1 hover:shadow-xl transition-all group">
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {skill.name}
                     </h3>
                     {skill.category === 'virtual-company' && (
@@ -465,7 +465,7 @@ export default function MarketplacePage() {
       {(selectedCategory === 'all' || selectedCategory === 'aiteams') && (
         <>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <Users size={22} className="text-violet-500" />
+            <Users size={22} className="text-blue-500" />
             AI 团队
             {aiteamsData?.data?.aiteams && (
               <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
@@ -486,7 +486,7 @@ export default function MarketplacePage() {
               {aiteamsData.data.aiteams.map((aiteam: AiTeam) => (
                 <Card key={aiteam.id} className="hover:-translate-y-1 hover:shadow-xl transition-all group">
                   <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {aiteam.name}
                     </h3>
                     <Badge variant="info">AI 团队</Badge>
@@ -672,11 +672,11 @@ export default function MarketplacePage() {
 
           {/* 创建智能体 */}
           <Link href="/nvwa" onClick={() => setShowCreateModal(false)} className="block">
-            <div className="p-4 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 hover:shadow-md transition-all group">
-              <h4 className="font-semibold text-violet-900 dark:text-violet-300 mb-1 flex items-center gap-2">
+            <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:shadow-md transition-all group">
+              <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-1 flex items-center gap-2">
                 <span className="text-lg">🤖</span> 创建智能体
               </h4>
-              <p className="text-sm text-violet-700 dark:text-violet-400">
+              <p className="text-sm text-blue-700 dark:text-blue-400">
                 使用 AI 辅助快速构建单个智能体，可配置技能、数据源和输出格式
               </p>
             </div>
@@ -709,7 +709,7 @@ export default function MarketplacePage() {
         {generatingAiTeam ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 mx-auto mb-4">
-              <svg className="animate-spin h-16 w-16 text-violet-500" viewBox="0 0 24 24">
+              <svg className="animate-spin h-16 w-16 text-blue-500" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
@@ -721,9 +721,9 @@ export default function MarketplacePage() {
               AI 正在分析需求并生成团队角色、工作流和配置
             </p>
             <div className="flex items-center justify-center gap-2 mt-4">
-              <div className="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0ms]" />
-              <div className="w-2 h-2 bg-violet-500 rounded-full animate-bounce [animation-delay:150ms]" />
-              <div className="w-2 h-2 bg-violet-600 rounded-full animate-bounce [animation-delay:300ms]" />
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0ms]" />
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:150ms]" />
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce [animation-delay:300ms]" />
             </div>
           </div>
         ) : generatedAiTeamPreview ? (
@@ -747,7 +747,7 @@ export default function MarketplacePage() {
                   <div className="space-y-2">
                     {generatedAiTeamPreview.members.map((member: {role: string; responsibilities?: string}, idx: number) => (
                       <div key={idx} className="flex items-center gap-2 text-sm">
-                        <Users size={14} className="text-violet-500 shrink-0" />
+                        <Users size={14} className="text-blue-500 shrink-0" />
                         <span className="font-medium text-gray-800 dark:text-gray-200">{member.role}</span>
                         {member.responsibilities && (
                           <span className="text-gray-500 dark:text-gray-400">- {member.responsibilities}</span>

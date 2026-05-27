@@ -46,7 +46,7 @@ export default function Navbar() {
                   priority
                 />
               </div>
-              <span className="text-xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">NvwaX</span>
+              <span className="text-xl font-bold bg-linear-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">NvwaX</span>
             </Link>
           </div>
 
@@ -91,7 +91,7 @@ export default function Navbar() {
                   href="/profile"
                   className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm whitespace-nowrap"
                 >
-                  <div className="w-7 h-7 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-semibold shrink-0">
                     {userInfo?.name?.charAt(0).toUpperCase() || userInfo?.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <span className="font-medium text-gray-700 dark:text-gray-300 max-w-30 truncate">
@@ -109,7 +109,7 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/login"
-                className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200"
+                className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200"
               >
                 <LogIn size={18} />
                 <span>登录</span>
@@ -179,7 +179,7 @@ export default function Navbar() {
               <Link
                 href="/login"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg mt-4"
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg mt-4"
               >
                 <LogIn size={20} />
                 <span>登录 / 注册</span>

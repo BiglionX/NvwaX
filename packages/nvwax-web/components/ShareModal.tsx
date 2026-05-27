@@ -131,7 +131,7 @@ export default function ShareModal({
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-linear-to-br from-blue-500 to-purple-600 rounded-lg">
+            <div className="p-2 bg-linear-to-br from-blue-500 to-blue-700 rounded-lg">
               <Share2 className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -187,7 +187,7 @@ export default function ShareModal({
           </button>
           <button
             onClick={handleCopy}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all shadow-md hover:shadow-lg"
           >
             {copied ? (
               <>

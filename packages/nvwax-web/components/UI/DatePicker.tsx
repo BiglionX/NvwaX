@@ -169,11 +169,11 @@ export default function DatePicker({
           border-2 rounded-xl
           flex items-center justify-between
           transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${isOpen
-            ? 'border-violet-500 dark:border-violet-600 shadow-lg shadow-violet-200/50 dark:shadow-violet-900/30'
-            : 'border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700'
+            ? 'border-blue-500 dark:border-blue-600 shadow-lg shadow-blue-200/50 dark:shadow-blue-900/30'
+            : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
           }
         `}
       >
@@ -243,9 +243,9 @@ export default function DatePicker({
                         text-sm font-medium
                         transition-all duration-200
                         ${isSelected(day)
-                          ? 'bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-lg'
+                          ? 'bg-linear-to-br from-blue-600 to-blue-700 text-white shadow-lg'
                           : isToday(day)
-                            ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border-2 border-violet-500'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-2 border-blue-500'
                             : isDateDisabled(day)
                               ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
                               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'

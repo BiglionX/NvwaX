@@ -630,11 +630,11 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
           推荐角色配置：
         </p>
         {roles.map((role, index) => (
-          <div key={index} className="bg-linear-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border border-violet-200 dark:border-violet-800 rounded-xl p-4 hover:shadow-md transition-shadow duration-200">
+          <div key={index} className="bg-linear-to-r from-blue-50 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 hover:shadow-md transition-shadow duration-200">
             <div className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
               <div className="flex-1">
-                <h4 className="font-semibold text-violet-900 dark:text-violet-300 text-base">{role.roleName}</h4>
+                <h4 className="font-semibold text-blue-900 dark:text-blue-300 text-base">{role.roleName}</h4>
                 <p className="text-sm text-gray-700 dark:text-gray-300 mt-1.5 leading-relaxed">{role.description}</p>
                 {role.responsibilities && (
                   <ul className="text-xs text-gray-600 dark:text-gray-400 mt-2.5 list-disc list-inside space-y-1">
@@ -656,18 +656,18 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-7xl max-h-[92vh] overflow-hidden flex flex-col border border-gray-200/60 dark:border-gray-700/60">
         {/* Header - 与 Nvwa Agent 页面对齐 */}
         <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-linear-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 dark:from-blue-500/10 dark:via-purple-500/10 dark:to-pink-500/10" />
+          <div className="absolute inset-0 bg-linear-to-r from-blue-500/5 via-blue-500/5 to-pink-500/5 dark:from-blue-500/10 dark:via-blue-500/10 dark:to-pink-500/10" />
           <div className="relative flex items-center justify-between px-6 sm:px-8 py-4 sm:py-5 border-b border-gray-200/60 dark:border-gray-800">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="relative group">
-                <div className="absolute inset-0 bg-linear-to-r from-blue-500 to-purple-600 rounded-2xl blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
-                <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-linear-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <div className="absolute inset-0 bg-linear-to-r from-blue-500 to-blue-700 rounded-2xl blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
+                <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-linear-to-br from-blue-500 via-indigo-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/25">
                   <Sparkles size={22} className="text-white" />
                 </div>
               </div>
               <div>
                 <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-                  <span className="bg-linear-to-r from-blue-600 via-indigo-500 to-purple-600 bg-clip-text text-transparent">
+                  <span className="bg-linear-to-r from-blue-600 via-indigo-500 to-blue-700 bg-clip-text text-transparent">
                     NvwaX
                   </span>
                   <span className="ml-2 text-xs sm:text-sm font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full align-middle">
@@ -746,7 +746,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                   <div 
-                    className="bg-linear-to-r from-blue-500 via-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-700 ease-out shadow-sm"
+                    className="bg-linear-to-r from-blue-500 via-indigo-500 to-blue-700 h-2 rounded-full transition-all duration-700 ease-out shadow-sm"
                     style={{ width: `${currentProgress?.percentage || 0}%` }}
                   />
                 </div>
@@ -772,7 +772,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
               >
               {message.role === 'nvwax_agent' && (
                 <div className="shrink-0">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
                     <Bot size={18} className="text-white" />
                   </div>
                 </div>
@@ -905,7 +905,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
             {isSending && (
             <div className="flex gap-3 sm:gap-4 justify-start">
               <div className="shrink-0">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
                   <Bot size={18} className="text-white" />
                 </div>
               </div>
@@ -913,7 +913,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0ms]" />
                   <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                  <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:300ms]" />
                 </div>
               </div>
             </div>
@@ -1009,7 +1009,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
                       setShowSuccessModal(false);
                     }
                   }}
-                  className="w-full px-6 py-3.5 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
+                  className="w-full px-6 py-3.5 bg-linear-to-r from-indigo-500 to-blue-700 hover:from-indigo-600 hover:to-blue-800 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
                 >
                   <Sparkles className="w-5 h-5" />
                   <span>集成到 ProClaw</span>

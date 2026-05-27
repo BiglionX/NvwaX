@@ -70,10 +70,10 @@ export default function Radio({
           rounded-full border-2
           flex items-center justify-center
           transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
           ${checked
-            ? 'border-violet-600'
-            : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-violet-400'
+            ? 'border-blue-600'
+            : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:border-blue-400'
           }
           ${disabled ? 'cursor-not-allowed' : ''}
         `}
@@ -84,7 +84,7 @@ export default function Radio({
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className="w-2.5 h-2.5 bg-linear-to-br from-violet-500 to-purple-600 rounded-full"
+            className="w-2.5 h-2.5 bg-linear-to-br from-blue-600 to-blue-700 rounded-full"
           />
         )}
       </div>

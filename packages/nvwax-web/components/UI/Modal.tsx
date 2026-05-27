@@ -149,7 +149,7 @@ export default function Modal({
                   {showCloseButton && (
                     <button
                       onClick={onClose}
-                      className="ml-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500"
+                      className="ml-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                       aria-label="关闭"
                     >
                       <X size={20} className="text-gray-500 dark:text-gray-400" />

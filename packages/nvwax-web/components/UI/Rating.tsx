@@ -96,7 +96,7 @@ export default function Rating({
               onMouseEnter={() => handleStarHover(starValue)}
               disabled={readOnly}
               className={`
-                focus:outline-none focus:ring-2 focus:ring-violet-500 rounded
+                focus:outline-none focus:ring-2 focus:ring-blue-500 rounded
                 ${readOnly ? 'cursor-default' : 'cursor-pointer'}
               `}
               whileHover={!readOnly ? { scale: 1.2 } : {}}

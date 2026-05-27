@@ -151,7 +151,7 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 dark:text-gray-400 py-12">
-            <Bot className="w-16 h-16 mx-auto mb-4 text-purple-500 opacity-80" />
+            <Bot className="w-16 h-16 mx-auto mb-4 text-blue-500 opacity-80" />
             <p className="text-lg font-medium">NvwaX Aiteam架构师 正在等待您的消息</p>
             <p className="text-sm mt-2">描述您想要创建的团队类型或业务目标</p>
           </div>
@@ -162,7 +162,7 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
               className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {message.role === 'ceo_agent' && (
-                <div className="w-8 h-8 bg-linear-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 bg-linear-to-r from-blue-600 to-blue-700 rounded-full flex items-center justify-center shrink-0">
                   <Bot className="w-5 h-5 text-white" />
                 </div>
               )}
@@ -188,7 +188,7 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
         {/* 加载指示器 */}
         {isLoading && (
           <div className="flex justify-start gap-3">
-            <div className="w-8 h-8 bg-linear-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 bg-linear-to-r from-blue-600 to-blue-700 rounded-full flex items-center justify-center shrink-0">
               <Bot className="w-5 h-5 text-white" />
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-sm border border-gray-200 dark:border-gray-700">

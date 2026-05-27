@@ -178,7 +178,7 @@ export default function APIDocsPage() {
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
             API 文档
           </h1>
-          <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full text-sm font-medium">
+          <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium">
             v1.0
           </span>
         </div>
@@ -188,7 +188,7 @@ export default function APIDocsPage() {
       </div>
 
       {/* Base URL */}
-      <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-6 mb-8">
+      <div className="bg-linear-to-r from-blue-50 to-sky-50 dark:from-blue-900/20 dark:to-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-6 mb-8">
         <div className="flex items-start justify-between mb-3">
           <h3 className="font-semibold text-blue-900 dark:text-blue-300">基础 URL</h3>
           <button
@@ -233,7 +233,7 @@ export default function APIDocsPage() {
                           <span className={`px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm ${
                             endpoint.method === 'GET' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border border-green-200 dark:border-green-800' :
                             endpoint.method === 'POST' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800' :
-                            'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 border border-purple-200 dark:border-purple-800'
+                            'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
                           }`}>
                             {endpoint.method}
                           </span>
@@ -324,7 +324,7 @@ export default function APIDocsPage() {
 
       {/* Footer */}
       <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
-        <div className="bg-linear-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-8 text-center">
+        <div className="bg-linear-to-r from-blue-50 to-sky-50 dark:from-blue-900/20 dark:to-blue-900/20 rounded-xl p-8 text-center">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             需要更多帮助？
           </h3>
@@ -336,7 +336,7 @@ export default function APIDocsPage() {
               href="https://github.com/BigLionX/NvwaX#readme"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5 font-medium"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition-all hover:shadow-lg hover:-translate-y-0.5 font-medium"
             >
               <ExternalLink size={18} />
               查看完整文档

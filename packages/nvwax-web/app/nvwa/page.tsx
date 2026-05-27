@@ -73,7 +73,7 @@ const SUGGESTIONS_BY_STEP: Record<number, string[]> = {
 const STEP_CONFIG = [
   { icon: Lightbulb, label: '需求分析', color: 'from-amber-500 to-orange-500', bgColor: 'bg-amber-100 dark:bg-amber-900/20', textColor: 'text-amber-600 dark:text-amber-400' },
   { icon: Database, label: '数据源配置', color: 'from-emerald-500 to-teal-500', bgColor: 'bg-emerald-100 dark:bg-emerald-900/20', textColor: 'text-emerald-600 dark:text-emerald-400' },
-  { icon: FileText, label: '输出定义', color: 'from-violet-500 to-purple-500', bgColor: 'bg-violet-100 dark:bg-violet-900/20', textColor: 'text-violet-600 dark:text-violet-400' },
+  { icon: FileText, label: '输出定义', color: 'from-blue-500 to-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/20', textColor: 'text-blue-600 dark:text-blue-400' },
   { icon: Cpu, label: '实现方式', color: 'from-blue-500 to-cyan-500', bgColor: 'bg-blue-100 dark:bg-blue-900/20', textColor: 'text-blue-600 dark:text-blue-400' },
   { icon: Zap, label: '模板搜索', color: 'from-pink-500 to-rose-500', bgColor: 'bg-pink-100 dark:bg-pink-900/20', textColor: 'text-pink-600 dark:text-pink-400' },
   { icon: Sparkles, label: '配置审查', color: 'from-indigo-500 to-blue-500', bgColor: 'bg-indigo-100 dark:bg-indigo-900/20', textColor: 'text-indigo-600 dark:text-indigo-400' },
@@ -680,17 +680,17 @@ export default function NvwaPage() {
       {/* ====== Hero Header ====== */}
       <header className="relative overflow-hidden bg-white dark:bg-gray-900 border-b border-gray-200/60 dark:border-gray-800">
         {/* 背景渐变装饰 */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 dark:from-blue-500/10 dark:via-purple-500/10 dark:to-pink-500/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-blue-500/5 to-pink-500/5 dark:from-blue-500/10 dark:via-blue-500/10 dark:to-pink-500/10" />
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/4 w-48 h-48 bg-gradient-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-48 h-48 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full blur-3xl" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center gap-4">
             {/* Logo */}
             <div className="flex items-center gap-3 flex-shrink-0">
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
-                <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-700 rounded-2xl blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
+                <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/25">
                   <Sparkles size={20} className="text-white animate-pulse" />
                 </div>
               </div>
@@ -730,7 +730,7 @@ export default function NvwaPage() {
                 >
                   <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs ${
                     activeMode === 'aiteam'
-                      ? 'bg-gradient-to-br from-purple-500 to-pink-600 text-white'
+                      ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white'
                       : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
                   }`}>
                     🏢
@@ -805,10 +805,10 @@ export default function NvwaPage() {
                   )}
                   {formData.outputs.length > 0 && (
                     <div>
-                      <label className="text-[11px] font-semibold text-violet-500 dark:text-violet-400 uppercase tracking-wider">输出类型</label>
+                      <label className="text-[11px] font-semibold text-blue-500 dark:text-blue-400 uppercase tracking-wider">输出类型</label>
                       <div className="flex flex-wrap gap-1.5 mt-1.5">
                         {formData.outputs.map((o, i) => (
-                          <span key={i} className="text-xs px-2.5 py-1 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 rounded-full font-medium border border-violet-100 dark:border-violet-900/30">
+                          <span key={i} className="text-xs px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full font-medium border border-blue-100 dark:border-blue-900/30">
                             {o}
                           </span>
                         ))}
@@ -828,12 +828,12 @@ export default function NvwaPage() {
             {/* 技能卡片 */}
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-sm border border-gray-200/60 dark:border-gray-700/60 p-5">
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                  <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                  <Zap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white">已选技能</h3>
                 {formData.skills.length > 0 && (
-                  <span className="ml-auto text-xs font-medium text-purple-500 bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 rounded-full">
+                  <span className="ml-auto text-xs font-medium text-blue-500 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">
                     {formData.skills.length}
                   </span>
                 )}
@@ -843,7 +843,7 @@ export default function NvwaPage() {
                 <div className="space-y-2">
                   {formData.skills.map((skill, index) => (
                     <div key={index} className="group flex items-center gap-3 p-2.5 bg-gray-50/50 dark:bg-gray-900/30 rounded-xl hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm transition-all duration-200 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 cursor-default">
-                      <div className="shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                      <div className="shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                         {index + 1}
                       </div>
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{skill}</p>
@@ -879,7 +879,7 @@ export default function NvwaPage() {
               <div className="mb-5">
                 <div className="w-full h-2 bg-gray-100 dark:bg-gray-700/50 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500 rounded-full transition-all duration-700 ease-out shadow-sm shadow-indigo-500/25"
+                    className="h-full bg-gradient-to-r from-indigo-500 via-blue-500 to-blue-600 rounded-full transition-all duration-700 ease-out shadow-sm shadow-indigo-500/25"
                     style={{ width: `${progress.percentage}%` }}
                   />
                 </div>
@@ -959,7 +959,7 @@ export default function NvwaPage() {
                 <div className="flex items-center gap-2">
                   <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-indigo-500 to-blue-600 rounded-full transition-all duration-500"
                       style={{ width: `${progress.percentage}%` }}
                     />
                   </div>
@@ -987,7 +987,7 @@ export default function NvwaPage() {
                     {/* AI 头像 */}
                     {message.role === 'assistant' && (
                       <div className="relative shrink-0">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
                           <Bot size={18} className="text-white" />
                         </div>
                       </div>
@@ -1028,7 +1028,7 @@ export default function NvwaPage() {
                 {isTyping && (
                   <div className="flex gap-3 sm:gap-4 justify-start opacity-0 animate-[fadeIn_0.3s_ease-out_forwards]">
                     <div className="shrink-0">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
                         <Bot size={18} className="text-white" />
                       </div>
                     </div>
@@ -1036,7 +1036,7 @@ export default function NvwaPage() {
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0ms]" />
                         <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                        <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                        <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:300ms]" />
                       </div>
                     </div>
                   </div>

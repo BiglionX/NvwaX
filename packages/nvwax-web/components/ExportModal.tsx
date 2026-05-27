@@ -45,7 +45,7 @@ export default function ExportModal({
     {
       id: 'json',
       name: 'JSON',
-      description: '通用格式，易于解析',
+      description: '通用格式，易于解�?,
       icon: FileJson,
       color: 'blue'
     },
@@ -54,7 +54,7 @@ export default function ExportModal({
       name: 'YAML',
       description: '人类可读，适合配置',
       icon: FileType,
-      color: 'purple'
+      color: 'blue'
     },
     {
       id: 'proclaw',
@@ -142,7 +142,7 @@ export default function ExportModal({
           {selectedFormat === 'proclaw' && (
             <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
               <div className="text-sm text-green-800 dark:text-green-300">
-                <strong>提示：</strong>ProClaw 格式包含运行时配置和集成指南，可直接导入 ProClaw 桌面端使用。
+                <strong>提示�?/strong>ProClaw 格式包含运行时配置和集成指南，可直接导入 ProClaw 桌面端使用�?
               </div>
             </div>
           )}
@@ -163,13 +163,13 @@ export default function ExportModal({
             className={`flex-1 px-4 py-3 rounded-xl transition-all shadow-md hover:shadow-lg font-medium flex items-center justify-center gap-2 ${
               exportSuccess
                 ? 'bg-green-600 text-white'
-                : 'bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+                : 'bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white'
             } disabled:opacity-50`}
           >
             {isExporting ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
-                导出中...
+                导出�?..
               </>
             ) : exportSuccess ? (
               <>
@@ -179,7 +179,7 @@ export default function ExportModal({
             ) : (
               <>
                 <Download size={18} />
-                开始导出
+                开始导�?
               </>
             )}
           </button>

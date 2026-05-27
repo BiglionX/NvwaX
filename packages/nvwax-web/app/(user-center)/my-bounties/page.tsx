@@ -100,7 +100,7 @@ export default function MyBountiesPage() {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-all"
+            className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
           >
             <option value="all">全部</option>
             <option value="open">开放中</option>

@@ -95,7 +95,7 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-linear-to-r from-purple-500 to-pink-500 rounded-lg">
+            <div className="p-2 bg-linear-to-r from-blue-600 to-blue-700 rounded-lg">
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -124,7 +124,7 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="例如：我需要一个营销团队来管理社交媒体账号，创建内容，分析数据..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none min-h-30"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none min-h-30"
                   disabled={isSubmitting}
                 />
                 {error && (
@@ -165,7 +165,7 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
 
           {step === 'generating' && (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
+              <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   正在生成虚拟公司配置...
@@ -211,7 +211,7 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
               <button
                 onClick={handleSubmit}
                 disabled={!description.trim() || isSubmitting}
-                className="flex-1 px-4 py-2 bg-linear-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Send className="w-4 h-4" />
                 创建虚拟公司
@@ -238,7 +238,7 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
               </button>
               <button
                 onClick={handleViewResult}
-                className="flex-1 px-4 py-2 bg-linear-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:opacity-90 transition-opacity"
+                className="flex-1 px-4 py-2 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity"
               >
                 查看详情
               </button>

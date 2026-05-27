@@ -137,8 +137,8 @@ export default function AdminCrawlerPage() {
         {/* 总 Agent 数 */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-              <Database className="text-purple-500" size={24} />
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+              <Database className="text-blue-500" size={24} />
             </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Agent 总数</p>
@@ -192,7 +192,7 @@ export default function AdminCrawlerPage() {
         <button
           onClick={handleTriggerCrawl}
           disabled={triggerCrawlerMutation.isPending}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-600 hover:to-blue-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
         >
           {triggerCrawlerMutation.isPending ? (
             <Loader2 className="animate-spin" size={20} />

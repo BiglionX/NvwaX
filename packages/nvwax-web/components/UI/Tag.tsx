@@ -49,7 +49,7 @@ export default function Tag({
   // 变体样式
   const variants = {
     default: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600',
-    primary: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-700',
+    primary: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700',
     success: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700',
     warning: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700',
     danger: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700',
@@ -84,7 +84,7 @@ export default function Tag({
         ${variants[variant]}
         ${sizes[size]}
         ${selectable ? 'cursor-pointer hover:shadow-md' : ''}
-        ${selected ? 'ring-2 ring-violet-500 ring-offset-2 dark:ring-offset-gray-900' : ''}
+        ${selected ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900' : ''}
         ${className}
       `}
     >

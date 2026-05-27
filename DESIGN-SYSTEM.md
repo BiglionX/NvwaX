@@ -1,13 +1,21 @@
 # NvwaX 设计系统规范
 
+> **版本**: 2.0.0 | **更新日期**: 2026-05-27 | **品牌色**: 深蓝色系 (Deep Blue)
+
 ## 1. 色彩系统
 
-### 主色调
-- **蓝色**: `from-blue-600 to-purple-600` (渐变)
-- **蓝色深色**: `from-blue-700 to-purple-700` (hover)
+### 主色调 — 深蓝色系
+- **品牌渐变**: `from-blue-600 to-blue-700` (渐变)
+- **品牌悬停**: `from-blue-700 to-blue-800` (hover)
+- **品牌浅色**: `from-blue-500/5 to-blue-600/5` (装饰背景)
+- **辅助渐变**: `from-blue-500 via-indigo-500 to-blue-700` (Logo/头像)
 - **成功色**: `green-600`
 - **警告色**: `orange-500`
 - **错误色**: `red-600`
+
+### 亮色背景渐变
+- **页面渐变**: `from-blue-50 to-sky-50` (登录/注册页)
+- **卡片渐变**: `from-blue-50 to-sky-50` (信息区/FAQ CTA)
 
 ### 灰色系统
 - **边框**: `gray-200` (亮色模式) / `gray-700` (暗色模式)
@@ -52,20 +60,20 @@
 ## 6. 按钮规范
 
 ### 主要按钮
-```html
-<button class="px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 
-  hover:from-blue-700 hover:to-purple-700 text-white font-medium 
+```
+<button class="px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 
+  hover:from-blue-700 hover:to-blue-800 text-white font-medium 
   rounded-xl shadow-md hover:shadow-lg transition-all">
 ```
 
 ### 次要按钮
-```html
+```
 <button class="px-4 py-2 border-2 border-gray-200 dark:border-gray-700 
   hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-all">
 ```
 
 ### 危险按钮
-```html
+```
 <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white 
   rounded-xl transition-all shadow-md hover:shadow-lg">
 ```
@@ -73,14 +81,14 @@
 ## 7. 表单规范
 
 ### 输入框
-```html
+```
 <input class="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 
   rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 
   outline-none transition-all">
 ```
 
 ### 选择框
-```html
+```
 <select class="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-2 
   border-gray-200 dark:border-gray-600 rounded-lg focus:ring-4 
   focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
@@ -89,13 +97,13 @@
 ## 8. 卡片规范
 
 ### 标准卡片
-```html
+```
 <div class="bg-white dark:bg-gray-800 rounded-xl border-2 
   border-gray-200 dark:border-gray-700 shadow-md">
 ```
 
 ### 可点击卡片
-```html
+```
 <div class="bg-white dark:bg-gray-800 rounded-xl border-2 
   border-gray-200 dark:border-gray-700 hover:border-blue-300 
   dark:hover:border-blue-700 hover:-translate-y-1 hover:shadow-xl 
@@ -104,7 +112,7 @@
 
 ## 9. 空状态规范
 
-```html
+```
 <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-xl 
   border-2 border-gray-200 dark:border-gray-700 shadow-md">
   <div class="w-20 h-20 bg-linear-to-br from-gray-100 to-gray-50 
@@ -124,7 +132,7 @@
 ## 10. 加载状态规范
 
 使用 `LoadingState` 组件：
-```tsx
+```
 <LoadingState /> {/* 默认全屏 */}
 <LoadingState fullScreen={false} /> {/* 非全屏 */}
 <LoadingState text="跳转中..." /> {/* 自定义文本 */}
@@ -186,6 +194,6 @@
 
 ---
 
-**最后更新**: 2026-05-17  
-**版本**: 1.0.0  
+**最后更新**: 2026-05-27  
+**版本**: 2.0.0  
 **维护者**: 前端设计团队

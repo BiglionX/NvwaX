@@ -79,7 +79,7 @@ export default function AdminsPage() {
               <tr key={admin.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-linear-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center">
                       <UserIcon className="text-white" size={20} />
                     </div>
                     <div>
@@ -97,7 +97,7 @@ export default function AdminsPage() {
                 <td className="px-6 py-4">
                   <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
                     admin.role === 'superadmin' 
-                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
                       : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
                   }`}>
                     <Shield size={14} />

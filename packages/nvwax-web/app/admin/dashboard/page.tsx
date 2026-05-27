@@ -48,8 +48,8 @@ export default function AdminDashboardPage() {
       label: '用户总数',
       value: stats?.totalUsers || 0,
       icon: Users,
-      color: 'bg-purple-500',
-      bgColor: 'bg-purple-100 dark:bg-purple-900/30'
+      color: 'bg-blue-600',
+      bgColor: 'bg-blue-100 dark:bg-blue-900/30'
     },
     {
       label: '项目总数',
