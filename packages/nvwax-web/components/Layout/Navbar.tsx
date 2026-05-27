@@ -35,7 +35,7 @@ export default function Navbar() {
   return (
     <nav className={`${
       isHome
-        ? 'bg-transparent backdrop-blur-lg border-b border-white/10'
+        ? 'bg-transparent border-b border-white/10'
         : 'bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700'
     } sticky top-0 z-50 transition-colors duration-300`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

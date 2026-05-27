@@ -28,7 +28,7 @@ export default function Home() {
           className="absolute -top-40 -right-40 w-125 h-125 rounded-full opacity-30 animate-[drift_12s_ease-in-out_infinite]"
           style={{
             background: 'radial-gradient(circle, rgba(59,130,246,0.25) 0%, rgba(59,130,246,0.1) 40%, transparent 70%)',
-            filter: 'blur(60px)'
+            filter: 'blur(40px)'
           }}
         />
         {/* 小星云 - 左下 */}
@@ -36,7 +36,7 @@ export default function Home() {
           className="absolute -bottom-20 -left-20 w-87.5 h-87.5 rounded-full opacity-25 animate-[drift_15s_ease-in-out_infinite_2s]"
           style={{
             background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, rgba(139,92,246,0.08) 40%, transparent 70%)',
-            filter: 'blur(50px)'
+            filter: 'blur(30px)'
           }}
         />
         {/* 流星 */}
