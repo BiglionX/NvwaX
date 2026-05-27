@@ -102,7 +102,7 @@ export default function SearchClient() {
       </div>
 
       {/* AI 对话搜索主界面 */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[500px]">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden min-h-125">
         <SearchInlineChat />
       </div>
 

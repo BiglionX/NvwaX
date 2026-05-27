@@ -7,6 +7,7 @@
 import { Pool } from 'pg';
 import { v4 as uuidv4 } from 'uuid';
 import { agentSearchService, Agent } from './agent-search.service.js';
+import { databaseService } from './database.service.js';
 
 export interface AiTeamMember {
   agentId: string;
@@ -999,3 +1000,6 @@ export class AiTeamService {
     };
   }
 }
+
+// 导出全局单例
+export const aiteamService = new AiTeamService(databaseService.getPool());

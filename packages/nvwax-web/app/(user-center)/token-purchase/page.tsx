@@ -130,6 +130,7 @@ export default function TokenPurchasePage() {
 
                 {!!paymentInfo.qr_code_url && (
                   <div className="mb-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={paymentInfo.qr_code_url as string}
                       alt={`${paymentInfo.provider_label as string}收款码`}

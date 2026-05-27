@@ -15,6 +15,20 @@ export interface Agent {
   license?: string;
 }
 
+/**
+ * AiTeam（虚拟公司）搜索结果类型
+ */
+export interface SearchAiTeam {
+  id: string;
+  name: string;
+  description?: string;
+  members: { agentId: string; role: string }[];
+  category?: string;
+  tags: string[];
+  rating: number;
+  publishStatus: string;
+}
+
 export interface Skill {
   id: string;
   name: string;

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Sparkles, Loader2, Bot, User, Star, ExternalLink, Search } from 'lucide-react';
-import type { Agent } from '@/lib/api/search';
+import { X, Send, Sparkles, Loader2, Bot, User, Star, ExternalLink, Search, Users } from 'lucide-react';
+import type { Agent, SearchAiTeam } from '@/lib/api/search';
 import { Button, Card, Badge, Tag } from '@/components/UI';
 
 /**
@@ -13,6 +13,8 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   results?: Agent[];
+  /** AiTeam（虚拟公司）搜索结果 */
+  aiteamResults?: SearchAiTeam[];
   suggestions?: string[];
   canGenerate?: boolean;
 }
@@ -139,6 +141,7 @@ export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoG
           role: 'assistant',
           content: data.data.reply || '没有找到相关结果。',
           results: data.data.results,
+          aiteamResults: data.data.aiteamResults,
           suggestions: data.data.suggestions,
           canGenerate: data.data.canGenerate
         };
@@ -296,6 +299,55 @@ export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoG
                               查看详情
                             </a>
                           )}
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* AiTeam 搜索结果卡片 */}
+                {msg.aiteamResults && msg.aiteamResults.length > 0 && (
+                  <div className="space-y-2 mt-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <Users size={12} />
+                      虚拟公司推荐 ({msg.aiteamResults.length} 个)
+                    </p>
+                    <div className="grid gap-2">
+                      {msg.aiteamResults.map((aiteam) => (
+                        <Card key={aiteam.id} padding="sm" variant="clickable" className="hover:border-purple-400 transition-colors border-l-4 border-l-purple-400">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <Users size={14} className="text-purple-500 shrink-0" />
+                                <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                  {aiteam.name}
+                                </h4>
+                              </div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
+                                {aiteam.description || '暂无描述'}
+                              </p>
+                            </div>
+                            <Badge variant="info" size="sm" className="shrink-0">虚拟公司</Badge>
+                          </div>
+                          <div className="flex items-center gap-3 mt-2">
+                            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                              <Users size={12} />
+                              <span>{aiteam.members?.length || 0} 成员</span>
+                            </div>
+                            {aiteam.rating > 0 && (
+                              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                <Star size={12} className="text-yellow-500" fill="currentColor" />
+                                <span>{aiteam.rating.toFixed(1)}</span>
+                              </div>
+                            )}
+                            {aiteam.tags && aiteam.tags.length > 0 && (
+                              <div className="flex gap-1 flex-1 overflow-hidden">
+                                {aiteam.tags.slice(0, 3).map((tag, i) => (
+                                  <Tag key={i} variant="primary" size="sm">{tag}</Tag>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </Card>
                       ))}
                     </div>

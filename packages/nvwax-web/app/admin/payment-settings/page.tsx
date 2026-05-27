@@ -9,13 +9,6 @@ export default function PaymentSettingsPage() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [orderPage, setOrderPage] = useState(1);
-  const [configForm, setConfigForm] = useState<Record<string, {
-    provider_label: string;
-    qr_code_url: string;
-    account_name: string;
-    account_info: string;
-    sort_order: number;
-  }>>({});
 
   // 获取支付配置
   const { data: configs, isLoading: loadingConfigs } = useQuery({
@@ -65,31 +58,6 @@ export default function PaymentSettingsPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-token-orders'] });
     }
   });
-
-  // 初始化表单数据
-  const getFormData = (provider: string) => {
-    if (!configForm[provider]) {
-      const config = configs?.find((c: { provider: string }) => c.provider === provider);
-      setConfigForm(prev => ({
-        ...prev,
-        [provider]: {
-          provider_label: config?.provider_label || (provider === 'wechat' ? '微信支付' : '支付宝'),
-          qr_code_url: config?.qr_code_url || '',
-          account_name: config?.account_name || '',
-          account_info: config?.account_info || '',
-          sort_order: config?.sort_order ?? (provider === 'wechat' ? 0 : 1)
-        }
-      }));
-      return configForm[provider] || {
-        provider_label: provider === 'wechat' ? '微信支付' : '支付宝',
-        qr_code_url: '',
-        account_name: '',
-        account_info: '',
-        sort_order: provider === 'wechat' ? 0 : 1
-      };
-    }
-    return configForm[provider];
-  };
 
 
 
@@ -173,6 +141,7 @@ export default function PaymentSettingsPage() {
             />
             {localForm.qr_code_url && (
               <div className="mt-2 flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={localForm.qr_code_url}
                   alt={`${localForm.provider_label}二维码`}

@@ -11,6 +11,8 @@ dist/
 build/
 .next/
 out/
+*.tsc_output.txt
+tsc_output.txt
 
 # Environment variables
 .env
