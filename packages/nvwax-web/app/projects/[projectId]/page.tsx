@@ -84,7 +84,7 @@ export default function ProjectDetailPage() {
         <div className="flex gap-3">
           <button
             onClick={() => setShowTemplateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-lg transition-all shadow-md"
+            className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-lg transition-all shadow-md"
           >
             <LayoutGrid size={20} />
             从模板创建
@@ -103,7 +103,7 @@ export default function ProjectDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <Link
           href="/nvwa"
-          className="group bg-gradient-to-br from-indigo-500 to-blue-700 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all"
+          className="group bg-linear-to-br from-indigo-500 to-blue-700 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all"
         >
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -118,7 +118,7 @@ export default function ProjectDetailPage() {
 
         <button
           onClick={() => setShowTemplateModal(true)}
-          className="group bg-gradient-to-br from-orange-500 to-red-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all text-left"
+          className="group bg-linear-to-br from-orange-500 to-red-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all text-left"
         >
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -172,7 +172,7 @@ export default function ProjectDetailPage() {
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => setShowTemplateModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-lg transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-lg transition-all"
             >
               <LayoutGrid size={20} />
               从模板创建
@@ -323,7 +323,7 @@ export default function ProjectDetailPage() {
                       setSelectedTemplate(null);
                       setNewTeamName('');
                     }}
-                    className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-lg transition-all"
+                    className="flex-1 px-4 py-2 bg-linear-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-lg transition-all"
                   >
                     应用模板并创建
                   </button>

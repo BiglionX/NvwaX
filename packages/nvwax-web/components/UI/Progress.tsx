@@ -51,10 +51,10 @@ export default function Progress({
   
   // 变体颜色
   const variants = {
-    default: 'bg-gradient-to-r from-blue-600 to-blue-700',
-    success: 'bg-gradient-to-r from-green-500 to-emerald-600',
-    warning: 'bg-gradient-to-r from-orange-500 to-amber-600',
-    danger: 'bg-gradient-to-r from-red-500 to-rose-600',
+    default: 'bg-linear-to-r from-blue-600 to-blue-700',
+    success: 'bg-linear-to-r from-green-500 to-emerald-600',
+    warning: 'bg-linear-to-r from-orange-500 to-amber-600',
+    danger: 'bg-linear-to-r from-red-500 to-rose-600',
   };
   
   return (

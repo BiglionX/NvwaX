@@ -233,7 +233,7 @@ export default function TeamSkillsPage() {
       )}
 
       {/* CTA Section */}
-      <div className="mt-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white">
+      <div className="mt-12 bg-linear-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white">
         <div className="max-w-3xl">
           <h2 className="text-3xl font-bold mb-4">
             没有找到合适的模板？

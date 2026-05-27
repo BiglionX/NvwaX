@@ -47,7 +47,7 @@ export default function Card({
   const variants = {
     default: '',
     clickable: 'cursor-pointer hover:border-blue-300 dark:hover:border-blue-700 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-200/50 dark:hover:shadow-blue-900/30 active:scale-[0.98]',
-    highlighted: 'border-blue-300 dark:border-blue-700 bg-gradient-to-br from-blue-50 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/20',
+    highlighted: 'border-blue-300 dark:border-blue-700 bg-linear-to-br from-blue-50 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/20',
   };
   
   // 阴影样式

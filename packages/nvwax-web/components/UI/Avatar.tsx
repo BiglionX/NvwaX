@@ -46,7 +46,7 @@ export default function Avatar({
   alt,
   size = 'md',
   shape = 'circle',
-  bgColor = 'bg-gradient-to-br from-blue-600 to-blue-700',
+  bgColor = 'bg-linear-to-br from-blue-600 to-blue-700',
   textColor = 'text-white',
   className = '',
   onClick,

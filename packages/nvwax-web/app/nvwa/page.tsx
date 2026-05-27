@@ -680,17 +680,17 @@ export default function NvwaPage() {
       {/* ====== Hero Header ====== */}
       <header className="relative overflow-hidden bg-white dark:bg-gray-900 border-b border-gray-200/60 dark:border-gray-800">
         {/* 背景渐变装饰 */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-blue-500/5 to-pink-500/5 dark:from-blue-500/10 dark:via-blue-500/10 dark:to-pink-500/10" />
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/4 w-48 h-48 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-linear-to-r from-blue-500/5 via-blue-500/5 to-pink-500/5 dark:from-blue-500/10 dark:via-blue-500/10 dark:to-pink-500/10" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-bl from-blue-500/10 to-transparent rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-48 h-48 bg-linear-to-tr from-blue-500/10 to-transparent rounded-full blur-3xl" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center gap-4">
             {/* Logo */}
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-3 shrink-0">
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-700 rounded-2xl blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
-                <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <div className="absolute inset-0 bg-linear-to-r from-blue-500 to-blue-700 rounded-2xl blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
+                <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-linear-to-br from-blue-500 via-indigo-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/25">
                   <Sparkles size={20} className="text-white animate-pulse" />
                 </div>
               </div>
@@ -710,7 +710,7 @@ export default function NvwaPage() {
                 >
                   <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs ${
                     activeMode === 'agent'
-                      ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white'
+                      ? 'bg-linear-to-br from-blue-500 to-indigo-600 text-white'
                       : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
                   }`}>
                     🤖
@@ -730,7 +730,7 @@ export default function NvwaPage() {
                 >
                   <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs ${
                     activeMode === 'aiteam'
-                      ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white'
+                      ? 'bg-linear-to-br from-blue-600 to-blue-700 text-white'
                       : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400'
                   }`}>
                     🏢
@@ -742,7 +742,7 @@ export default function NvwaPage() {
             </div>
 
             {/* 右侧操作区 */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               {activeMode === 'agent' && currentStep > 0 && currentStep < 7 && (
                 <button
                   onClick={() => {
@@ -843,7 +843,7 @@ export default function NvwaPage() {
                 <div className="space-y-2">
                   {formData.skills.map((skill, index) => (
                     <div key={index} className="group flex items-center gap-3 p-2.5 bg-gray-50/50 dark:bg-gray-900/30 rounded-xl hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm transition-all duration-200 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 cursor-default">
-                      <div className="shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                      <div className="shrink-0 w-7 h-7 rounded-lg bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                         {index + 1}
                       </div>
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{skill}</p>
@@ -879,7 +879,7 @@ export default function NvwaPage() {
               <div className="mb-5">
                 <div className="w-full h-2 bg-gray-100 dark:bg-gray-700/50 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-indigo-500 via-blue-500 to-blue-600 rounded-full transition-all duration-700 ease-out shadow-sm shadow-indigo-500/25"
+                    className="h-full bg-linear-to-r from-indigo-500 via-blue-500 to-blue-600 rounded-full transition-all duration-700 ease-out shadow-sm shadow-indigo-500/25"
                     style={{ width: `${progress.percentage}%` }}
                   />
                 </div>
@@ -959,7 +959,7 @@ export default function NvwaPage() {
                 <div className="flex items-center gap-2">
                   <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-indigo-500 to-blue-600 rounded-full transition-all duration-500"
+                      className="h-full bg-linear-to-r from-indigo-500 to-blue-600 rounded-full transition-all duration-500"
                       style={{ width: `${progress.percentage}%` }}
                     />
                   </div>
@@ -987,7 +987,7 @@ export default function NvwaPage() {
                     {/* AI 头像 */}
                     {message.role === 'assistant' && (
                       <div className="relative shrink-0">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 via-indigo-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
                           <Bot size={18} className="text-white" />
                         </div>
                       </div>
@@ -997,7 +997,7 @@ export default function NvwaPage() {
                     <div
                       className={`max-w-[88%] sm:max-w-[78%] rounded-2xl px-4 sm:px-5 py-3 text-sm leading-relaxed shadow-sm ${
                         message.role === 'user'
-                          ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-blue-500/20 rounded-br-lg'
+                          ? 'bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-blue-500/20 rounded-br-lg'
                           : 'bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-gray-700/50 rounded-bl-lg'
                       }`}
                     >
@@ -1014,7 +1014,7 @@ export default function NvwaPage() {
                     {/* 用户头像 */}
                     {message.role === 'user' && (
                       <div className="shrink-0">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center shadow-sm">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center shadow-sm">
                           <span className="text-white font-bold text-sm">
                             {userInfo?.name?.charAt(0).toUpperCase() || 'U'}
                           </span>
@@ -1028,7 +1028,7 @@ export default function NvwaPage() {
                 {isTyping && (
                   <div className="flex gap-3 sm:gap-4 justify-start opacity-0 animate-[fadeIn_0.3s_ease-out_forwards]">
                     <div className="shrink-0">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
                         <Bot size={18} className="text-white" />
                       </div>
                     </div>
@@ -1124,7 +1124,7 @@ export default function NvwaPage() {
                     onClick={handleSendMessage}
                     disabled={!inputValue.trim() || isTyping}
                     aria-label="发送消息"
-                    className="shrink-0 p-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-300 dark:disabled:from-gray-700 dark:disabled:to-gray-700 disabled:cursor-not-allowed text-white rounded-2xl transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg hover:shadow-blue-500/25 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
+                    className="shrink-0 p-3 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-300 dark:disabled:from-gray-700 dark:disabled:to-gray-700 disabled:cursor-not-allowed text-white rounded-2xl transition-all duration-200 flex items-center justify-center shadow-md hover:shadow-lg hover:shadow-blue-500/25 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900"
                     style={{ width: '44px', height: '44px' }}
                   >
                     <Send size={18} />
