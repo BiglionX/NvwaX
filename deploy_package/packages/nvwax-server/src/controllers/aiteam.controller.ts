@@ -7,10 +7,12 @@
 import { Request, Response } from 'express';
 import { AiTeamService } from '../services/aiteam.service.js';
 import { ExportService } from '../services/export.service.js';
+import { NvwaLeaderService } from '../services/nvwa-leader.service.js';
 import { databaseService } from '../services/database.service.js';
 
 const aiteamService = new AiTeamService(databaseService.getPool());
 const exportService = new ExportService(databaseService.getPool());
+const nvwaLeaderService = new NvwaLeaderService(databaseService.getPool());
 
 /**
  * 创建 AiTeam
@@ -566,6 +568,103 @@ export const searchPublishedAiTeams = async (req: Request, res: Response): Promi
       error: {
         code: 'INTERNAL_ERROR',
         message: '搜索 AiTeam 失败'
+      }
+    });
+  }
+};
+
+/**
+ * 推荐相似的 AiTeam
+ */
+export const recommendAiTeams = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { q, limit = 5 } = req.query;
+
+    if (!q) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_PARAMS',
+          message: '查询参数 q 不能为空'
+        }
+      });
+      return;
+    }
+
+    const result = await aiteamService.recommendAiTeams({
+      query: q as string,
+      limit: parseInt(limit as string)
+    });
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error: any) {
+    console.error('Recommend aiteams error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: '推荐 AiTeam 失败'
+      }
+    });
+  }
+};
+
+/**
+ * 根据需求描述自动生成 AiTeam
+ * POST /api/aiteams/generate-from-query
+ * Body: { query: string }
+ */
+export const generateAiTeamFromQuery = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { query } = req.body;
+
+    if (!query) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_PARAMS',
+          message: '查询参数 query 不能为空'
+        }
+      });
+      return;
+    }
+
+    // 复用 NvwaLeaderService 生成团队配置
+    const teamConfig = await nvwaLeaderService.generateTeamFromNvwa({
+      description: query,
+      dataSources: [],
+      outputs: [],
+      implementation: '',
+      skills: []
+    }, false); // isVirtualCompany = false, 生成普通团队
+
+    // 映射为 AiTeam 预览结构
+    const preview = {
+      name: teamConfig.teamName || `${query.substring(0, 15)}团队`,
+      description: teamConfig.teamDescription || `专注于${query}的 AI 团队`,
+      category: teamConfig.category || 'general',
+      tags: teamConfig.tags || [],
+      members: (teamConfig.roles || []).map((role: any) => ({
+        role: role.roleName || role.role || '成员',
+        responsibilities: role.description || role.responsibilities?.[0] || ''
+      })),
+      workflow: teamConfig.workflow || { steps: [] }
+    };
+
+    res.json({
+      success: true,
+      data: preview
+    });
+  } catch (error: any) {
+    console.error('Generate aiteam from query error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: '生成 AiTeam 失败'
       }
     });
   }

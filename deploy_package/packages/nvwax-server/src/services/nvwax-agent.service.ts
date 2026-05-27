@@ -164,7 +164,7 @@ export class NvwaXAgentService {
     const prompt = REQUIREMENT_ANALYSIS_PROMPT.replace('{{userInput}}', userInput);
 
     const completion = await this.openai.chat.completions.create({
-      model: 'deepseek-chat',
+      model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
       messages: [
         { role: 'system', content: '你是一个专业的需求分析师，擅长从用户描述中提取关键信息。' },
         { role: 'user', content: prompt }
@@ -301,7 +301,7 @@ export class NvwaXAgentService {
       .replace('{{specialRequirements}}', requirements.specialRequirements || '无');
 
     const completion = await this.openai.chat.completions.create({
-      model: 'deepseek-chat',
+      model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
       messages: [
         { role: 'system', content: '你是一个专业的团队架构师，擅长设计高效的AI团队结构。' },
         { role: 'user', content: prompt }

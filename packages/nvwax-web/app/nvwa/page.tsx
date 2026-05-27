@@ -81,7 +81,99 @@ const STEP_CONFIG = [
 ];
 
 export default function NvwaPage() {
-  const { isLoggedIn, userInfo } = useAuth();
+  const { isLoggedIn, userInfo, login, loading: authLoading } = useAuth();
+
+  // 从 URL 参数读取外部注入的需求（如从 ProClaw 跳转），使用 window.location 避免 SSR 问题
+  const [externalRequirements, setExternalRequirements] = useState<string | null>(null);
+  const [externalTeamName, setExternalTeamName] = useState<string | null>(null);
+  const [externalCategory, setExternalCategory] = useState<string | null>(null);
+  const [externalTags, setExternalTags] = useState<string | null>(null);
+  const [crossAuthHandled, setCrossAuthHandled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setExternalRequirements(params.get('requirements'));
+      setExternalTeamName(params.get('teamName'));
+      setExternalCategory(params.get('category'));
+      setExternalTags(params.get('tags'));
+    }
+  }, []);
+
+  // ProClaw 跨服务统一认证：自动登录
+  useEffect(() => {
+    if (crossAuthHandled || authLoading) return;
+    if (typeof window === 'undefined') return;
+
+    const params = new URLSearchParams(window.location.search);
+    const proclawToken = params.get('proclaw_token');
+    const proclawEmail = params.get('proclaw_email');
+
+    if (!proclawToken || !proclawEmail) {
+      setCrossAuthHandled(true);
+      return;
+    }
+
+    // 如果已登录，跳过
+    if (isLoggedIn) {
+      setCrossAuthHandled(true);
+      return;
+    }
+
+    const doCrossAuth = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+        const response = await fetch(`${API_URL}/auth/proclaw-cross-auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ proclaw_token: proclawToken, proclaw_email: proclawEmail }),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.data) {
+          console.warn('[ProClaw CrossAuth] Failed:', data.error);
+          setCrossAuthHandled(true);
+          return;
+        }
+
+        // 使用 useAuth 的 login 方法存储 Token 和用户信息
+        login(data.data.token, {
+          id: data.data.user.id,
+          email: data.data.user.email,
+          name: data.data.user.name,
+        });
+
+        console.log('[ProClaw CrossAuth] Auto-login successful:', data.data.user.email);
+      } catch (err) {
+        console.error('[ProClaw CrossAuth] Error:', err);
+      } finally {
+        setCrossAuthHandled(true);
+      }
+    };
+
+    doCrossAuth();
+  }, [isLoggedIn, authLoading, crossAuthHandled, login]);
+
+  // 跨服务认证完成后，自动打开虚拟公司弹窗（但需等待登录状态稳定）
+  const [authReadyForModal, setAuthReadyForModal] = useState(false);
+  useEffect(() => {
+    if (crossAuthHandled && externalRequirements && !authLoading) {
+      // 给一点时间让 auth state 稳定
+      const timer = setTimeout(() => setAuthReadyForModal(true), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [crossAuthHandled, externalRequirements, authLoading]);
+
+  // 构建带额外上下文的初始消息
+  const initialVirtualCompanyMessage = externalRequirements
+    ? [
+        externalRequirements,
+        externalTeamName ? `\n团队名称建议：${externalTeamName}` : '',
+        externalCategory ? `\n业务分类：${externalCategory}` : '',
+        externalTags ? `\n相关标签：${externalTags}` : '',
+      ].join('')
+    : undefined;
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -151,6 +243,18 @@ export default function NvwaPage() {
     };
     setMessages([welcomeMessage]);
   }, []);
+
+  // 从 ProClaw 等外部来源跳转时，自动打开虚拟公司创建弹窗（等待跨服务认证完成）
+  useEffect(() => {
+    if (externalRequirements) {
+      // 延迟打开，确保页面已完全渲染
+      const timer = setTimeout(() => {
+        setActiveMode('aiteam');
+        setShowVirtualCompanyModal(true);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [authReadyForModal]);
 
   // 添加消息
   const addAssistantMessage = (content: string) => {
@@ -1057,6 +1161,7 @@ export default function NvwaPage() {
       {/* 虚拟公司创建弹窗 */}
       {showVirtualCompanyModal && (
         <VirtualCompanyChatModal
+          initialMessage={initialVirtualCompanyMessage}
           onClose={() => { setShowVirtualCompanyModal(false); setActiveMode('agent'); }}
           onSuccess={(teamSkillId) => {
             setShowVirtualCompanyModal(false);

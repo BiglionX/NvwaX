@@ -21,6 +21,7 @@ import agentRouter from './agent.routes.js';
 import aiteamRouter from './aiteam.routes.js';
 import notificationRouter from './notification.routes.js';
 import downloadRouter from './download.routes.js';
+import aiSearchRouter from './ai-search.routes.js';
 
 const router = Router();
 
@@ -71,6 +72,7 @@ router.get('/user/stats', userController.getStats);
 // User authentication routes
 router.post('/auth/register', userAuthController.register);
 router.post('/auth/login', userAuthController.login);
+router.post('/auth/proclaw-cross-auth', userAuthController.proclawCrossAuth);
 router.get('/auth/profile', userAuthController.getProfile);
 
 // Bounty routes
@@ -125,6 +127,9 @@ router.use('/aiteams', aiteamRouter);
 
 // Notification routes (通知系统)
 router.use('/notifications', notificationRouter);
+
+// Ai Search routes (AI 对话式搜索)
+router.use('/ai-search', aiSearchRouter);
 
 // Download routes (打包文件下载)
 router.use('/downloads', downloadRouter);

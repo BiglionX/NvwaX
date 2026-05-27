@@ -79,3 +79,33 @@ export const searchApi = {
     return response.data;
   }
 };
+
+/**
+ * AI Search Agent API
+ * 对话式 Agent 智能搜索
+ */
+export const aiSearchApi = {
+  /**
+   * 创建新的搜索会话
+   */
+  createSession: async () => {
+    const response = await apiClient.post('/ai-search/sessions');
+    return response.data;
+  },
+
+  /**
+   * 发送消息进行对话式搜索
+   */
+  chat: async (sessionId: string, message: string) => {
+    const response = await apiClient.post('/ai-search/chat', { sessionId, message });
+    return response.data;
+  },
+
+  /**
+   * 获取会话详情
+   */
+  getSession: async (sessionId: string) => {
+    const response = await apiClient.get(`/ai-search/sessions/${sessionId}`);
+    return response.data;
+  }
+};

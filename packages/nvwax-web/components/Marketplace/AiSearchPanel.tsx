@@ -1,0 +1,430 @@
+'use client';
+
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { X, Send, Sparkles, Loader2, Bot, User, Star, ExternalLink, Search } from 'lucide-react';
+import type { Agent } from '@/lib/api/search';
+import { Button, Card, Badge, Tag } from '@/components/UI';
+
+/**
+ * AI 搜索对话消息
+ */
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  results?: Agent[];
+  suggestions?: string[];
+  canGenerate?: boolean;
+}
+
+/**
+ * AI 搜索面板属性
+ */
+interface AiSearchPanelProps {
+  isOpen: boolean;
+  onClose: () => void;
+  initialMessage?: string;
+  onAutoGenerate?: (query: string) => void;
+}
+
+/**
+ * AI Search Agent 对话搜索面板
+ * 侧滑式面板，支持多轮对话搜索 Agent
+ */
+export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoGenerate }: AiSearchPanelProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // 滚动到底部
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      scrollToBottom();
+      setTimeout(() => inputRef.current?.focus(), 300);
+    }
+  }, [isOpen, messages, scrollToBottom]);
+
+  // 打开时自动创建会话
+  useEffect(() => {
+    if (isOpen && !sessionId) {
+      initSession();
+    }
+  }, [isOpen]);
+
+  // 初始化会话
+  const initSession = async () => {
+    setIsCreatingSession(true);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/ai-search/sessions`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      if (data.success && data.data?.sessionId) {
+        setSessionId(data.data.sessionId);
+        
+        // 添加欢迎消息
+        setMessages([
+          {
+            id: 'welcome',
+            role: 'assistant',
+            content: '你好！我是 **AI Search Agent**，专门帮你搜索和发现 AI Agent 的智能助手。\n\n告诉我你需要的 Agent 类型或功能，我来帮你从 GitHub、Gitee、ModelScope 等平台搜索！',
+            suggestions: [
+              '找一个文案写作 Agent',
+              '需要数据处理的 AI',
+              '帮我搜图片生成的 Agent'
+            ]
+          }
+        ]);
+
+        // 如果有初始消息，自动发送
+        if (initialMessage) {
+          setInputValue(initialMessage);
+          setTimeout(() => sendMessage(initialMessage), 500);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to create AI search session:', error);
+      setMessages([
+        {
+          id: 'error',
+          role: 'assistant',
+          content: '抱歉，AI 搜索服务暂时不可用，请稍后重试。'
+        }
+      ]);
+    } finally {
+      setIsCreatingSession(false);
+    }
+  };
+
+  // 发送消息
+  const sendMessage = async (content?: string) => {
+    const messageText = content || inputValue;
+    if (!messageText.trim() || !sessionId || isLoading) return;
+
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: messageText.trim()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsLoading(true);
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/ai-search/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          message: messageText.trim()
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        const aiMessage: ChatMessage = {
+          id: `ai-${Date.now()}`,
+          role: 'assistant',
+          content: data.data.reply || '没有找到相关结果。',
+          results: data.data.results,
+          suggestions: data.data.suggestions,
+          canGenerate: data.data.canGenerate
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      } else {
+        throw new Error(data.error?.message || 'API 返回错误');
+      }
+    } catch (error) {
+      console.error('AI Search chat error:', error);
+      setMessages(prev => [...prev, {
+        id: `ai-error-${Date.now()}`,
+        role: 'assistant',
+        content: '抱歉，搜索过程中出错了，请重试或换个说法描述你的需求。'
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 键盘发送
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  // 点击建议
+  const handleSuggestionClick = (suggestion: string) => {
+    setInputValue(suggestion);
+    sendMessage(suggestion);
+  };
+
+  // 关闭面板
+  const handleClose = () => {
+    setMessages([]);
+    setSessionId(null);
+    setInputValue('');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex">
+      {/* 背景遮罩 */}
+      <div
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm"
+        onClick={handleClose}
+      />
+
+      {/* 面板 */}
+      <div className="relative ml-auto w-full max-w-2xl h-full bg-white dark:bg-gray-900 shadow-2xl flex flex-col animate-slide-in-right">
+        {/* 头部 */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-violet-600 to-indigo-600 text-white shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center">
+              <Sparkles size={20} className="text-yellow-300" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-base">AI Search Agent</h2>
+              <p className="text-xs text-white/70">对话式 Agent 智能搜索</p>
+            </div>
+          </div>
+          <button
+            onClick={handleClose}
+            className="w-9 h-9 rounded-lg hover:bg-white/20 flex items-center justify-center transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* 消息列表 */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+          {isCreatingSession && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 size={32} className="animate-spin text-violet-500" />
+            </div>
+          )}
+
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {/* AI 头像 */}
+              {msg.role === 'assistant' && (
+                <div className="w-8 h-8 rounded-full bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0 mt-1">
+                  <Bot size={16} className="text-white" />
+                </div>
+              )}
+
+              {/* 消息气泡 */}
+              <div className={`max-w-[85%] space-y-2 ${msg.role === 'user' ? 'order-1' : 'order-2'}`}>
+                {/* 文本内容 */}
+                <div
+                  className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                    msg.role === 'user'
+                      ? 'bg-violet-600 text-white rounded-tr-md'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-md'
+                  }`}
+                >
+                  {msg.role === 'assistant' ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      {renderMessageContent(msg.content)}
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  )}
+                </div>
+
+                {/* Agent 搜索结果卡片 */}
+                {msg.results && msg.results.length > 0 && (
+                  <div className="space-y-2 mt-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <Search size={12} />
+                      搜索结果 ({msg.results.length} 个)
+                    </p>
+                    <div className="grid gap-2">
+                      {msg.results.map((agent) => (
+                        <Card key={agent.id} padding="sm" variant="clickable" className="hover:border-violet-400 transition-colors">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                {agent.name}
+                              </h4>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
+                                {agent.description || '暂无描述'}
+                              </p>
+                            </div>
+                            <Badge variant={agent.source === 'github' ? 'default' : 'warning'} size="sm" className="shrink-0">
+                              {agent.source}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-3 mt-2">
+                            {agent.stars !== undefined && (
+                              <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                <Star size={12} className="text-yellow-500" fill="currentColor" />
+                                <span>{agent.stars.toLocaleString()}</span>
+                              </div>
+                            )}
+                            {agent.tags && agent.tags.length > 0 && (
+                              <div className="flex gap-1 flex-1 overflow-hidden">
+                                {agent.tags.slice(0, 3).map((tag, i) => (
+                                  <Tag key={i} variant="primary" size="sm">{tag}</Tag>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {agent.url && (
+                            <a
+                              href={agent.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1 mt-2"
+                            >
+                              <ExternalLink size={12} />
+                              查看详情
+                            </a>
+                          )}
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 建议追问按钮 */}
+                {msg.suggestions && msg.suggestions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {msg.suggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="px-3 py-1.5 text-xs rounded-full border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/30 transition-colors"
+                        disabled={isLoading}
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* AI 生成按钮 */}
+                {msg.canGenerate && onAutoGenerate && (
+                  <div className="mt-3">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      icon={<Sparkles size={14} />}
+                      onClick={() => {
+                        const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+                        onAutoGenerate(lastUserMsg?.content || initialMessage || '');
+                        handleClose();
+                      }}
+                    >
+                      AI 自动生成 Agent
+                    </Button>
+                    <p className="text-xs text-gray-400 mt-1">
+                      让 AI 根据您的需求自动创建一个定制的 Agent
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* 用户头像 */}
+              {msg.role === 'user' && (
+                <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-cyan-500 flex items-center justify-center shrink-0 mt-1">
+                  <User size={16} className="text-white" />
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* 加载指示器 */}
+          {isLoading && (
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-linear-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0">
+                <Bot size={16} className="text-white" />
+              </div>
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-tl-md px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Loader2 size={14} className="animate-spin text-violet-500" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">正在搜索...</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* 底部输入 */}
+        <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 shrink-0">
+          <div className="flex items-center gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="描述你需要的 Agent，如：帮我找一个文案写作的 AI..."
+              className="flex-1 px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 outline-none text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all"
+              disabled={isLoading || isCreatingSession}
+            />
+            <button
+              onClick={() => sendMessage()}
+              disabled={!inputValue.trim() || isLoading || isCreatingSession}
+              className="w-10 h-10 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white flex items-center justify-center transition-colors shrink-0"
+            >
+              <Send size={18} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 动画样式 */}
+      <style jsx>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .animate-slide-in-right {
+          animation: slideInRight 0.3s ease-out;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/**
+ * 渲染消息内容（支持 Markdown 风格的加粗）
+ */
+function renderMessageContent(content: string): React.ReactNode {
+  // 简单的 Markdown 渲染：加粗、换行
+  const parts = content.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
+        }
+        // 处理换行
+        return part.split('\n').map((line, j) => (
+          <span key={`${i}-${j}`}>
+            {j > 0 && <br />}
+            {line}
+          </span>
+        ));
+      })}
+    </>
+  );
+}

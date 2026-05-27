@@ -65,6 +65,31 @@ export class UserAuthController {
     }
   }
 
+  // ProClaw 跨服务预授权登录
+  async proclawCrossAuth(req: Request, res: Response) {
+    try {
+      const { proclaw_token, proclaw_email } = req.body;
+
+      if (!proclaw_token || !proclaw_email) {
+        return res.status(400).json({ error: 'proclaw_token and proclaw_email are required' });
+      }
+
+      const result = await userService.crossAuthLogin(proclaw_token, decodeURIComponent(proclaw_email));
+
+      if (!result) {
+        return res.status(401).json({ error: 'Invalid or expired cross-auth token' });
+      }
+
+      res.json({
+        message: 'Cross-auth login successful',
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in ProClaw cross-auth:', error);
+      res.status(500).json({ error: 'Cross-auth failed' });
+    }
+  }
+
   // 获取当前用户信息（需要认证）
   async getProfile(req: Request, res: Response) {
     try {

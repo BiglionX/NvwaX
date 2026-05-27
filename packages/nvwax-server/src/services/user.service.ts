@@ -1,6 +1,7 @@
 import { databaseService } from './database.service.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
 export interface User {
   id: string;
@@ -31,6 +32,8 @@ export class UserService {
   private readonly JWT_SECRET = process.env.JWT_SECRET || 'nvwax-secret-key-change-in-production';
   private readonly JWT_EXPIRES_IN = '7d'; // Token expires in 7 days
   private readonly SALT_ROUNDS = 10;
+  private readonly CROSS_AUTH_SECRET = 'proclaw-nvwax-bridge-2026'; // 与 ProClaw 共享
+  private readonly CROSS_AUTH_MAX_AGE = 5 * 60; // 5 分钟有效期
 
   // 注册用户
   async registerUser(email: string, password: string, name?: string): Promise<LoginResult> {
@@ -258,6 +261,60 @@ export class UserService {
       total: parseInt(totalResult.rows[0].count),
       active: parseInt(activeResult.rows[0].count),
       banned: parseInt(bannedResult.rows[0].count)
+    };
+  }
+
+  // ProClaw 跨服务预授权登录
+  // 验证一次性 Token，自动创建/查找用户，返回 JWT
+  async crossAuthLogin(proclawToken: string, proclawEmail: string): Promise<LoginResult | null> {
+    // 1. 验证 Token 签名
+    const decoded = Buffer.from(proclawToken.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf-8');
+    const parts = decoded.split(':');
+    if (parts.length !== 3) return null;
+
+    const [email, timestampStr, signature] = parts;
+    const timestamp = parseInt(timestampStr);
+
+    // 2. 检查时间戳（5分钟过期）
+    if (Math.abs(Math.floor(Date.now() / 1000) - timestamp) > this.CROSS_AUTH_MAX_AGE) {
+      console.warn('[crossAuth] Token expired:', { email, timestamp, now: Math.floor(Date.now() / 1000) });
+      return null;
+    }
+
+    // 3. 验证签名（与 ProClaw 端相同的算法）
+    const expectedPayload = `${email}:${timestampStr}`;
+    const expectedSignature = Buffer.from(`${this.CROSS_AUTH_SECRET}:${expectedPayload}`)
+      .toString('base64')
+      .replace(/=/g, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .slice(0, 40);
+
+    if (signature !== expectedSignature) {
+      console.warn('[crossAuth] Invalid signature:', { email, received: signature, expected: expectedSignature });
+      return null;
+    }
+
+    // 4. 验证邮箱匹配
+    if (email !== proclawEmail) {
+      console.warn('[crossAuth] Email mismatch:', { tokenEmail: email, paramEmail: proclawEmail });
+      return null;
+    }
+
+    // 5. 查找或创建用户
+    let user = await this.getUserByEmail(email);
+    if (!user) {
+      console.log('[crossAuth] Creating new user:', email);
+      user = await this.createUser(email, email.split('@')[0] || undefined);
+    }
+
+    // 6. 生成 JWT Token
+    const token = this.generateToken(user);
+    const { password: _, ...userWithoutPassword } = user;
+
+    return {
+      user: userWithoutPassword,
+      token
     };
   }
 

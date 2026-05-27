@@ -7,13 +7,24 @@ import {
   deleteAiTeam,
   publishAiTeam,
   unpublishAiTeam,
-  exportAiTeam
+  exportAiTeam,
+  searchPublishedAiTeams,
+  recommendAiTeams,
+  generateAiTeamFromQuery
 } from '../controllers/aiteam.controller.js';
 import { userAuthMiddleware } from '../middleware/user-auth.middleware.js';
 
 const router = Router();
 
-// 所有路由都需要认证
+// ========= 公开路由（无需认证） =========
+// 搜索公开市场的 AiTeam
+router.get('/search', searchPublishedAiTeams);
+// 推荐相似的 AiTeam
+router.get('/recommend', recommendAiTeams);
+// AI 根据需求描述自动生成 AiTeam 预览
+router.post('/generate-from-query', generateAiTeamFromQuery);
+
+// ========= 需要认证的路由 =========
 router.use(userAuthMiddleware);
 
 // AiTeam CRUD 路由

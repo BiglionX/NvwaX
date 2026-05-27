@@ -21,6 +21,7 @@ import agentRouter from './agent.routes.js';
 import aiteamRouter from './aiteam.routes.js';
 import notificationRouter from './notification.routes.js';
 import downloadRouter from './download.routes.js';
+import aiSearchRouter from './ai-search.routes.js';
 
 const router = Router();
 
@@ -125,6 +126,9 @@ router.use('/aiteams', aiteamRouter);
 
 // Notification routes (通知系统)
 router.use('/notifications', notificationRouter);
+
+// Ai Search routes (AI 对话式搜索)
+router.use('/ai-search', aiSearchRouter);
 
 // Download routes (打包文件下载)
 router.use('/downloads', downloadRouter);

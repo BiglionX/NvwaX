@@ -6,6 +6,7 @@
 
 import { Pool } from 'pg';
 import { v4 as uuidv4 } from 'uuid';
+import { agentSearchService, Agent } from './agent-search.service.js';
 
 export interface AiTeamMember {
   agentId: string;
@@ -436,27 +437,184 @@ export class AiTeamService {
       params.push(tags);
     }
 
-    const whereClause = conditions.join(' AND ');
+    // ===== 尝试本地数据库查询 =====
+    let aiteams: AiTeam[] = [];
+    let total = 0;
+    let dbAvailable = true;
 
-    // 查询总数
-    const countResult = await this.pool.query(
-      `SELECT COUNT(*) FROM aiteams WHERE ${whereClause}`,
-      params
-    );
-    const total = parseInt(countResult.rows[0].count);
+    try {
+      const whereClause = conditions.join(' AND ');
 
-    // 查询数据
-    const offset = (page - 1) * limit;
-    const dataResult = await this.pool.query(
-      `SELECT * FROM aiteams WHERE ${whereClause} ORDER BY rating DESC, download_count DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
-      [...params, limit, offset]
-    );
+      // 查询总数
+      const countResult = await this.pool.query(
+        `SELECT COUNT(*) FROM aiteams WHERE ${whereClause}`,
+        params
+      );
+      total = parseInt(countResult.rows[0].count);
 
-    const aiteams = await Promise.all(
-      dataResult.rows.map(row => this.getAiTeamWithMembers(row.id))
-    );
+      // 查询数据
+      const offset = (page - 1) * limit;
+      const dataResult = await this.pool.query(
+        `SELECT * FROM aiteams WHERE ${whereClause} ORDER BY rating DESC, download_count DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
+        [...params, limit, offset]
+      );
+
+      aiteams = await Promise.all(
+        dataResult.rows.map(row => this.getAiTeamWithMembers(row.id))
+      );
+    } catch (dbError) {
+      console.warn(`Database query failed for AiTeam search, falling back to external sources:`, (dbError as Error).message);
+      dbAvailable = false;
+    }
+
+    // 本地有结果，直接返回
+    if (aiteams.length > 0) {
+      return { aiteams, total };
+    }
+
+    // 本地无结果 / DB不可用时，搜索 GitHub/Gitee/ModelScope
+    if (query) {
+      console.log(`Searching external sources for "${query}" (dbAvailable=${dbAvailable})...`);
+      try {
+        const externalResult = await agentSearchService.searchAgents(query, page, limit);
+        if (externalResult.data.length > 0) {
+          // 将外部 Agent 结果映射为 AiTeam 预览
+          const externalAiteams = externalResult.data.map((agent: Agent) => ({
+            id: `external-${agent.id}`,
+            userId: '',
+            name: agent.name,
+            description: agent.description || `来自 ${agent.source} 的智能体`,
+            members: [],
+            workflow: {},
+            triggers: {},
+            version: '1.0.0',
+            publishStatus: 'published' as const,
+            downloadCount: agent.downloads || 0,
+            executionCount: 0,
+            successRate: 100.00,
+            category: agent.category || 'external',
+            tags: agent.tags || [],
+            thumbnailUrl: undefined,
+            rating: (agent.stars || 0) / 1000,
+            reviewCount: 0,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }));
+          console.log(`Found ${externalAiteams.length} external agents matching "${query}"`);
+          return { aiteams: externalAiteams, total: externalAiteams.length };
+        }
+      } catch (extError) {
+        console.error('Error searching external sources for AiTeams:', extError);
+      }
+    }
 
     return { aiteams, total };
+  }
+
+  /**
+   * 推荐相似的 AiTeam
+   * 基于分类和标签进行语义匹配
+   */
+  async recommendAiTeams(options: {
+    query: string;
+    limit?: number;
+  }): Promise<{ aiteams: AiTeam[]; total: number }> {
+    const { query, limit = 5 } = options;
+    
+    try {
+      // 第一步：精确搜索匹配的 AiTeam
+      const exactResult = await this.searchPublishedAiTeams({ query, limit });
+      
+      if (exactResult.aiteams.length >= limit) {
+        return { aiteams: exactResult.aiteams.slice(0, limit), total: exactResult.aiteams.length };
+      }
+      
+      // 第二步：基于分类和标签扩展推荐
+      // 从精确搜索结果的分类和标签中提取关键词
+      const categories = new Set<string>();
+      const allTags = new Set<string>();
+      
+      for (const aiteam of exactResult.aiteams) {
+        if (aiteam.category) categories.add(aiteam.category);
+        if (aiteam.tags) aiteam.tags.forEach(t => allTags.add(t));
+      }
+      
+      // 如果没有精确结果，从查询词中猜测分类
+      if (categories.size === 0 && allTags.size === 0) {
+        // 尝试搜索同一分类下的其他 AiTeam
+        const categoryResult = await this.searchPublishedAiTeams({ 
+          query, 
+          limit: limit * 2 
+        });
+        
+        // 对结果按评分降序排序，取 top N
+        const sorted = categoryResult.aiteams
+          .sort((a, b) => b.rating - a.rating);
+        
+        return { 
+          aiteams: sorted.slice(0, limit), 
+          total: Math.min(categoryResult.total, limit) 
+        };
+      }
+      
+      // 第三步：基于分类扩展搜索
+      const categoryArray = Array.from(categories);
+      const tagArray = Array.from(allTags);
+      
+      const conditions: string[] = ['publish_status = $1'];
+      const params: any[] = ['published'];
+      let paramIndex = 2;
+      const excludeIds: string[] = [];
+      
+      // 排除已精确匹配的结果
+      for (const aiteam of exactResult.aiteams) {
+        excludeIds.push(aiteam.id);
+      }
+      
+      // 按分类筛选
+      if (categoryArray.length > 0) {
+        const categoryConditions = categoryArray.map((_, i) => `$${paramIndex + i}`).join(', ');
+        conditions.push(`category IN (${categoryConditions})`);
+        params.push(...categoryArray);
+        paramIndex += categoryArray.length;
+      }
+      
+      // 按标签重叠筛选
+      if (tagArray.length > 0) {
+        conditions.push(`tags && $${paramIndex++}`);
+        params.push(tagArray);
+      }
+      
+      // 排除已精确匹配
+      if (excludeIds.length > 0) {
+        const excludeConditions = excludeIds.map((_, i) => `$${paramIndex + i}`).join(', ');
+        conditions.push(`id NOT IN (${excludeConditions})`);
+        params.push(...excludeIds);
+        paramIndex += excludeIds.length;
+      }
+      
+      const whereClause = conditions.join(' AND ');
+      
+      const dataResult = await this.pool.query(
+        `SELECT * FROM aiteams WHERE ${whereClause} ORDER BY rating DESC, download_count DESC LIMIT $${paramIndex}`,
+        [...params, limit - exactResult.aiteams.length]
+      );
+      
+      const recommendedAiteams = await Promise.all(
+        dataResult.rows.map(row => this.getAiTeamWithMembers(row.id))
+      );
+      
+      // 合并精确匹配 + 推荐结果
+      const merged = [...exactResult.aiteams, ...recommendedAiteams];
+      
+      return { 
+        aiteams: merged.slice(0, limit), 
+        total: merged.length 
+      };
+    } catch (error) {
+      console.error('Error recommending aiteams:', error);
+      return { aiteams: [], total: 0 };
+    }
   }
 
   /**

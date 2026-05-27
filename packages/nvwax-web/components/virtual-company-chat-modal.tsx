@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Send, Sparkles, Loader2, Bot, User, CheckCircle, AlertCircle, Share2 } from 'lucide-react';
 import { useVirtualCompanyProgress } from '@/hooks/use-virtual-company-progress';
 import CEOConfigPreview from './CEOConfigPreview';
@@ -9,6 +9,8 @@ import DocumentPackagePreview from './DocumentPackagePreview';
 interface VirtualCompanyChatModalProps {
   onClose: () => void;
   onSuccess: (teamSkillId: string) => void;
+  /** 外部注入的初始需求描述（如从 ProClaw 跳转带入） */
+  initialMessage?: string;
 }
 
 interface Message {
@@ -60,7 +62,7 @@ interface Message {
   };
 }
 
-export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatModalProps) {
+export default function VirtualCompanyChatModal({ onClose, initialMessage }: VirtualCompanyChatModalProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -185,6 +187,13 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
       };
 
       setMessages([welcomeMessage]);
+
+      // 如果有外部注入的初始需求，自动发送
+      if (initialMessage) {
+        setTimeout(() => {
+          sendMessageContent(initialMessage);
+        }, 1200);
+      }
     } catch (error) {
       console.error('Error creating session:', error);
       addSystemMessage('创建会话失败，请刷新页面重试');
@@ -193,16 +202,23 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || !sessionId || isSending) return;
+    const content = inputMessage.trim();
+    setInputMessage('');
+    await sendMessageContent(content);
+  };
+
+  /** 以编程方式发送消息（不依赖 inputMessage state） */
+  const sendMessageContent = useCallback(async (content: string) => {
+    if (!sessionId || isSending) return;
 
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content: inputMessage.trim(),
+      content: content,
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
     setIsSending(true);
 
     try {
@@ -258,7 +274,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
     } finally {
       setIsSending(false);
     }
-  };
+  }, [sessionId, isSending]);
 
   const fetchSessionStatus = async () => {
     // Session 数据现在通过 SSE hook 自动更新，此函数保留用于兼容性
@@ -640,18 +656,18 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
       <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-7xl max-h-[92vh] overflow-hidden flex flex-col border border-gray-200/60 dark:border-gray-700/60">
         {/* Header - 与 Nvwa Agent 页面对齐 */}
         <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 dark:from-blue-500/10 dark:via-purple-500/10 dark:to-pink-500/10" />
+          <div className="absolute inset-0 bg-linear-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 dark:from-blue-500/10 dark:via-purple-500/10 dark:to-pink-500/10" />
           <div className="relative flex items-center justify-between px-6 sm:px-8 py-4 sm:py-5 border-b border-gray-200/60 dark:border-gray-800">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
-                <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <div className="absolute inset-0 bg-linear-to-r from-blue-500 to-purple-600 rounded-2xl blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
+                <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-linear-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
                   <Sparkles size={22} className="text-white" />
                 </div>
               </div>
               <div>
                 <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-                  <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 bg-clip-text text-transparent">
+                  <span className="bg-linear-to-r from-blue-600 via-indigo-500 to-purple-600 bg-clip-text text-transparent">
                     NvwaX
                   </span>
                   <span className="ml-2 text-xs sm:text-sm font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full align-middle">
@@ -690,14 +706,14 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                     <div className="flex flex-col items-center">
                       <div className={`
                         w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 shadow-sm
-                        ${step.status === 'completed' ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white scale-110' : 
-                          step.status === 'in_progress' ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white animate-pulse scale-110' : 
+                        ${step.status === 'completed' ? 'bg-linear-to-br from-green-500 to-emerald-500 text-white scale-110' : 
+                          step.status === 'in_progress' ? 'bg-linear-to-br from-blue-500 to-indigo-600 text-white animate-pulse scale-110' : 
                           'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'}
                       `}>
                         {step.status === 'completed' ? '✓' : step.stepNumber}
                       </div>
                       {index < progressSteps.length - 1 && (
-                        <div className={`w-0.5 h-10 transition-all duration-500 ${step.status === 'completed' ? 'bg-gradient-to-b from-green-500 to-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                        <div className={`w-0.5 h-10 transition-all duration-500 ${step.status === 'completed' ? 'bg-linear-to-b from-green-500 to-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
                       )}
                     </div>
                     <div className="flex-1 pt-1.5">
@@ -730,7 +746,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                   <div 
-                    className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-700 ease-out shadow-sm"
+                    className="bg-linear-to-r from-blue-500 via-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-700 ease-out shadow-sm"
                     style={{ width: `${currentProgress?.percentage || 0}%` }}
                   />
                 </div>
@@ -746,7 +762,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
           </aside>
           
           {/* 中间：对话区域 */}
-          <section className="flex-1 flex flex-col min-h-0 bg-gradient-to-b from-white to-gray-50/30 dark:from-gray-900 dark:to-gray-800/30">
+          <section className="flex-1 flex flex-col min-h-0 bg-linear-to-b from-white to-gray-50/30 dark:from-gray-900 dark:to-gray-800/30">
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5 sm:space-y-6 scroll-smooth">
             {messages.map((message) => (
@@ -756,7 +772,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
               >
               {message.role === 'nvwax_agent' && (
                 <div className="shrink-0">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20">
                     <Bot size={18} className="text-white" />
                   </div>
                 </div>
@@ -765,7 +781,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
               <div
                 className={`max-w-[80%] rounded-2xl px-5 py-4 sm:px-5 sm:py-4 shadow-sm ${
                   message.role === 'user'
-                    ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-br-lg'
+                    ? 'bg-linear-to-br from-blue-600 to-indigo-600 text-white rounded-br-lg'
                     : 'bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-gray-700/50 rounded-bl-lg'
                 }`}
               >
@@ -803,7 +819,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                 {message.role === 'nvwax_agent' && message.showConfirmButton && (
                   <div className="mt-5 pt-4 border-t border-gray-200/60 dark:border-gray-700/60">
                     {/* 自动发布到市场选项 */}
-                    <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="mb-4 p-3 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                       <label className="flex items-start gap-3 cursor-pointer">
                         <input
                           type="checkbox"
@@ -825,7 +841,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                     <button
                       onClick={handleConfirmAndSave}
                       disabled={isConfirming}
-                      className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-green-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-sm active:scale-[0.98]"
+                      className="w-full px-6 py-3 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-green-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-sm active:scale-[0.98]"
                     >
                       {isConfirming ? (
                         <>
@@ -878,7 +894,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
 
               {message.role === 'user' && (
                 <div className="shrink-0">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center shadow-sm">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center shadow-sm">
                     <User size={18} className="text-white" />
                   </div>
                 </div>
@@ -889,7 +905,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
             {isSending && (
             <div className="flex gap-3 sm:gap-4 justify-start">
               <div className="shrink-0">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20">
                   <Bot size={18} className="text-white" />
                 </div>
               </div>
@@ -921,7 +937,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                 <button
                   onClick={sendMessage}
                   disabled={!inputMessage.trim() || isSending || !sessionId}
-                  className="shrink-0 px-5 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold text-sm active:scale-95"
+                  className="shrink-0 px-5 py-3 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold text-sm active:scale-95"
                 >
                   <Send size={18} />
                   <span className="hidden sm:inline">发送</span>
@@ -940,9 +956,9 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-60 p-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200/60 dark:border-gray-700/60">
             {/* Header */}
-            <div className="relative flex items-center justify-between p-6 border-b border-gray-200/60 dark:border-gray-800 bg-gradient-to-r from-green-50/80 to-emerald-50/80 dark:from-green-900/10 dark:to-emerald-900/10">
+            <div className="relative flex items-center justify-between p-6 border-b border-gray-200/60 dark:border-gray-800 bg-linear-to-r from-green-50/80 to-emerald-50/80 dark:from-green-900/10 dark:to-emerald-900/10">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md shadow-green-500/25">
+                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md shadow-green-500/25">
                   <CheckCircle className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -962,7 +978,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
             <div className="p-6 space-y-4">
               {/* 团队信息预览 */}
               {successData.documentPackage && (
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-4">
+                <div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-4">
                   <h3 className="font-bold text-gray-900 dark:text-white mb-2">
                     {successData.documentPackage.packageInfo.teamName}
                   </h3>
@@ -981,7 +997,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                     handleDownload(successData.downloadUrl);
                     setShowSuccessModal(false);
                   }}
-                  className="w-full px-6 py-3.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
+                  className="w-full px-6 py-3.5 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
                 >
                   <Send className="w-5 h-5" />
                   <span>下载文档包</span>
@@ -993,7 +1009,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
                       setShowSuccessModal(false);
                     }
                   }}
-                  className="w-full px-6 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
+                  className="w-full px-6 py-3.5 bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
                 >
                   <Sparkles className="w-5 h-5" />
                   <span>集成到 ProClaw</span>
@@ -1058,7 +1074,7 @@ export default function VirtualCompanyChatModal({ onClose }: VirtualCompanyChatM
             {/* Content */}
             <div className="p-6 space-y-4">
               {/* 预览卡片 */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+              <div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
                 <h3 className="font-bold text-gray-900 dark:text-white mb-2">{shareContent.title}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{shareContent.content}</p>
                 <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
