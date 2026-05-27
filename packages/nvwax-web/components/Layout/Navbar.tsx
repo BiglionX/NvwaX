@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, User, LogIn, LogOut, Menu, X, Award, ClipboardList, Sparkles, Store } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAiSearch } from '@/contexts/AiSearchContext';
 import { useState } from 'react';
 import NotificationDropdown from '../notification-dropdown';
 
@@ -20,6 +21,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isLoggedIn, userInfo, logout } = useAuth();
+  const { openAiSearch } = useAiSearch();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // 是否在首页（用于切换透明毛玻璃样式）
@@ -59,6 +61,18 @@ export default function Navbar() {
                   : 'bg-linear-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent'
               }`}>NvwaX</span>
             </Link>
+          </div>
+
+          {/* AI 搜索按钮 - Logo 右侧 */}
+          <div className="hidden lg:flex items-center ml-4">
+            <button
+              onClick={() => openAiSearch()}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white transition-all text-sm font-medium shadow-sm hover:shadow-md whitespace-nowrap"
+              title="AI 智能搜索"
+            >
+              <Sparkles size={16} className="text-yellow-300" />
+              <span>AI 搜索</span>
+            </button>
           </div>
 
           {/* Desktop Navigation */}
@@ -136,8 +150,15 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="lg:hidden flex items-center">
+          {/* Mobile: AI 搜索 + 菜单按钮 */}
+          <div className="lg:hidden flex items-center gap-1">
+            <button
+              onClick={() => openAiSearch()}
+              className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+              title="AI 智能搜索"
+            >
+              <Sparkles size={20} />
+            </button>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"

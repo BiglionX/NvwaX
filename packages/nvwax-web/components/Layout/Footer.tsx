@@ -14,7 +14,7 @@ export default function Footer() {
 
   const footerLinks = {
     product: [
-      { label: 'Agent 搜索', href: '/search' },
+      { label: 'AI 搜索', href: '/search' },
       { label: 'Agent 广场', href: '/marketplace' },
       { label: '我的项目', href: '/projects' },
       { label: '用户中心', href: '/profile' },

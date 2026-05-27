@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, Store, Folder, Home, User, LogIn, LogOut, Sparkles } from 'lucide-react';
+import { Store, Folder, Home, User, LogIn, LogOut, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const publicMenuItems = [
   { label: '首页', icon: Home, path: '/' },
-  { label: 'Agent 搜索', icon: Search, path: '/search' },
+  { label: 'AI 搜索', icon: Sparkles, path: '/search' },
   { label: 'Agent 广场', icon: Store, path: '/marketplace' },
   { label: 'Nvwa', icon: Sparkles, path: '/nvwa' }
 ];

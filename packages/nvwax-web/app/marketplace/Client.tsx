@@ -8,7 +8,7 @@ import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
 import { Star, Download, ExternalLink, Users, Search, X, TrendingUp, Plus, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Button, Input, Space, Container, Card, Badge, Tag, Modal } from '@/components/UI';
-import AiSearchPanel from '@/components/Marketplace/AiSearchPanel';
+import { useAiSearch } from '@/contexts/AiSearchContext';
 
 type Category = 'all' | 'agents' | 'aiteams' | 'virtual-company';
 
@@ -23,7 +23,6 @@ export default function MarketplaceClient() {
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [generatingAiTeam, setGeneratingAiTeam] = useState(false);
-  const [showAiSearch, setShowAiSearch] = useState(false);
   const [generatedAiTeamPreview, setGeneratedAiTeamPreview] = useState<{
     name: string;
     description: string;
@@ -32,6 +31,8 @@ export default function MarketplaceClient() {
     members: Array<{role: string; responsibilities?: string}>;
     workflow?: {steps: Array<unknown>};
   } | null>(null);
+
+  const { openAiSearch } = useAiSearch();
 
   // 搜索防抖
   useEffect(() => {
@@ -208,7 +209,10 @@ export default function MarketplaceClient() {
               variant="primary"
               icon={<Sparkles size={16} />}
               onClick={() => {
-                setShowAiSearch(true);
+                openAiSearch(debouncedSearch, (q: string) => {
+                  setDebouncedSearch(q);
+                  setShowCreateModal(true);
+                });
               }}
               className="shrink-0 hidden md:inline-flex"
             >
@@ -216,7 +220,10 @@ export default function MarketplaceClient() {
             </Button>
             <button
               onClick={() => {
-                setShowAiSearch(true);
+                openAiSearch(debouncedSearch, (q: string) => {
+                  setDebouncedSearch(q);
+                  setShowCreateModal(true);
+                });
               }}
               className="md:hidden w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shrink-0 transition-colors"
             >
@@ -789,17 +796,6 @@ export default function MarketplaceClient() {
           </div>
         ) : null}
       </Modal>
-
-      {/* AI 对话搜索面板 */}
-      <AiSearchPanel
-        isOpen={showAiSearch}
-        onClose={() => setShowAiSearch(false)}
-        initialMessage={debouncedSearch}
-        onAutoGenerate={(query) => {
-          setDebouncedSearch(query);
-          setShowCreateModal(true);
-        }}
-      />
 
     </Container>
   );

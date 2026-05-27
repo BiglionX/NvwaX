@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import SearchClient from "./Client";
 
 export const metadata: Metadata = {
-  title: "Agent & Skill 搜索 - AI Agent 搜索引擎",
+  title: "AI 搜索 Agent - NvwaX 智能搜索",
   description:
-    "在 NvwaX 搜索 AI Agent 和 Skill，支持智能搜索、全网搜索和本地数据库缓存。快速发现 GitHub、Gitee、HuggingFace 等平台的优秀项目。",
+    "使用 AI Search Agent 对话式搜索 AI Agent 和 Skill。通过自然语言描述需求，AI 理解意图后从 GitHub、Gitee、ModelScope 等平台智能搜索。",
   openGraph: {
-    title: "NvwaX Agent & Skill 搜索",
+    title: "AI 搜索 Agent - NvwaX",
     description:
-      "智能搜索 AI Agent 和 Skill，优先本地数据库，无结果则全网搜索。",
+      "对话式 AI 智能搜索，理解自然语言，精准发现 Agent 和 Skill。",
   },
   alternates: {
     canonical: "https://nvwax.com/search",
