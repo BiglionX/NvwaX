@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import { databaseService } from './database.service.js';
 import { apiKeyService } from './api-key.service.js';
+import { tokenQuotaService } from './token-quota.service.js';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -113,6 +114,30 @@ export class MarketingAgentService {
           team_category: teamConfig.category
         }
       });
+
+      // Step 5.5: Deduct tokens from user quota
+      try {
+        // Get user_id from api_key
+        const userResult = await this.pool.query(
+          'SELECT user_id FROM api_keys WHERE id = $1', [apiKeyId]
+        );
+        if (userResult.rows.length > 0) {
+          const userId = userResult.rows[0].user_id;
+          await tokenQuotaService.checkAndDeductTokens(userId, totalTokens, {
+            endpoint: '/v1/chat/completions',
+            sourceType: 'api_call',
+            description: `Chat completion with model: ${request.model}`,
+            model: request.model,
+            metadata: {
+              team_name: teamConfig.name,
+              team_category: teamConfig.category
+            }
+          });
+        }
+      } catch (quotaErr) {
+        console.error('Failed to deduct token quota:', quotaErr);
+        // Don't block the response if quota deduction fails
+      }
 
       // Step 6: Format response in OpenAI-compatible format
       const chatResponse: ChatCompletionResponse = {

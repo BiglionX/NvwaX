@@ -42,5 +42,37 @@ export const userApi = {
   getStats: async (userId: string): Promise<UserStats> => {
     const response = await api.get('/user/stats', { params: { userId } });
     return response.data;
+  },
+
+  // ========== Token相关 ==========
+
+  // 获取Token配额和消耗
+  getTokenQuota: async (userId: string) => {
+    const response = await api.get('/user/token/quota', { params: { userId } });
+    return response.data.data;
+  },
+
+  // 获取Token消费记录
+  getTokenTransactions: async (userId: string, page: number = 1, limit: number = 20) => {
+    const response = await api.get('/user/token/transactions', { params: { userId, page, limit } });
+    return response.data;
+  },
+
+  // 获取Token购买订单
+  getTokenOrders: async (userId: string, page: number = 1, limit: number = 20) => {
+    const response = await api.get('/user/token/orders', { params: { userId, page, limit } });
+    return response.data;
+  },
+
+  // 创建Token购买订单
+  createTokenOrder: async (userId: string, amount: number, paymentMethod: string) => {
+    const response = await api.post('/user/token/create-order', { userId, amount, paymentMethod });
+    return response.data.data;
+  },
+
+  // 获取可用的支付方式
+  getPaymentConfigs: async () => {
+    const response = await api.get('/user/token/payment-configs');
+    return response.data.data;
   }
 };

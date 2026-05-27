@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, LayoutDashboard, Users, Settings, Database, Folder, Bot, Building2, Bell, FileText } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, Settings, Database, Folder, Bot, Building2, Bell, FileText, Coins, CreditCard } from 'lucide-react';
 import ProtectedAdminRoute from '@/components/Auth/ProtectedAdminRoute';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -28,6 +28,8 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     { label: '审计日志', icon: FileText, path: '/admin/audit-logs' },
     { label: '爬虫管理', icon: Database, path: '/admin/crawler' },
     { label: '管理员管理', icon: Shield, path: '/admin/admins' },
+    { label: 'Token管理', icon: Coins, path: '/admin/tokens' },
+    { label: '支付设置', icon: CreditCard, path: '/admin/payment-settings' },
     { label: '系统设置', icon: Settings, path: '/admin/settings' }
   ];
 

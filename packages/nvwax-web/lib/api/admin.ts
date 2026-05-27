@@ -268,5 +268,88 @@ export const adminApi = {
   sendAnnouncement: async (data: { title: string; message: string; priority?: string }) => {
     const response = await api.post('/admin/notifications/announce', data);
     return response.data;
+  },
+
+  // ========== Token 配额管理 ==========
+
+  // 获取Token总览统计
+  getTokenOverview: async () => {
+    const response = await api.get('/admin/tokens/overview');
+    return response.data.data;
+  },
+
+  // 获取用户Token统计列表（分页）
+  getTokenUsersList: async (page: number = 1, limit: number = 20, search?: string) => {
+    const params: Record<string, string | number> = { page, limit };
+    if (search) params.search = search;
+    const response = await api.get('/admin/tokens/users', { params });
+    return response.data;
+  },
+
+  // 获取单个用户的Token消耗明细
+  getTokenUserDetail: async (userId: string, page: number = 1, limit: number = 20, sourceType?: string) => {
+    const params: Record<string, string | number> = { page, limit };
+    if (sourceType) params.sourceType = sourceType;
+    const response = await api.get(`/admin/tokens/users/${userId}`, { params });
+    return response.data.data;
+  },
+
+  // 获取Token消耗来源分类统计
+  getTokenConsumptionBreakdown: async (period: 'day' | 'week' | 'month' = 'month') => {
+    const response = await api.get('/admin/tokens/consumption-breakdown', { params: { period } });
+    return response.data.data;
+  },
+
+  // 手动重置月度配额
+  resetMonthlyQuotas: async () => {
+    const response = await api.post('/admin/tokens/reset-monthly');
+    return response.data;
+  },
+
+  // ========== 支付配置管理 ==========
+
+  // 获取支付配置列表
+  getPaymentConfigs: async () => {
+    const response = await api.get('/admin/payment-configs');
+    return response.data.data;
+  },
+
+  // 保存/更新支付配置
+  savePaymentConfig: async (data: {
+    provider: string;
+    provider_label: string;
+    qr_code_url?: string;
+    account_name?: string;
+    account_info?: string;
+    sort_order?: number;
+  }) => {
+    const response = await api.post('/admin/payment-configs', data);
+    return response.data.data;
+  },
+
+  // 启用/禁用支付配置
+  togglePaymentConfig: async (provider: string, enabled: boolean) => {
+    const response = await api.post(`/admin/payment-configs/${provider}/toggle`, { enabled });
+    return response.data.data;
+  },
+
+  // 获取Token订单列表
+  getTokenOrders: async (page: number = 1, limit: number = 20, status?: string) => {
+    const params: Record<string, string | number> = { page, limit };
+    if (status) params.status = status;
+    const response = await api.get('/admin/token-orders', { params });
+    return response.data;
+  },
+
+  // 确认Token订单付款
+  confirmTokenOrder: async (orderId: string) => {
+    const response = await api.post(`/admin/token-orders/${orderId}/confirm`);
+    return response.data.data;
+  },
+
+  // 取消Token订单
+  cancelTokenOrder: async (orderId: string) => {
+    const response = await api.post(`/admin/token-orders/${orderId}/cancel`);
+    return response.data.data;
   }
 };

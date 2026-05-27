@@ -54,4 +54,21 @@ router.get('/virtual-companies/builds', adminController.getVirtualCompanyBuilds)
 // 通知管理
 router.post('/notifications/announce', adminController.sendSystemAnnouncement);
 
+// Token 配额管理
+router.get('/tokens/overview', adminController.getTokenOverview);
+router.get('/tokens/users', adminController.getTokenUsersList);
+router.get('/tokens/users/:userId', adminController.getTokenUserDetail);
+router.get('/tokens/consumption-breakdown', adminController.getTokenConsumptionBreakdown);
+router.post('/tokens/reset-monthly', adminController.resetMonthlyQuotas);
+
+// 支付配置管理
+router.get('/payment-configs', adminController.getPaymentConfigs);
+router.post('/payment-configs', adminController.savePaymentConfig);
+router.post('/payment-configs/:provider/toggle', adminController.togglePaymentConfig);
+
+// Token订单管理
+router.get('/token-orders', adminController.getTokenOrders);
+router.post('/token-orders/:id/confirm', adminController.confirmTokenOrder);
+router.post('/token-orders/:id/cancel', adminController.cancelTokenOrder);
+
 export default router;

@@ -2,6 +2,7 @@ import { databaseService } from './database.service.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { tokenQuotaService } from './token-quota.service.js';
 
 export interface User {
   id: string;
@@ -61,6 +62,14 @@ export class UserService {
     const token = this.generateToken(user);
 
     const { password: _, ...userWithoutPassword } = user;
+
+    // 初始化Token配额（100万免费额度）
+    try {
+      await tokenQuotaService.createUserQuota(id);
+    } catch (err) {
+      console.error('Failed to create token quota for user:', id, err);
+    }
+
     return {
       user: userWithoutPassword,
       token
@@ -75,7 +84,19 @@ export class UserService {
       [id, email, name || null]
     );
     
-    return (await this.getUserById(id))!;
+    const user = await this.getUserById(id);
+    if (!user) {
+      throw new Error('Failed to create user');
+    }
+
+    // 初始化Token配额（100万免费额度）
+    try {
+      await tokenQuotaService.createUserQuota(id);
+    } catch (err) {
+      console.error('Failed to create token quota for user:', id, err);
+    }
+
+    return user;
   }
 
   // 根据 ID 获取用户

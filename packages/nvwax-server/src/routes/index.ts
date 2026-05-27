@@ -69,6 +69,13 @@ router.get('/user/profile', userController.getProfile);
 router.put('/user/:userId', userController.updateProfile);
 router.get('/user/stats', userController.getStats);
 
+// User Token routes
+router.get('/user/token/quota', userController.getTokenQuota);
+router.get('/user/token/transactions', userController.getTokenTransactions);
+router.get('/user/token/orders', userController.getTokenOrders);
+router.post('/user/token/create-order', userController.createTokenOrder);
+router.get('/user/token/payment-configs', userController.getPaymentConfigs);
+
 // User authentication routes
 router.post('/auth/register', userAuthController.register);
 router.post('/auth/login', userAuthController.login);

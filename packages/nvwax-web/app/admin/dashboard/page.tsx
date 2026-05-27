@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
-import { Users, Folder, Shield, Activity, TrendingUp, Clock } from 'lucide-react';
+import { Users, Folder, Shield, Activity, TrendingUp, Clock, Coins } from 'lucide-react';
 import LoadingState from '@/components/Layout/LoadingState';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -21,6 +21,12 @@ export default function AdminDashboardPage() {
   const { data: logs, isLoading: isLoadingLogs, error: logsError } = useQuery({
     queryKey: ['admin-logs'],
     queryFn: () => adminApi.getSystemLogs(1, 10),
+    retry: 1
+  });
+
+  const { data: tokenOverview } = useQuery({
+    queryKey: ['admin-token-overview'],
+    queryFn: () => adminApi.getTokenOverview(),
     retry: 1
   });
   
@@ -64,6 +70,13 @@ export default function AdminDashboardPage() {
       icon: Activity,
       color: 'bg-orange-500',
       bgColor: 'bg-orange-100 dark:bg-orange-900/30'
+    },
+    {
+      label: '本月Token消耗',
+      value: tokenOverview?.totalTokensThisMonth ? `${(tokenOverview.totalTokensThisMonth / 10000).toFixed(1)}万` : '0',
+      icon: Coins,
+      color: 'bg-purple-500',
+      bgColor: 'bg-purple-100 dark:bg-purple-900/30'
     }
   ];
 
@@ -79,7 +92,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (

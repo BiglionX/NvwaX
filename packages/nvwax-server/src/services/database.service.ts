@@ -292,6 +292,76 @@ class DatabaseService {
         console.log('Virtual company sessions extra columns already exist or not needed');
       }
 
+      // 创建用户Token配额表
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS user_token_quotas (
+          id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          monthly_limit INTEGER NOT NULL DEFAULT 1000000,
+          used_this_month INTEGER NOT NULL DEFAULT 0,
+          total_used INTEGER NOT NULL DEFAULT 0,
+          overage_tokens INTEGER NOT NULL DEFAULT 0,
+          overage_cost DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+          last_reset_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          reset_day INTEGER NOT NULL DEFAULT 1,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(user_id)
+        )
+      `);
+
+      // 创建Token消费明细表
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS token_transactions (
+          id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          quota_id TEXT REFERENCES user_token_quotas(id) ON DELETE SET NULL,
+          tokens_consumed INTEGER NOT NULL DEFAULT 0,
+          is_overage BOOLEAN NOT NULL DEFAULT false,
+          overage_cost DECIMAL(10, 4) NOT NULL DEFAULT 0.0000,
+          endpoint TEXT,
+          source_type TEXT NOT NULL DEFAULT 'api_call',
+          description TEXT,
+          model TEXT,
+          metadata JSONB DEFAULT '{}'::jsonb,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // 创建支付配置表
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS payment_configs (
+          id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+          provider TEXT NOT NULL,
+          provider_label TEXT NOT NULL,
+          enabled BOOLEAN NOT NULL DEFAULT false,
+          qr_code_url TEXT,
+          account_name TEXT,
+          account_info TEXT,
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(provider)
+        )
+      `);
+
+      // 创建Token购买订单表
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS token_orders (
+          id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          amount DECIMAL(10, 2) NOT NULL,
+          tokens INTEGER NOT NULL,
+          token_rate INTEGER NOT NULL DEFAULT 100000,
+          payment_method TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'pending',
+          paid_at TIMESTAMP,
+          confirmed_by TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       // 创建索引以提高查询性能
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
@@ -324,6 +394,21 @@ class DatabaseService {
         CREATE INDEX IF NOT EXISTS idx_vcs_user_id ON virtual_company_sessions(user_id);
         CREATE INDEX IF NOT EXISTS idx_vcs_status ON virtual_company_sessions(status);
         CREATE INDEX IF NOT EXISTS idx_vcs_created_at ON virtual_company_sessions(created_at DESC);
+
+        -- Token配额表索引
+        CREATE INDEX IF NOT EXISTS idx_utq_user_id ON user_token_quotas(user_id);
+        CREATE INDEX IF NOT EXISTS idx_utq_reset ON user_token_quotas(last_reset_at);
+
+        -- Token消费明细表索引
+        CREATE INDEX IF NOT EXISTS idx_tt_user_id ON token_transactions(user_id);
+        CREATE INDEX IF NOT EXISTS idx_tt_created_at ON token_transactions(created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_tt_source_type ON token_transactions(source_type);
+        CREATE INDEX IF NOT EXISTS idx_tt_endpoint ON token_transactions(endpoint);
+        CREATE INDEX IF NOT EXISTS idx_tt_user_month ON token_transactions(user_id, created_at DESC);
+
+        -- Token订单表索引
+        CREATE INDEX IF NOT EXISTS idx_to_user_id ON token_orders(user_id);
+        CREATE INDEX IF NOT EXISTS idx_to_status ON token_orders(status);
       `);
 
       console.log('✓ Database schema initialized successfully');

@@ -7,6 +7,8 @@ import { crawlerSchedulerService } from '../services/crawler-scheduler.service.j
 import { agentCrawlerService } from '../services/agent-crawler.service.js';
 import { databaseService } from '../services/database.service.js';
 import { TeamSkillPackageService } from '../services/team-skill-package.service.js';
+import { tokenQuotaService } from '../services/token-quota.service.js';
+import { paymentService } from '../services/payment.service.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // 创建 TeamSkillPackageService 实例
@@ -843,6 +845,251 @@ export class AdminController {
     } catch (error) {
       console.error('Error backing up database:', error);
       res.status(500).json({ error: 'Failed to backup database' });
+    }
+  }
+
+  // ========== Token 配额管理 ==========
+
+  /**
+   * 获取Token消耗总览统计
+   */
+  async getTokenOverview(req: Request, res: Response) {
+    try {
+      const stats = await tokenQuotaService.getTokenOverviewStats();
+      res.json({ data: stats });
+    } catch (error) {
+      console.error('Error fetching token overview:', error);
+      res.status(500).json({ error: 'Failed to fetch token overview' });
+    }
+  }
+
+  /**
+   * 获取所有用户Token统计（分页）
+   */
+  async getTokenUsersList(req: Request, res: Response) {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const search = req.query.search as string | undefined;
+
+      const result = await tokenQuotaService.getAllUsersTokenStats(page, limit, search);
+      res.json({
+        data: result.data,
+        total: result.total,
+        page,
+        limit
+      });
+    } catch (error) {
+      console.error('Error fetching token users list:', error);
+      res.status(500).json({ error: 'Failed to fetch token users list' });
+    }
+  }
+
+  /**
+   * 获取单个用户的Token消耗明细
+   */
+  async getTokenUserDetail(req: Request, res: Response) {
+    try {
+      const userId = req.params.userId as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const sourceType = req.query.sourceType as string | undefined;
+
+      // 获取配额信息
+      const quota = await tokenQuotaService.getUserQuota(userId);
+
+      // 获取消费明细
+      const transactions = await tokenQuotaService.getUserConsumptionDetail(userId, page, limit, sourceType);
+
+      res.json({
+        data: {
+          quota: quota ? {
+            monthlyLimit: quota.monthly_limit,
+            usedThisMonth: quota.used_this_month,
+            remaining: Math.max(0, quota.monthly_limit - quota.used_this_month),
+            usagePercent: Math.min(100, Math.round((quota.used_this_month / quota.monthly_limit) * 100)),
+            overageTokens: quota.overage_tokens,
+            overageCost: quota.overage_cost,
+            totalUsed: quota.total_used,
+            lastResetAt: quota.last_reset_at
+          } : null,
+          transactions: transactions.data,
+          total: transactions.total,
+          page,
+          limit
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching token user detail:', error);
+      res.status(500).json({ error: 'Failed to fetch token user detail' });
+    }
+  }
+
+  /**
+   * 获取Token消耗来源分类统计
+   */
+  async getTokenConsumptionBreakdown(req: Request, res: Response) {
+    try {
+      const period = (req.query.period as string) || 'month';
+      const breakdown = await tokenQuotaService.getTokenConsumptionBreakdown(period as 'day' | 'week' | 'month');
+      res.json({ data: breakdown });
+    } catch (error) {
+      console.error('Error fetching token consumption breakdown:', error);
+      res.status(500).json({ error: 'Failed to fetch token consumption breakdown' });
+    }
+  }
+
+  /**
+   * 手动重置月度配额（管理员操作）
+   */
+  async resetMonthlyQuotas(req: Request, res: Response) {
+    try {
+      const adminId = req.admin.id;
+      const count = await tokenQuotaService.resetAllMonthlyQuotas();
+      
+      await adminService.logAction('info', 'RESET_TOKEN_QUOTAS', adminId,
+        `Reset ${count} user token quotas for new month`, req.ip);
+
+      res.json({
+        success: true,
+        message: `已重置 ${count} 个用户的月度Token配额`,
+        data: { resetCount: count }
+      });
+    } catch (error) {
+      console.error('Error resetting monthly quotas:', error);
+      res.status(500).json({ error: 'Failed to reset monthly quotas' });
+    }
+  }
+
+  // ========== 支付配置管理 ==========
+
+  /**
+   * 获取支付配置列表
+   */
+  async getPaymentConfigs(req: Request, res: Response) {
+    try {
+      const configs = await paymentService.getPaymentConfigs();
+      res.json({ data: configs });
+    } catch (error) {
+      console.error('Error fetching payment configs:', error);
+      res.status(500).json({ error: 'Failed to fetch payment configs' });
+    }
+  }
+
+  /**
+   * 保存/更新支付配置
+   */
+  async savePaymentConfig(req: Request, res: Response) {
+    try {
+      const { provider, provider_label, qr_code_url, account_name, account_info, sort_order } = req.body;
+
+      if (!provider || !provider_label) {
+        return res.status(400).json({ error: 'provider and provider_label are required' });
+      }
+
+      const config = await paymentService.savePaymentConfig({
+        provider,
+        provider_label,
+        qr_code_url,
+        account_name,
+        account_info,
+        sort_order
+      });
+
+      res.json({ data: config });
+    } catch (error) {
+      console.error('Error saving payment config:', error);
+      res.status(500).json({ error: 'Failed to save payment config' });
+    }
+  }
+
+  /**
+   * 启用/禁用支付配置
+   */
+  async togglePaymentConfig(req: Request, res: Response) {
+    try {
+      const provider = req.params.provider as string;
+      const { enabled } = req.body;
+
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ error: 'enabled must be a boolean' });
+      }
+
+      const config = await paymentService.togglePaymentConfig(provider, enabled);
+      if (!config) {
+        return res.status(404).json({ error: 'Payment config not found' });
+      }
+
+      res.json({ data: config });
+    } catch (error) {
+      console.error('Error toggling payment config:', error);
+      res.status(500).json({ error: 'Failed to toggle payment config' });
+    }
+  }
+
+  // ========== Token订单管理 ==========
+
+  /**
+   * 获取Token购买订单列表
+   */
+  async getTokenOrders(req: Request, res: Response) {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const status = req.query.status as string | undefined;
+
+      const result = await paymentService.getAllOrders(page, limit, status);
+      res.json({
+        data: result.data,
+        total: result.total,
+        page,
+        limit
+      });
+    } catch (error) {
+      console.error('Error fetching token orders:', error);
+      res.status(500).json({ error: 'Failed to fetch token orders' });
+    }
+  }
+
+  /**
+   * 确认Token订单付款
+   */
+  async confirmTokenOrder(req: Request, res: Response) {
+    try {
+      const orderId = req.params.id as string;
+      const adminId = req.admin.id;
+
+      const order = await paymentService.confirmOrder(orderId, adminId);
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found or already processed' });
+      }
+
+      await adminService.logAction('info', 'CONFIRM_TOKEN_ORDER', adminId,
+        `Confirmed token order ${orderId} for ¥${order.amount}`, req.ip);
+
+      res.json({ data: order });
+    } catch (error) {
+      console.error('Error confirming token order:', error);
+      res.status(500).json({ error: 'Failed to confirm token order' });
+    }
+  }
+
+  /**
+   * 取消Token订单
+   */
+  async cancelTokenOrder(req: Request, res: Response) {
+    try {
+      const orderId = req.params.id as string;
+
+      const order = await paymentService.cancelOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found or already processed' });
+      }
+
+      res.json({ data: order });
+    } catch (error) {
+      console.error('Error cancelling token order:', error);
+      res.status(500).json({ error: 'Failed to cancel token order' });
     }
   }
 }
