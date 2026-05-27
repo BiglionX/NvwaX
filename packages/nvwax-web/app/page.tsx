@@ -25,7 +25,7 @@ export default function Home() {
       <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
         {/* 大星云 - 右上 */}
         <div
-          className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full opacity-30 animate-[drift_12s_ease-in-out_infinite]"
+          className="absolute -top-40 -right-40 w-125 h-125 rounded-full opacity-30 animate-[drift_12s_ease-in-out_infinite]"
           style={{
             background: 'radial-gradient(circle, rgba(59,130,246,0.25) 0%, rgba(59,130,246,0.1) 40%, transparent 70%)',
             filter: 'blur(60px)'
@@ -33,7 +33,7 @@ export default function Home() {
         />
         {/* 小星云 - 左下 */}
         <div
-          className="absolute -bottom-20 -left-20 w-[350px] h-[350px] rounded-full opacity-25 animate-[drift_15s_ease-in-out_infinite_2s]"
+          className="absolute -bottom-20 -left-20 w-87.5 h-87.5 rounded-full opacity-25 animate-[drift_15s_ease-in-out_infinite_2s]"
           style={{
             background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, rgba(139,92,246,0.08) 40%, transparent 70%)',
             filter: 'blur(50px)'
@@ -41,7 +41,7 @@ export default function Home() {
         />
         {/* 流星 */}
         <div
-          className="absolute top-10 left-1/2 w-[2px] h-[2px] rounded-full bg-white animate-[shootingStar_6s_linear_infinite]"
+          className="absolute top-10 left-1/2 w-0.5 h-0.5 rounded-full bg-white animate-[shootingStar_6s_linear_infinite]"
           style={{
             boxShadow: '0 0 4px 2px rgba(255,255,255,0.3)',
           }}
