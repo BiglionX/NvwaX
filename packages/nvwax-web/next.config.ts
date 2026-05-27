@@ -11,6 +11,20 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // SEO: 响应头优化
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'index, follow',
+          },
+        ],
+      },
+    ];
+  },
   // 只在开发环境使用 API 代理
   async rewrites() {
     if (process.env.NODE_ENV === 'development') {
