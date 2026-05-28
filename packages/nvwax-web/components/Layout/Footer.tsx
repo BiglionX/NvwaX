@@ -34,9 +34,9 @@ export default function Footer() {
       { label: t('common.back'), href: 'mailto:1055603323@qq.com', external: true, icon: Mail },
     ],
     legal: [
-      { label: 'Privacy', href: '/privacy' },
-      { label: 'Terms', href: '/terms' },
-      { label: 'License', href: 'https://github.com/BigLionX/NvwaX/blob/main/LICENSE', external: true },
+      { label: t('nav.footerPrivacy'), href: '/privacy' },
+      { label: t('nav.footerTerms'), href: '/terms' },
+      { label: t('nav.footerLicense'), href: 'https://github.com/BigLionX/NvwaX/blob/main/LICENSE', external: true },
     ],
   };
 
@@ -68,7 +68,7 @@ export default function Footer() {
             <p className={`text-sm mb-4 ${
               isHome ? 'text-slate-400' : 'text-gray-600 dark:text-gray-400'
             }`}>
-              开源的 AI Agent 搜索、发现和管理平台
+              {t('nav.footerDescription')}
             </p>
             <div className="flex items-center gap-3">
               <a
@@ -95,7 +95,7 @@ export default function Footer() {
             <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
               isHome ? 'text-white' : 'text-gray-900 dark:text-white'
             }`}>
-              Products
+              {t('nav.footerProducts')}
             </h3>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
@@ -120,7 +120,7 @@ export default function Footer() {
             <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
               isHome ? 'text-white' : 'text-gray-900 dark:text-white'
             }`}>
-              Resources
+              {t('nav.footerResources')}
             </h3>
             <ul className="space-y-3">
               {footerLinks.resources.map((link) => (
@@ -147,7 +147,7 @@ export default function Footer() {
             <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
               isHome ? 'text-white' : 'text-gray-900 dark:text-white'
             }`}>
-              Community
+              {t('nav.footerCommunity')}
             </h3>
             <ul className="space-y-3">
               {footerLinks.community.map((link) => {
@@ -182,7 +182,7 @@ export default function Footer() {
             <div className={`text-sm ${
               isHome ? 'text-slate-400' : 'text-gray-600 dark:text-gray-400'
             }`}>
-              © {currentYear} NvwaX. All rights reserved.
+              {t('nav.footerRights', { year: currentYear })}
             </div>
             
             <div className="flex items-center gap-6">
@@ -206,9 +206,9 @@ export default function Footer() {
             <div className={`flex items-center gap-2 text-sm ${
               isHome ? 'text-slate-400' : 'text-gray-600 dark:text-gray-400'
             }`}>
-              <span>Made with</span>
+              <span>{t('nav.footerMadeWith')}</span>
               <Heart size={16} className="text-red-500 fill-current" />
-              <span>by Open Source Community</span>
+              <span>{t('nav.footerByCommunity')}</span>
             </div>
           </div>
         </div>

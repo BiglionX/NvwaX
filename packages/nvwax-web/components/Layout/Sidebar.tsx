@@ -4,23 +4,27 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Store, Folder, Home, User, LogIn, LogOut, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslations } from 'next-intl';
 
-const publicMenuItems = [
-  { label: '首页', icon: Home, path: '/' },
-  { label: 'AI 搜索', icon: Sparkles, path: '/search' },
-  { label: 'Agent 广场', icon: Store, path: '/marketplace' },
-  { label: 'Nvwa', icon: Sparkles, path: '/nvwa' }
+const getPublicMenuItems = (t: (key: string) => string) => [
+  { label: t('nav.home'), icon: Home, path: '/' },
+  { label: t('nav.aiSearch'), icon: Sparkles, path: '/search' },
+  { label: t('nav.marketplace'), icon: Store, path: '/marketplace' },
+  { label: t('nav.nvwa'), icon: Sparkles, path: '/nvwa' }
 ];
 
-const privateMenuItems = [
-  { label: '我的项目', icon: Folder, path: '/projects' },
-  { label: '用户中心', icon: User, path: '/profile' }
+const getPrivateMenuItems = (t: (key: string) => string) => [
+  { label: t('nav.projects'), icon: Folder, path: '/projects' },
+  { label: t('nav.profile'), icon: User, path: '/profile' }
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { isLoggedIn, userInfo, logout } = useAuth();
+  const t = useTranslations();
+  const publicMenuItems = getPublicMenuItems(t);
+  const privateMenuItems = getPrivateMenuItems(t);
 
   // 处理登出
   const handleLogout = () => {
@@ -32,7 +36,7 @@ export default function Sidebar() {
     <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 fixed left-0 top-16 bottom-0 overflow-y-auto flex flex-col z-40">
       <div className="p-6">
         <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">NvwaX</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">AI Agent Platform</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('nav.platformTitle')}</p>
       </div>
 
       <nav className="flex-1 px-4">
@@ -64,7 +68,7 @@ export default function Sidebar() {
             <>
               <li className="pt-4 pb-2">
                 <div className="px-4 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  个人空间
+                  {t('nav.personalSpace')}
                 </div>
               </li>
               {privateMenuItems.map((item) => {
@@ -104,7 +108,7 @@ export default function Sidebar() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {userInfo?.name || '用户'}
+                    {userInfo?.name || t('nav.defaultUser')}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {userInfo?.email}
@@ -119,7 +123,7 @@ export default function Sidebar() {
               className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <LogOut size={16} />
-              <span>退出登录</span>
+              <span>{t('nav.logout')}</span>
             </button>
           </div>
         ) : (
@@ -128,7 +132,7 @@ export default function Sidebar() {
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all duration-200"
           >
             <LogIn size={18} />
-            <span>登录 / 注册</span>
+            <span>{t('nav.login')} / {t('nav.register')}</span>
           </Link>
         )}
       </div>

@@ -14,9 +14,9 @@ import LocaleSwitcher from '../LocaleSwitcher';
 
 const getNavItems = (t: (key: string) => string) => [
   { label: t('nav.home'), icon: Home, path: '/' },
-  { label: 'Nvwa', icon: Sparkles, path: '/nvwa' },
+  { label: t('nav.nvwa'), icon: Sparkles, path: '/nvwa' },
   { label: t('nav.marketplace'), icon: Store, path: '/marketplace' },
-  { label: 'Bounties', icon: Award, path: '/bounties' },
+  { label: t('nav.bounties'), icon: Award, path: '/bounties' },
 ];
 
 export default function Navbar() {
@@ -72,10 +72,10 @@ export default function Navbar() {
             <button
               onClick={() => openAiSearch()}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white transition-all text-sm font-medium shadow-sm hover:shadow-md whitespace-nowrap"
-              title="AI 智能搜索"
+              title={t('nav.aiSearch')}
             >
               <Sparkles size={16} className="text-yellow-300" />
-              <span>AI 搜索</span>
+              <span>{t('nav.aiSearch')}</span>
             </button>
           </div>
 
@@ -119,7 +119,7 @@ export default function Navbar() {
                   className="flex items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 text-sm whitespace-nowrap"
                 >
                   <ClipboardList size={16} />
-                  <span className="font-medium">我的悬赏</span>
+                  <span className="font-medium">{t('nav.myBounties')}</span>
                 </Link>
                 <Link
                   href="/profile"
@@ -129,7 +129,7 @@ export default function Navbar() {
                     {userInfo?.name?.charAt(0).toUpperCase() || userInfo?.email?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <span className="font-medium text-gray-700 dark:text-gray-300 max-w-30 truncate">
-                    {userInfo?.name || userInfo?.email || '用户'}
+                    {userInfo?.name || userInfo?.email || t('nav.defaultUser')}
                   </span>
                 </Link>
                 <button
@@ -137,7 +137,7 @@ export default function Navbar() {
                   className="flex items-center gap-1.5 px-2 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm whitespace-nowrap"
                 >
                   <LogOut size={16} />
-                  <span>退出</span>
+                  <span>{t('nav.logout')}</span>
                 </button>
               </>
             ) : (
@@ -150,7 +150,7 @@ export default function Navbar() {
                 }`}
               >
                 <LogIn size={18} />
-                <span>登录</span>
+                <span>{t('nav.login')}</span>
               </Link>
             )}
           </div>
@@ -160,7 +160,7 @@ export default function Navbar() {
             <button
               onClick={() => openAiSearch()}
               className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-              title="AI 智能搜索"
+              title={t('nav.aiSearch')}
             >
               <Sparkles size={20} />
             </button>
@@ -215,7 +215,7 @@ export default function Navbar() {
                   className="flex items-center gap-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                 >
                   <User size={20} />
-                  <span className="font-medium">用户中心</span>
+                  <span className="font-medium">{t('nav.profile')}</span>
                 </Link>
 
                 <button
@@ -223,7 +223,7 @@ export default function Navbar() {
                   className="w-full flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
                 >
                   <LogOut size={20} />
-                  <span className="font-medium">退出登录</span>
+                  <span className="font-medium">{t('nav.logout')}</span>
                 </button>
               </>
             )}
@@ -239,7 +239,7 @@ export default function Navbar() {
                 }`}
               >
                 <LogIn size={20} />
-                <span>登录 / 注册</span>
+                <span>{t('nav.login')} / {t('nav.register')}</span>
               </Link>
             )}
           </div>
