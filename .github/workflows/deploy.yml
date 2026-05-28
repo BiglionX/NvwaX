@@ -25,6 +25,12 @@ jobs:
           script: |
             set -e
             echo "🚀 Starting deployment..."
+            if [ ! -d /opt/nvwax ]; then
+              echo "📦 First deployment - cloning repository..."
+              sudo mkdir -p /opt/nvwax
+              sudo chown ubuntu:ubuntu /opt/nvwax
+              git clone https://github.com/BiglionX/NvwaX.git /opt/nvwax
+            fi
             cd /opt/nvwax
             echo "📥 Pulling latest code..."
             git pull origin main
