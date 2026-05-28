@@ -1,31 +1,35 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import { Link } from '@/src/i18n/navigation';
+import { useRouter } from '@/src/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { Home, User, LogIn, LogOut, Menu, X, Award, ClipboardList, Sparkles, Store } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAiSearch } from '@/contexts/AiSearchContext';
 import { useState } from 'react';
 import NotificationDropdown from '../notification-dropdown';
+import LocaleSwitcher from '../LocaleSwitcher';
 
-const navItems = [
-  { label: '首页', icon: Home, path: '/' },
+const getNavItems = (t: (key: string) => string) => [
+  { label: t('nav.home'), icon: Home, path: '/' },
   { label: 'Nvwa', icon: Sparkles, path: '/nvwa' },
-  { label: 'Agent广场', icon: Store, path: '/marketplace' },
-  { label: '悬赏', icon: Award, path: '/bounties' },
-  // { label: 'API', icon: FileText, path: '/api/docs' }, // API 文档页面暂未实现
+  { label: t('nav.marketplace'), icon: Store, path: '/marketplace' },
+  { label: 'Bounties', icon: Award, path: '/bounties' },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations();
   const { isLoggedIn, userInfo, logout } = useAuth();
   const { openAiSearch } = useAiSearch();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // 是否在首页（用于切换透明毛玻璃样式）
-  const isHome = pathname === '/';
+  const isHome = pathname === '/' || pathname === '/en';
+  const navItems = getNavItems(t);
 
   // 处理登出
   const handleLogout = () => {
@@ -104,6 +108,7 @@ export default function Navbar() {
 
           {/* User Actions */}
           <div className="hidden lg:flex items-center gap-2 shrink-0">
+            <LocaleSwitcher />
             {isLoggedIn ? (
               <>
                 {/* 通知下拉组件 */}

@@ -1,41 +1,42 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { Link } from '@/src/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { Heart, Mail } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const pathname = usePathname();
+  const t = useTranslations();
 
   // 是否在首页（用于切换暗色星空样式）
-  const isHome = pathname === '/';
+  const isHome = pathname === '/' || pathname === '/en';
 
   const footerLinks = {
     product: [
-      { label: 'AI 搜索', href: '/search' },
-      { label: 'Agent 广场', href: '/marketplace' },
-      { label: '我的项目', href: '/projects' },
-      { label: '用户中心', href: '/profile' },
+      { label: t('nav.search'), href: '/search' },
+      { label: t('nav.marketplace'), href: '/marketplace' },
+      { label: t('nav.projects'), href: '/projects' },
+      { label: t('nav.profile'), href: '/profile' },
     ],
     resources: [
-      { label: '文档', href: 'https://github.com/BigLionX/NvwaX#readme', external: true },
-      // { label: 'API 文档', href: '/api/docs', external: false }, // API 文档页面暂未实现
-      { label: '常见问题', href: '/faq', external: false },
-      { label: '示例代码', href: 'https://github.com/BigLionX/NvwaX/tree/main/examples', external: true },
-      { label: '更新日志', href: 'https://github.com/BigLionX/NvwaX/releases', external: true },
+      { label: 'Docs', href: 'https://github.com/BigLionX/NvwaX#readme', external: true },
+      { label: 'FAQ', href: '/faq', external: false },
+      { label: t('common.more'), href: 'https://github.com/BigLionX/NvwaX/tree/main/examples', external: true },
+      { label: 'Changelog', href: 'https://github.com/BigLionX/NvwaX/releases', external: true },
     ],
     community: [
       { label: 'GitHub', href: 'https://github.com/BigLionX/NvwaX', external: true },
       { label: 'Issues', href: 'https://github.com/BigLionX/NvwaX/issues', external: true },
       { label: 'Discussions', href: 'https://github.com/BigLionX/NvwaX/discussions', external: true },
-      { label: '联系我们', href: 'mailto:1055603323@qq.com', external: true, icon: Mail },
+      { label: t('common.back'), href: 'mailto:1055603323@qq.com', external: true, icon: Mail },
     ],
     legal: [
-      { label: '隐私政策', href: '/privacy' },
-      { label: '使用条款', href: '/terms' },
-      { label: '开源协议', href: 'https://github.com/BigLionX/NvwaX/blob/main/LICENSE', external: true },
+      { label: 'Privacy', href: '/privacy' },
+      { label: 'Terms', href: '/terms' },
+      { label: 'License', href: 'https://github.com/BigLionX/NvwaX/blob/main/LICENSE', external: true },
     ],
   };
 
@@ -94,7 +95,7 @@ export default function Footer() {
             <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
               isHome ? 'text-white' : 'text-gray-900 dark:text-white'
             }`}>
-              产品
+              Products
             </h3>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
@@ -119,7 +120,7 @@ export default function Footer() {
             <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
               isHome ? 'text-white' : 'text-gray-900 dark:text-white'
             }`}>
-              资源
+              Resources
             </h3>
             <ul className="space-y-3">
               {footerLinks.resources.map((link) => (
@@ -146,7 +147,7 @@ export default function Footer() {
             <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${
               isHome ? 'text-white' : 'text-gray-900 dark:text-white'
             }`}>
-              社区
+              Community
             </h3>
             <ul className="space-y-3">
               {footerLinks.community.map((link) => {
