@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import NvwaClient from "./Client";
 
 export const metadata: Metadata = {
-  title: "Nvwa 智能体工厂 - 创建 AI Agent & 虚拟公司",
+  title: "Nvwa 智能体工厂 - 创建 AI Agent & AiTeam",
   description:
-    "通过对话式交互轻松创建专属 AI Agent 和虚拟公司。Nvwa 智能体之母帮您一步步完成需求分析、数据源配置、技能匹配等流程。",
+    "通过对话式交互轻松创建专属 AI Agent 和 AiTeam。Nvwa 智能体之母帮您一步步完成需求分析、数据源配置、技能匹配等流程。",
   openGraph: {
     title: "NvwaX 智能体工厂 - Nvwa",
     description:

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { bountyApi } from '@/lib/api/bounty';
+import { useTranslations } from 'next-intl';
 
 interface SearchSuggestionsProps {
   query: string;
@@ -11,6 +12,7 @@ interface SearchSuggestionsProps {
 }
 
 export default function SearchSuggestions({ query, onSelect }: SearchSuggestionsProps) {
+  const t = useTranslations('bountySearch');
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -83,7 +85,7 @@ export default function SearchSuggestions({ query, onSelect }: SearchSuggestions
     <div ref={wrapperRef} className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden">
       {isLoading ? (
         <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-          加载中...
+          {t('loading')}
         </div>
       ) : (
         <ul className="max-h-60 overflow-y-auto">

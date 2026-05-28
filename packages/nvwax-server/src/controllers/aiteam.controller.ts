@@ -639,7 +639,7 @@ export const generateAiTeamFromQuery = async (req: Request, res: Response): Prom
       outputs: [],
       implementation: '',
       skills: []
-    }, false); // isVirtualCompany = false, 生成普通团队
+    }, false); // isAiTeam = false, 生成普通团队
 
     // 映射为 AiTeam 预览结构
     const preview = {

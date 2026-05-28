@@ -4,8 +4,11 @@ import { useState, useEffect } from 'react';
 import { Bell, Check, Trash2, X } from 'lucide-react';
 import { notificationApi, type Notification } from '@/lib/api/notifications';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslations, useLocale } from 'next-intl';
 
 export default function NotificationDropdown() {
+  const t = useTranslations('notifications');
+  const locale = useLocale();
   const { isLoggedIn } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -112,11 +115,11 @@ export default function NotificationDropdown() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return '刚刚';
-    if (diffMins < 60) return `${diffMins}分钟前`;
-    if (diffHours < 24) return `${diffHours}小时前`;
-    if (diffDays < 7) return `${diffDays}天前`;
-    return date.toLocaleDateString('zh-CN');
+    if (diffMins < 1) return t('justNow');
+    if (diffMins < 60) return t('minutesAgo', { minutes: diffMins });
+    if (diffHours < 24) return t('hoursAgo', { hours: diffHours });
+    if (diffDays < 7) return t('daysAgo', { days: diffDays });
+    return date.toLocaleDateString(locale);
   };
 
   if (!isLoggedIn) {
@@ -152,7 +155,7 @@ export default function NotificationDropdown() {
             {/* 头部 */}
             <div className="p-4 border-b-2 border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <h3 className="font-semibold text-gray-900 dark:text-white">
-                通知中心
+                {t('title')}
               </h3>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
@@ -160,7 +163,7 @@ export default function NotificationDropdown() {
                     onClick={handleMarkAllAsRead}
                     className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                   >
-                    全部标为已读
+                    {t('markAllRead')}
                   </button>
                 )}
                 <button
@@ -177,12 +180,12 @@ export default function NotificationDropdown() {
               {loading ? (
                 <div className="p-8 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-                  <p className="mt-2 text-sm text-gray-500">加载中...</p>
+                  <p className="mt-2 text-sm text-gray-500">{t('loading')}</p>
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="p-8 text-center">
                   <Bell size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-2" />
-                  <p className="text-gray-500 dark:text-gray-400">暂无通知</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('noData')}</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -201,9 +204,9 @@ export default function NotificationDropdown() {
                               {notification.title}
                             </h4>
                             <span className={`text-xs px-2 py-0.5 rounded-full ${getPriorityColor(notification.priority)}`}>
-                              {notification.priority === 'urgent' ? '紧急' :
-                               notification.priority === 'high' ? '高' :
-                               notification.priority === 'low' ? '低' : '普通'}
+                              {notification.priority === 'urgent' ? t('priorityUrgent') :
+                               notification.priority === 'high' ? t('priorityHigh') :
+                               notification.priority === 'low' ? t('priorityLow') : t('priorityNormal')}
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
@@ -220,7 +223,7 @@ export default function NotificationDropdown() {
                             <button
                               onClick={() => handleMarkAsRead(notification.id)}
                               className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                              title="标记为已读"
+                              title={t('markReadTitle')}
                             >
                               <Check size={16} />
                             </button>
@@ -228,7 +231,7 @@ export default function NotificationDropdown() {
                           <button
                             onClick={() => handleDelete(notification.id)}
                             className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                            title="删除"
+                            title={t('deleteTitle')}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -250,7 +253,7 @@ export default function NotificationDropdown() {
                   }}
                   className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                 >
-                  查看全部通知
+                  {t('viewAll')}
                 </button>
               </div>
             )}

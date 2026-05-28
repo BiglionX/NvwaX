@@ -16,7 +16,7 @@ export interface Agent {
 }
 
 /**
- * AiTeam（虚拟公司）搜索结果类型
+ * AiTeam 搜索结果类型
  */
 export interface SearchAiTeam {
   id: string;

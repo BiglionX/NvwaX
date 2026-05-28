@@ -3,12 +3,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { TrendingUp } from 'lucide-react';
 import { bountyApi } from '@/lib/api/bounty';
+import { useTranslations } from 'next-intl';
 
 interface PopularSearchesProps {
   onSearch: (query: string) => void;
 }
 
 export default function PopularSearches({ onSearch }: PopularSearchesProps) {
+  const t = useTranslations('bountySearch');
   const { data: popularSearches, isLoading } = useQuery({
     queryKey: ['popular-searches'],
     queryFn: () => bountyApi.getPopularSearches(8),
@@ -23,7 +25,7 @@ export default function PopularSearches({ onSearch }: PopularSearchesProps) {
     <div className="mt-4">
       <div className="flex items-center gap-2 mb-2 text-sm text-gray-600 dark:text-gray-400">
         <TrendingUp size={14} className="text-orange-500" />
-        <span>热门搜索</span>
+        <span>{""}{t('popularSearches')}</span>
       </div>
       
       <div className="flex flex-wrap gap-2">

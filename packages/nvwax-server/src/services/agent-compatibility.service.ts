@@ -35,7 +35,7 @@ export interface RoleRequirement {
 /**
  * Agent 兼容性评分服务
  * 
- * 用于评估开源 Agent 与虚拟公司角色需求的匹配程度
+ * 用于评估开源 Agent 与 AiTeam 角色需求的匹配程度
  */
 export class AgentCompatibilityService {
   

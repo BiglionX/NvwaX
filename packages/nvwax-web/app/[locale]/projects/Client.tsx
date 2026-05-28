@@ -7,6 +7,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { projectApi } from '@/lib/api/projects';
 import LoadingState from '@/components/Layout/LoadingState';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslations } from 'next-intl';
 
 interface Project {
   id: string;
@@ -19,6 +20,7 @@ interface Project {
 }
 
 export default function ProjectsClient() {
+  const t = useTranslations('projectList');
   const router = useRouter();
   const { userInfo } = useAuth();
   const queryClient = useQueryClient();
@@ -65,7 +67,7 @@ export default function ProjectsClient() {
   };
 
   const handleDeleteProject = (projectId: string) => {
-    if (window.confirm('确定要删除这个项目吗？此操作不可撤销。')) {
+    if (window.confirm(t('confirmDelete'))) {
       deleteProjectMutation.mutate(projectId);
     }
   };
@@ -78,9 +80,9 @@ export default function ProjectsClient() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 max-w-md w-full text-center">
-          <h2 className="text-xl font-semibold text-red-800 dark:text-red-200 mb-2">错误</h2>
+          <h2 className="text-xl font-semibold text-red-800 dark:text-red-200 mb-2">{t('errorTitle')}</h2>
           <p className="text-red-600 dark:text-red-400">
-            加载项目失败: {(projectsError as Error).message}
+            {t('errorLoading', { message: (projectsError as Error).message })}
           </p>
         </div>
       </div>

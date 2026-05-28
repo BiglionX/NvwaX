@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * 验证虚拟公司团队数据脚本
+ * 验证 AiTeam 团队数据脚本
  * 检查team_skills表中的数据情况
  */
 
@@ -17,7 +17,7 @@ const pool = new Pool({
 });
 
 async function verifyTeamData() {
-  console.log('🔍 开始验证虚拟公司团队数据...\n');
+  console.log('🔍 开始验证 AiTeam 团队数据...\n');
   
   try {
     // 检查总数

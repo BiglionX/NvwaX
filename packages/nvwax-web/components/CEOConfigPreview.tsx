@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 interface CEOConfig {
   teamType: string;
@@ -26,9 +27,10 @@ interface CEOConfigPreviewProps {
  * - 决策规则
  */
 const CEOConfigPreview: React.FC<CEOConfigPreviewProps> = ({ config, onDownload }) => {
+  const t = useTranslations('ceoConfig');
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(config.systemPrompt);
-    alert('System Prompt 已复制到剪贴板');
+    alert(t('copiedAlert'));
   };
 
   const handleDownloadConfig = () => {
@@ -53,7 +55,7 @@ const CEOConfigPreview: React.FC<CEOConfigPreviewProps> = ({ config, onDownload 
       {/* 头部信息 */}
       <div className="border-b pb-4">
         <h3 className="text-xl font-bold text-gray-900 mb-2">
-          🎯 CEO Agent 配置
+          {t('title')}
         </h3>
         <div className="flex items-center gap-4 text-sm text-gray-600">
           <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
@@ -67,7 +69,7 @@ const CEOConfigPreview: React.FC<CEOConfigPreviewProps> = ({ config, onDownload 
 
       {/* 管理风格 */}
       <div>
-        <h4 className="text-sm font-semibold text-gray-700 mb-2">管理风格</h4>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">{t('managementStyle')}</h4>
         <p className="text-gray-600 bg-gray-50 p-3 rounded-md">
           {config.managementStyle}
         </p>
@@ -75,8 +77,8 @@ const CEOConfigPreview: React.FC<CEOConfigPreviewProps> = ({ config, onDownload 
 
       {/* Skills 列表 */}
       <div>
-        <h4 className="text-sm font-semibold text-gray-700 mb-2">
-          配置 Skills ({config.skills.length})
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+          {t('configSkills', { count: config.skills.length })}
         </h4>
         <div className="flex flex-wrap gap-2">
           {config.skills.map((skill, index) => (
@@ -93,7 +95,7 @@ const CEOConfigPreview: React.FC<CEOConfigPreviewProps> = ({ config, onDownload 
       {/* 决策规则 */}
       {config.decisionRules && config.decisionRules.length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-gray-700 mb-2">决策规则</h4>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">{t('decisionRules')}</h4>
           <ul className="list-disc list-inside space-y-1 text-gray-600">
             {config.decisionRules.map((rule, index) => (
               <li key={index}>{rule}</li>
@@ -105,12 +107,12 @@ const CEOConfigPreview: React.FC<CEOConfigPreviewProps> = ({ config, onDownload 
       {/* System Prompt */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-semibold text-gray-700">System Prompt</h4>
+                    <h4 className="text-sm font-semibold text-gray-700">{t('systemPrompt')}</h4>
           <button
             onClick={handleCopyPrompt}
             className="text-xs px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded transition-colors"
           >
-            📋 复制
+            {t('copy')}
           </button>
         </div>
         <pre className="bg-gray-50 p-4 rounded-md text-sm text-gray-700 overflow-x-auto whitespace-pre-wrap max-h-64 overflow-y-auto">
@@ -124,13 +126,13 @@ const CEOConfigPreview: React.FC<CEOConfigPreviewProps> = ({ config, onDownload 
           onClick={handleDownloadConfig}
           className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center justify-center gap-2"
         >
-          📥 下载配置
+          {t('downloadConfig')}
         </button>
         <button
           onClick={handleCopyPrompt}
           className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors flex items-center justify-center gap-2"
         >
-          📋 复制 Prompt
+          {t('copyPrompt')}
         </button>
       </div>
     </div>

@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Bot, Sparkles, Loader, RotateCcw, Lightbulb, Zap, Database, FileText, Cpu, Check, AlertCircle, CornerDownLeft, ArrowUp } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import VirtualCompanyChatModal from '@/components/virtual-company-chat-modal';
+import AiTeamCreatorModal from '@/components/aiteam-creator-modal';
+import { useTranslations } from 'next-intl';
 
 interface Message {
   id: string;
@@ -42,31 +43,11 @@ interface CreationProgress {
 }
 
 /** 快捷建议词组 */
-const SUGGESTIONS_BY_STEP: Record<number, string[]> = {
-  0: [
-    '自动回复客户咨询的客服智能体',
-    '分析股票和基金数据的投资助手',
-    '生成营销文案和广告创意的工具',
-    '处理订单和物流查询的助手',
-  ],
-  1: [
-    '公司产品数据库和API文档',
-    '用户订单系统和CRM数据',
-    '知识库和FAQ文档',
-    '第三方天气/地图API',
-  ],
-  2: [
-    '自动回复客户消息',
-    '生成数据分析报表',
-    '创建个性化推荐',
-    '实时告警和通知',
-  ],
-  3: [
-    '调用现有REST API',
-    '使用LLM自然语言处理',
-    '查询数据库并分析',
-    '集成第三方服务',
-  ],
+const SUGGESTION_KEYS: Record<number, string[]> = {
+  0: ['suggestion1', 'suggestion2', 'suggestion3', 'suggestion4'],
+  1: ['suggestion5', 'suggestion6', 'suggestion7', 'suggestion8'],
+  2: ['suggestion9', 'suggestion10', 'suggestion11', 'suggestion12'],
+  3: ['suggestion13', 'suggestion14', 'suggestion15', 'suggestion16'],
 };
 
 /** 步骤配置 */
@@ -81,6 +62,7 @@ const STEP_CONFIG = [
 ];
 
 export default function NvwaClient() {
+  const t = useTranslations('nvwa');
   const { isLoggedIn, userInfo, login, loading: authLoading } = useAuth();
 
   // 从 URL 参数读取外部注入的需求（如从 ProClaw 跳转），使用 window.location 避免 SSR 问题
@@ -154,7 +136,7 @@ export default function NvwaClient() {
     doCrossAuth();
   }, [isLoggedIn, authLoading, crossAuthHandled, login]);
 
-  // 跨服务认证完成后，自动打开虚拟公司弹窗（但需等待登录状态稳定）
+  // 跨服务认证完成后，自动打开 AiTeam 创建弹窗（但需等待登录状态稳定）
   const [authReadyForModal, setAuthReadyForModal] = useState(false);
   useEffect(() => {
     if (crossAuthHandled && externalRequirements && !authLoading) {
@@ -165,7 +147,7 @@ export default function NvwaClient() {
   }, [crossAuthHandled, externalRequirements, authLoading]);
 
   // 构建带额外上下文的初始消息
-  const initialVirtualCompanyMessage = externalRequirements
+  const initialAiTeamMessage = externalRequirements
     ? [
         externalRequirements,
         externalTeamName ? `\n团队名称建议：${externalTeamName}` : '',
@@ -188,7 +170,7 @@ export default function NvwaClient() {
     skills: [],
   });
   const [activeMode, setActiveMode] = useState<'agent' | 'aiteam'>('agent');
-  const [showVirtualCompanyModal, setShowVirtualCompanyModal] = useState(false);
+  const [showAiTeamModal, setShowAiTeamModal] = useState(false);
   const [progress, setProgress] = useState<CreationProgress>({
     currentStep: 0,
     totalSteps: 7,
@@ -238,13 +220,13 @@ export default function NvwaClient() {
     setMessages([welcomeMessage]);
   }, []);
 
-  // 从 ProClaw 等外部来源跳转时，自动打开虚拟公司创建弹窗（等待跨服务认证完成）
+  // 从 ProClaw 等外部来源跳转时，自动打开 AiTeam 创建弹窗（等待跨服务认证完成）
   useEffect(() => {
     if (externalRequirements) {
       // 延迟打开，确保页面已完全渲染
       const timer = setTimeout(() => {
         setActiveMode('aiteam');
-        setShowVirtualCompanyModal(true);
+        setShowAiTeamModal(true);
       }, 800);
       return () => clearTimeout(timer);
     }
@@ -418,14 +400,14 @@ export default function NvwaClient() {
 
   // 处理用户输入
   const processUserInput = async (input: string) => {
-    const teamKeywords = ['团队', 'team', '虚拟公司', 'virtual company', 'ai团队', 'ai team', '多agent', 'multi-agent', '协作', 'collaboration'];
+    const teamKeywords = ['团队', 'team', 'AiTeam', 'aiteam', 'ai团队', 'ai team', '多agent', 'multi-agent', '协作', 'collaboration'];   
     const isTeamRequest = teamKeywords.some(keyword => input.toLowerCase().includes(keyword));
 
     if (isTeamRequest && currentStep === 0) {
       addAssistantMessage(
-        `我注意到您想创建一个 AI 团队！🎯\n\nNvwa 主要用于创建单个智能体，而创建 AI 团队（虚拟公司）需要使用专门的团队创建工具。\n\n我将为您打开虚拟公司创建窗口，在那里您可以：\n- 描述团队需求\n- 获得专业的角色推荐\n- 自动匹配 Agent 和 Skills\n- 生成完整的团队配置\n\n正在为您打开虚拟公司创建界面...`
+        `我注意到您想创建一个 AI 团队！🎯\n\nNvwa 主要用于创建单个智能体，而创建 AI 团队（AiTeam）需要使用专门的团队创建工具。\n\n我将为您打开 AiTeam 创建窗口，在那里您可以：\n- 描述团队需求\n- 获得专业的角色推荐\n- 自动匹配 Agent 和 Skills\n- 生成完整的团队配置\n\n正在为您打开 AiTeam 创建界面...`
       );
-      setTimeout(() => setShowVirtualCompanyModal(true), 1500);
+      setTimeout(() => setShowAiTeamModal(true), 1500);
       return;
     }
 
@@ -695,7 +677,7 @@ export default function NvwaClient() {
               <div className="inline-flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl shadow-inner">
                 {/* Nvwa Agent */}
                 <button
-                  onClick={() => { setActiveMode('agent'); setShowVirtualCompanyModal(false); }}
+                  onClick={() => { setActiveMode('agent'); setShowAiTeamModal(false); }}
                   className={`relative flex items-center gap-2 px-4 sm:px-5 py-2 text-sm font-semibold rounded-xl transition-all duration-300 ${
                     activeMode === 'agent'
                       ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md'
@@ -715,7 +697,7 @@ export default function NvwaClient() {
 
                 {/* NvwaX Aiteam */}
                 <button
-                  onClick={() => { setActiveMode('aiteam'); setShowVirtualCompanyModal(true); }}
+                  onClick={() => { setActiveMode('aiteam'); setShowAiTeamModal(true); }}
                   className={`relative flex items-center gap-2 px-4 sm:px-5 py-2 text-sm font-semibold rounded-xl transition-all duration-300 ${
                     activeMode === 'aiteam'
                       ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md'
@@ -1057,29 +1039,29 @@ export default function NvwaClient() {
                 {/* 快捷建议 */}
                 {messages.length === 1 && currentStep === 0 && (
                   <div className="flex flex-wrap gap-2 mb-3 opacity-0 animate-[fadeIn_0.4s_ease-out_0.2s_forwards]">
-                    {SUGGESTIONS_BY_STEP[0].map((suggestion, idx) => (
+                    {SUGGESTION_KEYS[0].map((key, idx) => (
                       <button
                         key={idx}
-                        onClick={() => handleSuggestionClick(suggestion)}
+                        onClick={() => handleSuggestionClick(t(key))}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-full transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-700 hover:text-blue-600 dark:hover:text-blue-400 hover:shadow-sm active:scale-95"
                                               >
                                                 <Lightbulb size={12} className="shrink-0 text-amber-400" />
-                                                {suggestion}
+                                                {t(key)}
                                               </button>
                                             ))}
                                           </div>
                                         )}
                         
                                         {/* 后续步骤建议 */}
-                                        {messages.length > 1 && currentStep < 4 && SUGGESTIONS_BY_STEP[currentStep] && (
+                                        {messages.length > 1 && currentStep < 4 && SUGGESTION_KEYS[currentStep] && (
                                           <div className="flex flex-wrap gap-2 mb-3 opacity-0 animate-[fadeIn_0.3s_ease-out_0.1s_forwards]">
-                                            {SUGGESTIONS_BY_STEP[currentStep].map((suggestion, idx) => (
+                                            {SUGGESTION_KEYS[currentStep].map((key, idx) => (
                                               <button
                                                 key={idx}
-                                                onClick={() => handleSuggestionClick(suggestion)}
+                                                onClick={() => handleSuggestionClick(t(key))}
                                                 className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200/50 dark:border-gray-700/50 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 active:scale-95"
                                               >
-                                                {suggestion}
+                                                {t(key)}
                                               </button>
                                             ))}
                                           </div>
@@ -1152,16 +1134,16 @@ export default function NvwaClient() {
                                 </div>
                               </main>
                         
-                              {/* 虚拟公司创建弹窗 */}
-                              {showVirtualCompanyModal && (
-                                <VirtualCompanyChatModal
-                                  initialMessage={initialVirtualCompanyMessage}
-                                  onClose={() => { setShowVirtualCompanyModal(false); setActiveMode('agent'); }}
+                              {/* AiTeam 创建弹窗 */}
+                              {showAiTeamModal && (
+                                <AiTeamCreatorModal
+                                  initialMessage={initialAiTeamMessage}
+                                  onClose={() => { setShowAiTeamModal(false); setActiveMode('agent'); }}
                                   onSuccess={(teamSkillId) => {
-                                    setShowVirtualCompanyModal(false);
+                                    setShowAiTeamModal(false);
                                     setActiveMode('agent');
                                     addAssistantMessage(
-                                      `🎉 **虚拟公司创建成功！**\n\n您的 AI 团队已经创建完成，可以在市场页面查看和管理。\n\n团队 ID: ${teamSkillId}\n\n还需要我帮您做什么吗？`
+                                      `🎉 **AiTeam 创建成功！**\n\n您的 AI 团队已经创建完成，可以在市场页面查看和管理。\n\n团队 ID: ${teamSkillId}\n\n还需要我帮您做什么吗？`
                                     );
                                   }}
                                 />

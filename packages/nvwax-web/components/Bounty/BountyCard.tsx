@@ -4,32 +4,35 @@ import Link from 'next/link';
 import { Clock, Award, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { Bounty } from '@/lib/api/bounty';
 import HighlightText from './HighlightText';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface BountyCardProps {
   bounty: Bounty;
   searchQuery?: string;
 }
 
-const statusConfig = {
-  open: { color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle, label: '开放中' },
-  claimed: { color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: AlertCircle, label: '已领取' },
-  submitted: { color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock, label: '待验证' },
-  verified: { color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: CheckCircle, label: '已验证' },
-  completed: { color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400', icon: CheckCircle, label: '已完成' },
-  cancelled: { color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: XCircle, label: '已取消' },
-};
-
 export default function BountyCard({ bounty, searchQuery = '' }: BountyCardProps) {
-  const status = statusConfig[bounty.status];
-  const StatusIcon = status.icon;
+  const t = useTranslations('bountyCard');
+  const locale = useLocale();
+  const statusConfig = {
+    open: { color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle, label: t('statusOpen') },
+    claimed: { color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: AlertCircle, label: t('statusClaimed') },
+    submitted: { color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400', icon: Clock, label: t('statusSubmitted') },
+    verified: { color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', icon: CheckCircle, label: t('statusVerified') },
+    completed: { color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400', icon: CheckCircle, label: t('statusCompleted') },
+    cancelled: { color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', icon: XCircle, label: t('statusCancelled') },
+  };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('zh-CN', {
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
     });
   };
+
+  const status = statusConfig[bounty.status];
+  const StatusIcon = status.icon;
 
   return (
     <Link href={`/bounties/${bounty.id}`} className="block">
@@ -75,7 +78,7 @@ export default function BountyCard({ bounty, searchQuery = '' }: BountyCardProps
             <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
               <Award size={16} />
               <span className="font-semibold">{bounty.rewardAmount}</span>
-              <span className="text-xs">{bounty.currency === 'points' ? '积分' : bounty.currency}</span>
+              <span className="text-xs">{bounty.currency === 'points' ? t('points') : bounty.currency}</span>
             </div>
             <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs">
               <Clock size={14} />
@@ -85,7 +88,7 @@ export default function BountyCard({ bounty, searchQuery = '' }: BountyCardProps
           
           {bounty.deadline && (
             <div className="text-xs text-gray-500 dark:text-gray-400">
-              截止: {formatDate(bounty.deadline)}
+              {t('deadline', { date: formatDate(bounty.deadline) })}
             </div>
           )}
         </div>

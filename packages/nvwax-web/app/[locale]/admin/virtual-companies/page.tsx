@@ -17,10 +17,10 @@ interface BuildJob {
 }
 
 export default function AdminVirtualCompaniesPage() {
-  // 获取虚拟公司打包任务列表
+  // 获取 AiTeam 打包任务列表
   const { data: buildsData, isLoading: loadingBuilds } = useQuery({
     queryKey: ['admin-virtual-companies-builds'],
-    queryFn: () => adminApi.getVirtualCompanyBuilds(),
+    queryFn: () => adminApi.getAiTeamBuilds(),
     refetchInterval: 5000 // 每5秒刷新一次以监控进度
   });
 

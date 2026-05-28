@@ -25,9 +25,9 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
 
-  const titleZh = "NvwaX - AI Agent & 虚拟公司 制造工厂";
+  const titleZh = "NvwaX - AI Agent & AiTeam 制造工厂";
   const titleEn = "NvwaX - AI Agent & Virtual Company Factory";
-  const descZh = "NvwaX 是一个开源的 AI Agent 和虚拟公司搜索、发现和管理平台。支持从 GitHub、HuggingFace 等多数据源搜索 AI Agent，创建虚拟公司（AI团队）和智能体。";
+  const descZh = "NvwaX 是一个开源的 AI Agent 和 AiTeam 搜索、发现和管理平台。支持从 GitHub、HuggingFace 等多数据源搜索 AI Agent，创建 AiTeam（AI团队）和智能体。";
   const descEn = "NvwaX is an open-source AI Agent and Virtual Company search, discovery, and management platform.";
 
   const title = locale === 'en' ? titleEn : titleZh;
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     keywords: [
       "AI Agent",
       "AI智能体",
-      "虚拟公司",
+      "AiTeam",
       "AI团队",
       "人工智能代理",
       "Agent搜索",
@@ -110,10 +110,10 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: "NvwaX",
-  alternateName: "NvwaX AI Agent & Virtual Company Platform",
+  alternateName: "NvwaX AI Agent & AiTeam Platform",
   url: "https://nvwax.com",
   description:
-    "AI Agent & 虚拟公司 制造工厂 - 搜索、发现、创建、发布智能体和虚拟公司",
+    "AI Agent & AiTeam 制造工厂 - 搜索、发现、创建、发布智能体和 AiTeam",
   inLanguage: "zh-CN",
   potentialAction: {
     "@type": "SearchAction",

@@ -24,7 +24,7 @@ export interface SSEProgressEvent {
 /**
  * SSE 进度追踪服务
  * 
- * 实现 Server-Sent Events 实时推送虚拟公司创建进度
+ * 实现 Server-Sent Events 实时推送 AiTeam 创建进度
  */
 export class SSEProgressService {
   private clients: Map<string, SSEClient[]> = new Map();
@@ -122,7 +122,7 @@ export class SSEProgressService {
     try {
       // 直接查询数据库获取最新进度
       const result = await this.pool.query(
-        'SELECT id, status, progress, requirements, selected_roles FROM virtual_company_sessions WHERE id = $1',
+        'SELECT id, status, progress, requirements, selected_roles FROM aiteam_creation_sessions WHERE id = $1',
         [sessionId]
       );
 
@@ -256,7 +256,7 @@ export class SSEProgressService {
   private async sendCurrentProgress(client: SSEClient): Promise<void> {
     try {
       const result = await this.pool.query(
-        'SELECT id, status, progress, requirements, selected_roles FROM virtual_company_sessions WHERE id = $1',
+        'SELECT id, status, progress, requirements, selected_roles FROM aiteam_creation_sessions WHERE id = $1',
         [client.sessionId]
       );
 

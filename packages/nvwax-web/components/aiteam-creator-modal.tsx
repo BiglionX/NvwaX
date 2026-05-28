@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Send, Sparkles, Loader2, Bot, User, CheckCircle, AlertCircle, Share2 } from 'lucide-react';
-import { useVirtualCompanyProgress } from '@/hooks/use-virtual-company-progress';
+import { useAiTeamCreationProgress } from '@/hooks/use-aiteam-creation-progress';
 import CEOConfigPreview from './CEOConfigPreview';
 import DocumentPackagePreview from './DocumentPackagePreview';
+import { useTranslations, useLocale } from 'next-intl';
 
-interface VirtualCompanyChatModalProps {
+interface AiTeamCreatorModalProps {
   onClose: () => void;
   onSuccess: (teamSkillId: string) => void;
   /** 外部注入的初始需求描述（如从 ProClaw 跳转带入） */
@@ -62,7 +63,9 @@ interface Message {
   };
 }
 
-export default function VirtualCompanyChatModal({ onClose, initialMessage }: VirtualCompanyChatModalProps) {
+export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCreatorModalProps) {
+  const t = useTranslations('vcChatModal');
+  const locale = useLocale();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -79,7 +82,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 使用 SSE Hook 追踪进度
-  const { progress } = useVirtualCompanyProgress(sessionId, {
+  const { progress } = useAiTeamCreationProgress(sessionId, {
     autoReconnect: true,
     maxRetries: 3,
     retryDelay: 2000
@@ -87,13 +90,13 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
 
   // 进度步骤定义
   const progressSteps = progress?.steps || [
-    { stepNumber: 1, name: '需求分析', status: 'pending' as const, message: '等待开始' },
-    { stepNumber: 2, name: '团队设计', status: 'pending' as const, message: '等待开始' },
-    { stepNumber: 3, name: 'Agent 搜索', status: 'pending' as const, message: '等待开始' },
-    { stepNumber: 4, name: 'Skill 匹配', status: 'pending' as const, message: '等待开始' },
-    { stepNumber: 5, name: '需求确认', status: 'pending' as const, message: '等待开始' },
-    { stepNumber: 6, name: '团队构建', status: 'pending' as const, message: '等待开始' },
-    { stepNumber: 7, name: '保存配置', status: 'pending' as const, message: '等待开始' }
+    { stepNumber: 1, name: t('step1Name'), status: 'pending' as const, message: t('stepWaiting') },
+    { stepNumber: 2, name: t('step2Name'), status: 'pending' as const, message: t('stepWaiting') },
+    { stepNumber: 3, name: t('step3Name'), status: 'pending' as const, message: t('stepWaiting') },
+    { stepNumber: 4, name: t('step4Name'), status: 'pending' as const, message: t('stepWaiting') },
+    { stepNumber: 5, name: t('step5Name'), status: 'pending' as const, message: t('stepWaiting') },
+    { stepNumber: 6, name: t('step6Name'), status: 'pending' as const, message: t('stepWaiting') },
+    { stepNumber: 7, name: t('step7Name'), status: 'pending' as const, message: t('stepWaiting') }
   ];
 
   const currentProgress = progress || { percentage: 0 };
@@ -105,7 +108,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
     const userInfo = localStorage.getItem('user_info');
     
     if (!token || !userInfo) {
-      addSystemMessage('请先登录以使用虚拟公司功能。\n\n💡 提示：点击右上角的"登录"按钮进行登录。');
+      addSystemMessage(t('loginRequired'));
       console.warn('User not logged in, skipping session creation');
       return;
     }
@@ -125,7 +128,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       const userInfo = localStorage.getItem('user_info');
       
       if (!token || !userInfo) {
-        addSystemMessage('请先登录以创建虚拟公司会话。');
+        addSystemMessage(t('loginRequiredShort'));
         console.warn('User not logged in');
         return;
       }
@@ -136,7 +139,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
         'Authorization': `Bearer ${token}`,
       };
       
-      const response = await fetch(`${API_URL}/virtual-company/sessions`, {
+      const response = await fetch(`${API_URL}/aiteam-creation/sessions`, {
         method: 'POST',
         headers,
       });
@@ -146,18 +149,18 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       if (!response.ok) {
         if (response.status === 401) {
           // Token 过期或无效，提示重新登录
-          addSystemMessage('登录已过期，请重新登录后再试。\n\n💡 提示：请刷新页面并重新登录。');
+          addSystemMessage(t('tokenExpired'));
           console.warn('Token expired or invalid');
           // 清除过期 token
           localStorage.removeItem('user_token');
           localStorage.removeItem('user_info');
           return;
         }
-        throw new Error(data.error?.message || data.error || '创建会话失败');
+        throw new Error(data.error?.message || data.error || t('sessionCreateError'));
       }
       
       if (!data.success) {
-        throw new Error(data.error?.message || data.error || '创建会话失败');
+        throw new Error(data.error?.message || data.error || t('sessionCreateError'));
       }
 
       setSessionId(data.data.id);
@@ -196,7 +199,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       }
     } catch (error) {
       console.error('Error creating session:', error);
-      addSystemMessage('创建会话失败，请刷新页面重试');
+      addSystemMessage(t('sessionError'));
     }
   };
 
@@ -232,7 +235,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch(`${API_URL}/virtual-company/sessions/${sessionId}/message`, {
+      const response = await fetch(`${API_URL}/aiteam-creation/sessions/${sessionId}/message`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ content: userMessage.content }),
@@ -241,7 +244,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || '发送消息失败');
+        throw new Error(data.error || t('sendMessageError'));
       }
 
       // 添加 NvwaX Agent 回复
@@ -270,7 +273,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       fetchSessionStatus();
     } catch (error) {
       console.error('Error sending message:', error);
-      addSystemMessage('发送消息失败，请重试');
+      addSystemMessage(t('sendError'));
     } finally {
       setIsSending(false);
     }
@@ -295,7 +298,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       const systemMessage: Message = {
         id: `system-match-${Date.now()}`,
         role: 'nvwax_agent',
-        content: '🔍 正在搜索匹配的 Agent 和 Skills...\n\n请稍候，这可能需要几分钟时间...',
+        content: t('matchSearching'),
         timestamp: new Date(),
         phase: 'agent_matching'
       };
@@ -311,7 +314,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch(`${API_URL}/virtual-company/sessions/${sessionId}/nvwax-match`, {
+      const response = await fetch(`${API_URL}/aiteam-creation/sessions/${sessionId}/nvwax-match`, {
         method: 'POST',
         headers,
       });
@@ -319,7 +322,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || '触发匹配失败');
+        throw new Error(data.error || t('triggerMatchError'));
       }
 
       console.log('✅ NvwaX match completed:', data.data);
@@ -332,13 +335,13 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const skillCount = Object.values(skillMatches).filter((s: any) => s.status === 'found').length;
       
-      let content = `✅ 匹配完成！\n\n找到 ${agentCount} 个 Agent 候选\n找到 ${skillCount} 个 Skills`;
-      
+      let content = t('matchComplete', { agentCount, skillCount });
+            
       if (ceoConfig) {
-        content += `\n\n🎯 NvwaX Aiteam架构师 配置已生成：\n- 类型：${ceoConfig.templateName}\n- 管理风格：${ceoConfig.managementStyle}\n- Skills：${ceoConfig.skills.length} 个`;
+        content += t('matchConfigGenerated', { templateName: ceoConfig.templateName, managementStyle: ceoConfig.managementStyle, skillCount: ceoConfig.skills.length });
       }
-      
-      content += '\n\n📦 团队配置已准备就绪，点击“确认并保存”将团队保存到用户中心并下载文档包。';
+            
+      content += t('matchReadyToSave');
       
       const completeMessage: Message = {
         id: `system-match-complete-${Date.now()}`,
@@ -356,7 +359,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       const errorMessage: Message = {
         id: `system-match-error-${Date.now()}`,
         role: 'nvwax_agent',
-        content: '⚠️ 匹配过程出现错误，但您可以继续手动配置。',
+        content: t('matchError'),
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -393,7 +396,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       }
       
       // Step 1: 确认并保存团队
-      const response = await fetch(`${API_URL}/virtual-company/sessions/${sessionId}/confirm`, {
+      const response = await fetch(`${API_URL}/aiteam-creation/sessions/${sessionId}/confirm`, {
         method: 'POST',
         headers,
       });
@@ -411,7 +414,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       if (autoPublishToMarketplace && sessionId) {
         try {
           console.log('🚀 Auto-publishing to marketplace...');
-          const publishResponse = await fetch(`${API_URL}/virtual-company/sessions/${sessionId}/publish-to-marketplace`, {
+          const publishResponse = await fetch(`${API_URL}/aiteam-creation/sessions/${sessionId}/publish-to-marketplace`, {
             method: 'POST',
             headers,
           });
@@ -514,6 +517,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
 
   /**
    * 集成到ProClaw
+   * TODO: ProClaw 功能尚未完善，此接口为占位
    */
   const handleIntegrateToProClaw = async (teamSessionId: string) => {
     try {
@@ -528,7 +532,8 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
       }
       
       // 调用后端 API 将团队集成到 ProClaw
-      const response = await fetch(`${API_URL}/virtual-company/sessions/${teamSessionId}/integrate-proclaw`, {
+      // TODO: 后端接口尚未实现，返回占位响应
+      const response = await fetch(`${API_URL}/aiteam-creation/sessions/${teamSessionId}/integrate-proclaw`, {
         method: 'POST',
         headers,
       });
@@ -698,7 +703,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
                 <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
                   <Loader2 className={`w-4 h-4 text-indigo-600 dark:text-indigo-400 ${(currentProgress?.percentage || 0) > 0 && (currentProgress?.percentage || 0) < 100 ? 'animate-spin' : ''}`} />
                 </div>
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white">创建进度</h3>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">{t('progressTitle')}</h3>
               </div>
               <div className="space-y-4">
                 {progressSteps.map((step, index) => (
@@ -724,7 +729,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
                       }`}>
                         {step.name}
                       </p>
-                      {step.message && step.message !== '等待开始' && (
+                      {step.message && step.message !== t('stepWaiting') && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{step.message}</p>
                       )}
                       {step.status === 'in_progress' && (
@@ -741,7 +746,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
               {/* 总体进度条 */}
               <div className="mt-6 pt-5 border-t border-gray-200/60 dark:border-gray-700/60">
                 <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
-                  <span className="font-medium">总进度</span>
+                  <span className="font-medium">{t('overallProgress')}</span>
                   <span className="font-bold text-indigo-600 dark:text-indigo-400 text-base tabular-nums">{currentProgress?.percentage || 0}%</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
@@ -755,7 +760,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
               {/* 提示信息 */}
               <div className="mt-5 p-3.5 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/30">
                 <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
-                  💡 <strong className="font-semibold">提示</strong>：团队创建完成后，将自动保存到您的 Agent 仓库并生成可下载的文档包。
+                  💡 <strong className="font-semibold">{t('tipTitle')}</strong>：团队创建完成后，将自动保存到您的 Agent 仓库并生成可下载的文档包。
                 </p>
               </div>
             </div>
@@ -888,7 +893,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
                     message.role === 'user' ? 'text-blue-200' : 'text-gray-400 dark:text-gray-500'
                   }`}
                 >
-                  {message.timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+                  {message.timestamp.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
 
@@ -929,7 +934,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="描述您想创建的 AI 团队... (Enter 发送，Shift+Enter 换行)"
+                  placeholder={t('inputPlaceholder')}
                   className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 text-sm"
                   disabled={isSending || !sessionId}
                   rows={2}
@@ -940,11 +945,11 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
                   className="shrink-0 px-5 py-3 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold text-sm active:scale-95"
                 >
                   <Send size={18} />
-                  <span className="hidden sm:inline">发送</span>
+                  <span className="hidden sm:inline">{t('sendButton')}</span>
                 </button>
               </div>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-2.5 text-center">
-                💡 详细描述您的需求，智能助手会为您推荐合适的角色配置
+                💡 {t('inputHint')}
               </p>
             </div>
           </section>
@@ -1002,6 +1007,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
                   <Send className="w-5 h-5" />
                   <span>下载文档包</span>
                 </button>
+                {/* TODO: ProClaw 功能尚未完善，以下按钮为占位 */}
                 <button
                   onClick={async () => {
                     if (sessionId) {
@@ -1012,8 +1018,18 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
                   className="w-full px-6 py-3.5 bg-linear-to-r from-indigo-500 to-blue-700 hover:from-indigo-600 hover:to-blue-800 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
                 >
                   <Sparkles className="w-5 h-5" />
-                  <span>集成到 ProClaw</span>
+                  <span>导入 AiTeam 到 ProClaw</span>
                 </button>
+                {/* TODO: ProClaw 下载功能 - 后续根据用户选择进销存模块后跳转到 proclaw.cc */}
+                <a
+                  href="https://proclaw.cc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full px-6 py-3.5 bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
+                >
+                  <Loader2 className="w-5 h-5" />
+                  <span>下载 ProClaw 桌面端</span>
+                </a>
                 <button
                   onClick={() => {
                     handleShare();
@@ -1030,7 +1046,7 @@ export default function VirtualCompanyChatModal({ onClose, initialMessage }: Vir
               <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-700">
-                  💡 您可以稍后在我的 Agent 仓库中查看和管理这个虚拟公司。
+                  💡 您可以稍后在我的 Agent 仓库中查看和管理这个 AiTeam。
                 </p>
               </div>
             </div>

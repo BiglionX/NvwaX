@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { bountyApi, CreateBountyInput } from '@/lib/api/bounty';
+import { useTranslations } from 'next-intl';
 
 export default function CreateBountyPage() {
   const router = useRouter();
+  const t = useTranslations('bountyCreate');
   const [formData, setFormData] = useState<CreateBountyInput>({
     title: '',
     description: '',
@@ -19,11 +21,11 @@ export default function CreateBountyPage() {
   const createMutation = useMutation({
     mutationFn: (data: CreateBountyInput) => bountyApi.createBounty(data),
     onSuccess: () => {
-      alert('✅ 悬赏发布成功！');
+      alert(t('success'));
       router.push('/bounties');
     },
     onError: (error: Error) => {
-      alert('❌ 发布失败：' + error.message);
+      alert(t('failed') + error.message);
     },
   });
 
@@ -31,17 +33,17 @@ export default function CreateBountyPage() {
     e.preventDefault();
     
     if (!formData.title.trim()) {
-      alert('请输入标题');
+      alert(t('errorTitle'));
       return;
     }
     
     if (!formData.description.trim()) {
-      alert('请输入描述');
+      alert(t('errorDesc'));
       return;
     }
     
     if (formData.requiredSkills.length === 0) {
-      alert('请至少添加一个技能要求');
+      alert(t('errorSkills'));
       return;
     }
     
@@ -69,8 +71,8 @@ export default function CreateBountyPage() {
     <div className="max-w-3xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">发布悬赏</h1>
-        <p className="text-gray-600 dark:text-gray-400">详细描述您的需求，吸引优秀的开发者</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('title')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('subtitle')}</p>
       </div>
 
       {/* Form */}
@@ -78,13 +80,13 @@ export default function CreateBountyPage() {
         {/* Title */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            标题 <span className="text-red-500">*</span>
+            {t('titleField')}
           </label>
           <input
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            placeholder="例如：开发订单查询智能体技能"
+            placeholder={t('titlePlaceholder')}
             className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             required
           />
@@ -93,12 +95,12 @@ export default function CreateBountyPage() {
         {/* Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            详细描述 <span className="text-red-500">*</span>
+            {t('descField')}
           </label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="详细描述任务需求、期望成果、技术要求等..."
+            placeholder={t('descPlaceholder')}
             rows={6}
             className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
             required
@@ -108,7 +110,7 @@ export default function CreateBountyPage() {
         {/* Required Skills */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            所需技能 <span className="text-red-500">*</span>
+            {t('skillsField')}
           </label>
           <div className="flex gap-2 mb-3">
             <input
@@ -116,7 +118,7 @@ export default function CreateBountyPage() {
               value={skillInput}
               onChange={(e) => setSkillInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
-              placeholder="输入技能名称（如：database-connector）"
+              placeholder={t('skillPlaceholder')}
               className="flex-1 px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             />
             <button
@@ -124,7 +126,7 @@ export default function CreateBountyPage() {
               onClick={addSkill}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
             >
-              添加
+              {t('add')}
             </button>
           </div>
           
@@ -152,7 +154,7 @@ export default function CreateBountyPage() {
         {/* Reward Amount */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            悬赏金额（积分）<span className="text-red-500">*</span>
+            {t('rewardField')}
           </label>
           <input
             type="number"
@@ -163,14 +165,14 @@ export default function CreateBountyPage() {
             required
           />
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            最低 10 积分，完成后领取者将获得 80%，平台抽成 20%
+            {t('rewardHint')}
           </p>
         </div>
 
         {/* Deadline */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            截止时间（可选）
+            {t('deadlineOptional')}
           </label>
           <input
             type="datetime-local"
@@ -193,10 +195,10 @@ export default function CreateBountyPage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                发布中...
+                {t('publishing')}
               </>
             ) : (
-              '发布悬赏'
+              t('publish')
             )}
           </button>
         </div>

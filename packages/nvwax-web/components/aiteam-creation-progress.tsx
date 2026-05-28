@@ -1,9 +1,10 @@
 'use client';
 
 import { CheckCircle, Clock, Loader2, AlertCircle } from 'lucide-react';
-import { ProgressStep, SessionStatus } from '@/hooks/use-virtual-company-progress';
+import { ProgressStep, SessionStatus } from '@/hooks/use-aiteam-creation-progress';
+import { useTranslations, useLocale } from 'next-intl';
 
-interface VirtualCompanyProgressProps {
+interface AiTeamCreationProgressProps {
   progress: {
     currentStep: number;
     totalSteps: number;
@@ -14,16 +15,18 @@ interface VirtualCompanyProgressProps {
   isConnected: boolean;
 }
 
-export default function VirtualCompanyProgress({ 
+export default function AiTeamCreationProgress({ 
   progress, 
   status,
   isConnected 
-}: VirtualCompanyProgressProps) {
+}: AiTeamCreationProgressProps) {
+  const t = useTranslations('vcProgress');
+  const locale = useLocale();
   if (!progress) {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
-        <span className="ml-2 text-gray-600">加载进度...</span>
+        <span className="ml-2 text-gray-600">{t('loading')}</span>
       </div>
     );
   }
@@ -52,16 +55,16 @@ export default function VirtualCompanyProgress({
 
   const getStatusText = (stepStatus: SessionStatus) => {
     const statusMap: Record<SessionStatus, string> = {
-      initiated: '已启动',
-      requirements_gathering: '需求收集中',
-      role_selection: '角色选择中',
-      agent_searching: 'Agent 搜索中',
-      skill_matching: 'Skill 匹配中',
-      confirming: '确认配置中',
-      building: '团队构建中',
-      completed: '已完成',
-      failed: '失败',
-      cancelled: '已取消'
+      initiated: t('statusInitiated'),
+      requirements_gathering: t('statusRequirements'),
+      role_selection: t('statusRoleSelection'),
+      agent_searching: t('statusAgentSearch'),
+      skill_matching: t('statusSkillMatch'),
+      confirming: t('statusConfirming'),
+      building: t('statusBuilding'),
+      completed: t('statusCompleted'),
+      failed: t('statusFailed'),
+      cancelled: t('statusCancelled')
     };
     return statusMap[stepStatus] || stepStatus;
   };
@@ -74,12 +77,12 @@ export default function VirtualCompanyProgress({
           {isConnected ? (
             <>
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm text-green-600">实时连接</span>
+              <span className="text-sm text-green-600">{t('connected')}</span>
             </>
           ) : (
             <>
               <AlertCircle className="w-4 h-4 text-orange-500" />
-              <span className="text-sm text-orange-600">连接断开</span>
+              <span className="text-sm text-orange-600">{t('disconnected')}</span>
             </>
           )}
         </div>
@@ -91,7 +94,7 @@ export default function VirtualCompanyProgress({
       {/* 进度条 */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700">总体进度</span>
+          <span className="text-sm font-medium text-gray-700">{t('overallProgress')}</span>
           <span className="text-sm font-semibold text-blue-600">{progress.percentage}%</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
@@ -104,7 +107,7 @@ export default function VirtualCompanyProgress({
 
       {/* 步骤列表 */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-gray-700">创建步骤</h3>
+        <h3 className="text-sm font-semibold text-gray-700">{t('progressTitle')}</h3>
         <div className="space-y-2">
           {progress.steps.map((step) => (
             <div
@@ -125,12 +128,12 @@ export default function VirtualCompanyProgress({
                 </div>
                 {step.startedAt && step.status === 'in_progress' && (
                   <p className="text-xs mt-1 opacity-75">
-                    开始于: {new Date(step.startedAt).toLocaleTimeString('zh-CN')}
+                    {t('startedAt')}{new Date(step.startedAt).toLocaleTimeString(locale)}
                   </p>
                 )}
                 {step.completedAt && step.status === 'completed' && (
                   <p className="text-xs mt-1 opacity-75">
-                    完成于: {new Date(step.completedAt).toLocaleTimeString('zh-CN')}
+                    {t('completedAt')}{new Date(step.completedAt).toLocaleTimeString(locale)}
                   </p>
                 )}
               </div>
@@ -145,19 +148,19 @@ export default function VirtualCompanyProgress({
           <div className="text-2xl font-bold text-green-600">
             {progress.steps.filter(s => s.status === 'completed').length}
           </div>
-          <div className="text-xs text-green-700 mt-1">已完成</div>
+          <div className="text-xs text-green-700 mt-1">{t('completedCount')}</div>
         </div>
         <div className="text-center p-3 bg-blue-50 rounded-lg">
           <div className="text-2xl font-bold text-blue-600">
             {progress.steps.filter(s => s.status === 'in_progress').length}
           </div>
-          <div className="text-xs text-blue-700 mt-1">进行中</div>
+          <div className="text-xs text-blue-700 mt-1">{t('inProgress')}</div>
         </div>
         <div className="text-center p-3 bg-gray-50 rounded-lg">
           <div className="text-2xl font-bold text-gray-600">
             {progress.steps.filter(s => s.status === 'pending').length}
           </div>
-          <div className="text-xs text-gray-700 mt-1">待处理</div>
+          <div className="text-xs text-gray-700 mt-1">{t('pendingLabel')}</div>
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Download, FileJson, FileType, CheckCircle, Loader2, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export default function ExportModal({
   resourceName,
   onExport
 }: Omit<ExportModalProps, 'resourceId'>) {
+  const t = useTranslations('exportModal');
   const [selectedFormat, setSelectedFormat] = useState<'json' | 'yaml' | 'proclaw'>('json');
   const [isExporting, setIsExporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
@@ -42,27 +44,9 @@ export default function ExportModal({
   };
 
   const formats = [
-    {
-      id: 'json',
-      name: 'JSON',
-      description: '通用格式，易于解析',
-      icon: FileJson,
-      color: 'blue'
-    },
-    {
-      id: 'yaml',
-      name: 'YAML',
-      description: '人类可读，适合配置',
-      icon: FileType,
-      color: 'blue'
-    },
-    {
-      id: 'proclaw',
-      name: 'ProClaw',
-      description: 'ProClaw 专用格式',
-      icon: Download,
-      color: 'green'
-    }
+    { id: 'json', name: 'JSON', description: t('descJson'), icon: FileJson, color: 'blue' },
+    { id: 'yaml', name: 'YAML', description: t('descYaml'), icon: FileType, color: 'blue' },
+    { id: 'proclaw', name: 'ProClaw', description: t('descProclaw'), icon: Download, color: 'green' }
   ];
 
   return (
@@ -72,7 +56,7 @@ export default function ExportModal({
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Download className="text-blue-600" size={24} />
-            导出{resourceType === 'agent' ? 'Agent' : 'AiTeam'}
+            {t('title', { type: resourceType === 'agent' ? 'Agent' : 'AiTeam' })}
           </h2>
           <button
             onClick={onClose}
@@ -86,14 +70,14 @@ export default function ExportModal({
         <div className="p-6">
           {/* 资源信息 */}
           <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">资源名称</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('resourceName')}</div>
             <div className="font-semibold text-gray-900 dark:text-white">{resourceName}</div>
           </div>
 
           {/* 格式选择 */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-              选择导出格式
+              {t('selectFormat')}
             </label>
             <div className="space-y-3">
               {formats.map((format) => {
@@ -142,7 +126,7 @@ export default function ExportModal({
           {selectedFormat === 'proclaw' && (
             <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
               <div className="text-sm text-green-800 dark:text-green-300">
-                <strong>提示：</strong>ProClaw 格式包含运行时配置和集成指南，可直接导入 ProClaw 桌面端使用。
+                {t('tipProclaw')}
               </div>
             </div>
           )}
@@ -155,7 +139,7 @@ export default function ExportModal({
             disabled={isExporting}
             className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium disabled:opacity-50"
           >
-            取消
+            {t('cancel')}
           </button>
           <button
             onClick={handleExport}
@@ -169,17 +153,17 @@ export default function ExportModal({
             {isExporting ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
-                导出中...
+                {t('exporting')}
               </>
             ) : exportSuccess ? (
               <>
                 <CheckCircle size={18} />
-                导出成功
+                {t('exportSuccess')}
               </>
             ) : (
               <>
                 <Download size={18} />
-                开始导出
+                {t('startExport')}
               </>
             )}
           </button>

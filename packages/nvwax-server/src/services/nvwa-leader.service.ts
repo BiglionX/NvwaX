@@ -17,7 +17,7 @@ export class NvwaLeaderService {
   /**
    * 从 Nvwa 需求生成团队配置
    * @param nvwaData Nvwa 的需求分析数据
-   * @param isVirtualCompany 是否为虚拟公司模式（多角色团队）
+   * @param isAiTeam 是否为 AiTeam 模式（多角色团队）
    * @returns 生成的团队配置
    */
   async generateTeamFromNvwa(nvwaData: {
@@ -26,32 +26,32 @@ export class NvwaLeaderService {
     outputs: string[];
     implementation: string;
     skills: string[];
-  }, isVirtualCompany: boolean = false) {
-    console.log(`🤖 Generating ${isVirtualCompany ? 'virtual company' : 'team'} configuration from Nvwa data...`);
+  }, isAiTeam: boolean = false) {
+    console.log(`🤖 Generating ${isAiTeam ? 'AiTeam' : 'team'} configuration from Nvwa data...`);
     
     // TODO: 接入真实的 LLM API
     // 当环境变量配置了 LLM API Key 时，使用 LLM 生成配置
     // 否则使用 mock 数据作为降级方案
     const useLLM = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY;
     
-    if (useLLM && isVirtualCompany) {
+    if (useLLM && isAiTeam) {
       // TODO: 实现真实的 LLM 调用
       // return await this.generateWithLLM(nvwaData);
       console.log('⚠️ LLM API not configured, using mock data');
     }
     
     // 使用 mock 数据作为降级方案
-    if (isVirtualCompany) {
-      return this.generateMockVirtualCompany(nvwaData);
+    if (isAiTeam) {
+      return this.generateMockAiTeam(nvwaData);
     } else {
       return this.generateMockTeam(nvwaData);
     }
   }
 
   /**
-   * 生成虚拟公司配置（多角色团队）
+   * 生成 AiTeam 配置（多角色团队）
    */
-  private generateMockVirtualCompany(nvwaData: {
+  private generateMockAiTeam(nvwaData: {
     description: string;
     dataSources: string[];
     outputs: string[];
@@ -211,13 +211,13 @@ export class NvwaLeaderService {
     const template = (templates as any)[companyType] || templates.development;
     
     // 更新描述
-    template.description = `基于 Nvwa 需求分析自动生成的虚拟公司：${desc}`;
+    template.description = `基于 Nvwa 需求分析自动生成的 AiTeam：${desc}`;
     
     return template;
   }
 
   /**
-   * 生成单个团队配置（非虚拟公司模式）
+   * 生成单个团队配置（非 AiTeam 模式）
    */
   private generateMockTeam(nvwaData: {
     description: string;

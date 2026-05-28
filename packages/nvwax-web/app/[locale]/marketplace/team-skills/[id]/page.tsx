@@ -11,7 +11,7 @@ import {
 import Link from 'next/link';
 import { useState } from 'react';
 import TeamSkillPackageModal from '@/components/Package/TeamSkillPackageModal';
-import VirtualCompanyChat from '@/components/virtual-company-chat';
+import AiTeamChat from '@/components/aiteam-chat';
 import ShareModal from '@/components/ShareModal';
 import { downloadTeamConfig } from '@/lib/api/proclaw';
 
@@ -135,7 +135,7 @@ export default function TeamSkillDetailPage() {
               {skill.category === 'virtual-company' && (
                 <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 flex items-center gap-1">
                   <Sparkles size={14} />
-                  虚拟公司
+                  AiTeam
                 </span>
               )}
             </div>
@@ -405,7 +405,7 @@ export default function TeamSkillDetailPage() {
                 </svg>
               </button>
             </div>
-            <VirtualCompanyChat 
+            <AiTeamChat
               sessionId={id} 
               onComplete={(data) => {
                 console.log('Chat completed', data);

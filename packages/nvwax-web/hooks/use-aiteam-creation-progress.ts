@@ -49,7 +49,7 @@ export type SessionStatus =
 /**
  * Hook 返回值
  */
-interface UseVirtualCompanyProgressReturn {
+interface UseAiTeamCreationProgressReturn {
   progress: CreationProgress | null;
   status: SessionStatus | null;
   isConnected: boolean;
@@ -60,18 +60,18 @@ interface UseVirtualCompanyProgressReturn {
 }
 
 /**
- * 虚拟公司进度追踪 Hook
+ * AiTeam 创建进度追踪 Hook
  * 
  * 使用 Server-Sent Events (SSE) 实时接收进度更新
  */
-export function useVirtualCompanyProgress(
+export function useAiTeamCreationProgress(
   sessionId: string | null,
   options?: {
     autoReconnect?: boolean;
     maxRetries?: number;
     retryDelay?: number;
   }
-): UseVirtualCompanyProgressReturn {
+): UseAiTeamCreationProgressReturn {
   const [progress, setProgress] = useState<CreationProgress | null>(null);
   const [status, setStatus] = useState<SessionStatus | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -104,8 +104,8 @@ export function useVirtualCompanyProgress(
       
       // SSE EventSource 不支持自定义 header，通过 URL 参数传递 token
       const url = token 
-        ? `${API_URL}/virtual-company/sessions/${sessionId}/stream?token=${encodeURIComponent(token)}`
-        : `${API_URL}/virtual-company/sessions/${sessionId}/stream`;
+        ? `${API_URL}/aiteam-creation/sessions/${sessionId}/stream?token=${encodeURIComponent(token)}`
+        : `${API_URL}/aiteam-creation/sessions/${sessionId}/stream`;
       
       const eventSource = new EventSource(url);
       

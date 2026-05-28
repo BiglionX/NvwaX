@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { AlertTriangle, Loader2, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -20,11 +21,15 @@ export default function ConfirmDialog({
   onConfirm,
   title,
   message,
-  confirmText = '确认',
-  cancelText = '取消',
+  confirmText,
+  cancelText,
   variant = 'danger'
 }: ConfirmDialogProps) {
+  const t = useTranslations('confirmDialog');
   const [isConfirming, setIsConfirming] = useState(false);
+
+  const resolvedConfirmText = confirmText || t('confirm');
+  const resolvedCancelText = cancelText || t('cancel');
 
   if (!isOpen) return null;
 
@@ -91,7 +96,7 @@ export default function ConfirmDialog({
             disabled={isConfirming}
             className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium disabled:opacity-50"
           >
-            {cancelText}
+            {cancelText ? cancelText : resolvedCancelText}
           </button>
           <button
             onClick={handleConfirm}
@@ -101,10 +106,10 @@ export default function ConfirmDialog({
             {isConfirming ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
-                处理中...
+                {t('processing')}
               </>
             ) : (
-              confirmText
+              resolvedConfirmText
             )}
           </button>
         </div>

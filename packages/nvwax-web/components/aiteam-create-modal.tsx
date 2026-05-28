@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Send, Sparkles, Building2, Loader2 } from 'lucide-react';
+import { X, Send, Sparkles, Users, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-interface VirtualCompanyCreateModalProps {
+interface AiTeamCreateModalProps {
   onClose: () => void;
   onSuccess: (teamSkillId: string) => void;
 }
@@ -17,7 +18,8 @@ interface CreateRequest {
   isPublic?: boolean;
 }
 
-export default function VirtualCompanyCreateModal({ onClose, onSuccess }: VirtualCompanyCreateModalProps) {
+export default function AiTeamCreateModal({ onClose, onSuccess }: AiTeamCreateModalProps) {
+  const t = useTranslations('vcCreate');
   const [step, setStep] = useState<'input' | 'generating' | 'success'>('input');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,16 +29,15 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
     teamName: string;
   } | null>(null);
 
-  // 示例提示词
   const examples = [
-    '创建一个营销团队，负责社交媒体内容创作、数据分析和广告投放',
-    '组建一个全栈开发团队，包含前端、后端和DevOps工程师',
-    '建立一个设计工作室，专注于UI/UX设计和品牌视觉识别',
+    t('example1'),
+    t('example2'),
+    t('example3'),
   ];
 
   const handleSubmit = async () => {
     if (!description.trim()) {
-      setError('请输入需求描述');
+      setError(t('inputError'));
       return;
     }
 
@@ -55,7 +56,7 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
       };
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${API_URL}/nvwa/create-virtual-company`, {
+      const response = await fetch(`${API_URL}/nvwa/create-aiteam`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,7 +67,7 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || '创建失败');
+        throw new Error(data.error || t('createError'));
       }
 
       setResult({
@@ -75,8 +76,8 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
       });
       setStep('success');
     } catch (err) {
-      console.error('Error creating virtual company:', err);
-      setError(err instanceof Error ? err.message : '创建虚拟公司失败，请重试');
+      console.error('Error creating AiTeam:', err);
+      setError(err instanceof Error ? err.message : t('createError'));
       setStep('input');
     } finally {
       setIsSubmitting(false);
@@ -96,11 +97,11 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-linear-to-r from-blue-600 to-blue-700 rounded-lg">
-              <Building2 className="w-6 h-6 text-white" />
+              <Users className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">创建虚拟公司</h2>
-              <p className="text-sm text-gray-500">用自然语言描述你的 AI 团队需求</p>
+              <h2 className="text-xl font-bold text-gray-900">{t('title')}</h2>
+              <p className="text-sm text-gray-500">{t('subtitle')}</p>
             </div>
           </div>
           <button
@@ -118,12 +119,12 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
               {/* Description Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  描述你的需求
+                  {t('descriptionLabel')}
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="例如：我需要一个营销团队来管理社交媒体账号，创建内容，分析数据..."
+                  placeholder={t('placeholder')}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none min-h-30"
                   disabled={isSubmitting}
                 />
@@ -135,7 +136,7 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
               {/* Examples */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  💡 示例
+                  {t('examplesTitle')}
                 </label>
                 <div className="space-y-2">
                   {examples.map((example, index) => (
@@ -153,11 +154,11 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
 
               {/* Tips */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-blue-900 mb-2">💡 提示</h3>
+                <h3 className="text-sm font-semibold text-blue-900 mb-2">{t('tipTitle')}</h3>
                 <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                  <li>详细描述团队的主要职责和工作内容</li>
-                  <li>说明需要哪些专业角色（如设计师、开发者等）</li>
-                  <li>提及期望的输出成果和工作流程</li>
+                  <li>{t('tip1')}</li>
+                  <li>{t('tip2')}</li>
+                  <li>{t('tip3')}</li>
                 </ul>
               </div>
             </div>
@@ -168,10 +169,10 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
               <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  正在生成虚拟公司配置...
+                  {t('generatingTitle')}
                 </h3>
                 <p className="text-sm text-gray-500">
-                  AI 正在分析你的需求并组建合适的团队
+                  {t('generatingDesc')}
                 </p>
               </div>
             </div>
@@ -184,13 +185,13 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
               </div>
               <div className="text-center">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  🎉 虚拟公司创建成功！
+                  {t('successTitle')}
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  <span className="font-semibold">{result.teamName}</span> 已保存到市场
+                  <span className="font-semibold">{result.teamName}</span> {t('successDesc')}
                 </p>
                 <p className="text-sm text-gray-500">
-                  你可以在 Team Skills 中查看和管理这个虚拟公司
+                  {t('successHint')}
                 </p>
               </div>
             </div>
@@ -206,7 +207,7 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
                 disabled={isSubmitting}
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={handleSubmit}
@@ -214,7 +215,7 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
                 className="flex-1 px-4 py-2 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Send className="w-4 h-4" />
-                创建虚拟公司
+                {t('createButton')}
               </button>
             </div>
           )}
@@ -224,7 +225,7 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
               disabled
               className="w-full px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed"
             >
-              生成中...
+              {t('generatingButton')}
             </button>
           )}
 
@@ -234,13 +235,13 @@ export default function VirtualCompanyCreateModal({ onClose, onSuccess }: Virtua
                 onClick={onClose}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
               >
-                关闭
+                {t('close')}
               </button>
               <button
                 onClick={handleViewResult}
                 className="flex-1 px-4 py-2 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity"
               >
-                查看详情
+                {t('viewDetail')}
               </button>
             </div>
           )}

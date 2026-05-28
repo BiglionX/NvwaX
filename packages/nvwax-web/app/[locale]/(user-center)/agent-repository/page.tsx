@@ -13,7 +13,7 @@ import { agentApi } from '@/lib/api/agents';
 import { aiteamApi } from '@/lib/api/aiteams';
 import type { Agent } from '@/lib/api/agents';
 import type { AiTeam } from '@/lib/api/aiteams';
-import VirtualCompanyChatModal from '@/components/virtual-company-chat-modal';
+import AiTeamCreatorModal from '@/components/aiteam-creator-modal';
 
 type TabType = 'agents' | 'aiteams';
 
@@ -21,7 +21,7 @@ export default function AgentRepositoryPage() {
   const [activeTab, setActiveTab] = useState<TabType>('agents');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showVirtualCompanyModal, setShowVirtualCompanyModal] = useState(false);
+  const [showAiTeamCreateModal, setShowAiTeamCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({
     name: '',
     description: '',
@@ -186,10 +186,10 @@ export default function AgentRepositoryPage() {
         <div className="flex gap-3">
           <Button
             variant="primary"
-            onClick={() => setShowVirtualCompanyModal(true)}
+            onClick={() => setShowAiTeamCreateModal(true)}
             icon={<Building2 size={18} />}
           >
-            虚拟公司
+            创建 AiTeam
           </Button>
           <Button
             variant="primary"
@@ -283,12 +283,12 @@ export default function AgentRepositoryPage() {
         />
       )}
 
-      {/* 虚拟公司模态框 */}
-      {showVirtualCompanyModal && (
-        <VirtualCompanyChatModal 
-          onClose={() => setShowVirtualCompanyModal(false)}
+      {/* AiTeam 创建模态框 */}
+      {showAiTeamCreateModal && (
+        <AiTeamCreatorModal 
+          onClose={() => setShowAiTeamCreateModal(false)}
           onSuccess={() => {
-            setShowVirtualCompanyModal(false);
+            setShowAiTeamCreateModal(false);
             // 刷新数据
             queryClient.invalidateQueries({ queryKey: ['aiteams', userId] });
           }}

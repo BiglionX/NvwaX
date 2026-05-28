@@ -11,7 +11,8 @@ import {
   Users as UsersIcon,
   Loader2,
   Mail,
-  Calendar
+  Calendar,
+  Globe
 } from 'lucide-react';
 
 interface UserListResponse {
@@ -180,6 +181,7 @@ export default function AdminUsersPage() {
             <tr>
               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">用户</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">状态</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">社交绑定</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">注册时间</th>
               <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">操作</th>
             </tr>
@@ -225,6 +227,50 @@ export default function AdminUsersPage() {
                     )}
                   </td>
                   <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="group relative">
+                        <Globe size={18} className={user.socialAccounts?.some(sa => sa.provider === 'facebook') ? 'text-blue-500' : 'text-gray-300 dark:text-gray-600'} />
+                        {user.socialAccounts?.some(sa => sa.provider === 'facebook') ? (
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                            {user.socialAccounts?.find(sa => sa.provider === 'facebook')?.displayName || 'Facebook 已绑定'}
+                          </span>
+                        ) : (
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                            未绑定
+                          </span>
+                        )}
+                      </div>
+                      <div className="group relative">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.26H17.92C17.66 15.63 16.88 16.79 15.71 17.57V20.34H19.28C21.36 18.42 22.56 15.6 22.56 12.25Z" fill={user.socialAccounts?.some(sa => sa.provider === 'google') ? '#4285F4' : '#D1D5DB'}/>
+                          <path d="M12 23C14.97 23 17.46 21.98 19.28 20.34L15.71 17.57C14.73 18.22 13.45 18.62 12 18.62C9.12 18.62 6.68 16.67 5.81 14.08H2.13V16.92C3.93 20.46 7.62 23 12 23Z" fill={user.socialAccounts?.some(sa => sa.provider === 'google') ? '#34A853' : '#D1D5DB'}/>
+                          <path d="M5.81 14.08C5.58 13.38 5.44 12.63 5.44 11.87C5.44 11.11 5.58 10.36 5.81 9.66V6.82H2.13C1.37 8.32 0.94 10 0.94 11.87C0.94 13.74 1.37 15.42 2.13 16.92L5.81 14.08Z" fill={user.socialAccounts?.some(sa => sa.provider === 'google') ? '#FBBC05' : '#D1D5DB'}/>
+                          <path d="M12 5.12C13.58 5.12 15 5.69 16.09 6.72L19.35 3.46C17.44 1.68 14.96 0.75 12 0.75C7.62 0.75 3.93 3.29 2.13 6.82L5.81 9.66C6.68 7.07 9.12 5.12 12 5.12Z" fill={user.socialAccounts?.some(sa => sa.provider === 'google') ? '#EA4335' : '#D1D5DB'}/>
+                        </svg>
+                        {user.socialAccounts?.some(sa => sa.provider === 'google') ? (
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                            {user.socialAccounts?.find(sa => sa.provider === 'google')?.displayName || 'Google 已绑定'}
+                          </span>
+                        ) : (
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                            未绑定
+                          </span>
+                        )}
+                      </div>
+                      <div className="group relative">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-green-400 opacity-50">
+                          <path d="M8.5 11C9.32843 11 10 10.3284 10 9.5C10 8.67157 9.32843 8 8.5 8C7.67157 8 7 8.67157 7 9.5C7 10.3284 7.67157 11 8.5 11Z" fill="currentColor"/>
+                          <path d="M15.5 11C16.3284 11 17 10.3284 17 9.5C17 8.67157 16.3284 8 15.5 8C14.6716 8 14 8.67157 14 9.5C14 10.3284 14.6716 11 15.5 11Z" fill="currentColor"/>
+                          <path d="M12 2C6.477 2 2 6.037 2 10.5C2 12.772 3.12 14.832 4.93 16.291L4.22 19L7.194 17.151C8.704 17.695 10.31 18 12 18C12.34 18 12.677 17.982 13.012 17.948C12.686 17.154 12.5 16.292 12.5 15.5C12.5 12.462 15.462 9.5 18.5 9.5C19.057 9.5 19.594 9.571 20.108 9.704C19.307 5.28 16.013 2 12 2Z" fill="currentColor" fillOpacity="0.9"/>
+                          <path d="M18.5 11C16.015 11 14 13.015 14 15.5C14 17.985 16.015 20 18.5 20C19.22 20 19.91 19.862 20.54 19.62L22 20.5L21.5 19.15C22.4 18.48 23 17.56 23 16.5C23 15.12 21.68 14 20 13.5C20.34 12.62 20.5 12 20.5 11C18.5 11 18.5 11 18.5 11Z" fill="currentColor" fillOpacity="0.6"/>
+                        </svg>
+                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                          微信登录即将上线
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <Calendar size={16} />
                       {new Date(user.createdAt).toLocaleDateString('zh-CN')}
@@ -256,7 +302,7 @@ export default function AdminUsersPage() {
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                   <UsersIcon className="mx-auto mb-2 opacity-50" size={48} />
                   <p>暂无数据</p>
                 </td>

@@ -1,7 +1,7 @@
 import { CompatibilityScore } from './agent-compatibility.service.js';
 import { AgentService } from './agent.service.js';
 import { NvwaLeaderService } from './nvwa-leader.service.js';
-import { VirtualCompanyCreationService } from './virtual-company-creation.service.js';
+import { AiTeamCreationService } from './aiteam-creation.service.js';
 
 /**
  * Agent 复用决策结果
@@ -43,10 +43,10 @@ export interface RoleAgentConfig {
  * - 低匹配度或用户拒绝 → 创建新 Agent
  */
 export class AgentReuseService {
-  private creationService: VirtualCompanyCreationService;
+  private creationService: AiTeamCreationService;
 
   constructor() {
-    this.creationService = new VirtualCompanyCreationService();
+    this.creationService = new AiTeamCreationService();
   }
 
   /**

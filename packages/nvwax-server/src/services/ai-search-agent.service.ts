@@ -560,12 +560,12 @@ class AiSearchAgentService {
 
 搜索关键词：${analysis.keywords.join(', ')}
 Agent 搜索结果总数：${totalCount}
-${hasAiteams ? `AiTeam（虚拟公司）搜索结果数：${aiteamResults.length}` : ''}
+${hasAiteams ? `AiTeam 搜索结果数：${aiteamResults.length}` : ''}
 
 以下是 Agent 搜索结果的详细数据（JSON格式，前10条）：
 ${searchDataJson}
 ${hasAiteams ? `
-以下是 AiTeam（虚拟公司）搜索结果的详细数据（JSON格式）：
+以下是 AiTeam 搜索结果的详细数据（JSON格式）：
 ${aiteamDataJson}
 ` : ''}
 ${conversationContext ? `对话历史上下文：
@@ -575,8 +575,8 @@ ${conversationContext}` : ''}
 
 请基于以上搜索结果数据，用中文提供有深度、个性化的回复：
 1. 首先根据结果分析是否与用户需求匹配
-2. 推荐最相关的 2-3 个 Agent 或 AiTeam（虚拟公司），并说明**推荐理由**（基于描述、Stars、标签、成员数量等）
-3. ${hasAiteams ? '注意区分 Agent（单个智能体）和 AiTeam（虚拟公司/团队）的区别，用户可能需要的是团队协作方案' : '如果用户是细化需求（如"侧重xx方向"），基于已有的搜索结果进行筛选推荐'}
+2. 推荐最相关的 2-3 个 Agent 或 AiTeam，并说明**推荐理由**（基于描述、Stars、标签、成员数量等）
+3. ${hasAiteams ? '注意区分 Agent（单个智能体）和 AiTeam（团队）的区别，用户可能需要的是团队协作方案' : '如果用户是细化需求（如"侧重xx方向"），基于已有的搜索结果进行筛选推荐'}
 4. 回复要热情、有实质性内容，不要只说"找到X个结果"这种机械的统计
 5. 最后询问是否需要进一步细化`;
 

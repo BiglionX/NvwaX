@@ -67,7 +67,7 @@ ${JSON.stringify(data, null, 2)}
 返回 JSON 格式的审查结果，包含 passed、issues、suggestions、confidence 字段。
 `,
     final_config: `
-作为最终配置审查专家，请全面检查虚拟公司配置：
+作为最终配置审查专家，请全面检查 AiTeam 配置：
 
 配置数据:
 ${JSON.stringify(data, null, 2)}

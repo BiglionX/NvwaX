@@ -445,8 +445,36 @@ export class AdminController {
 
       const result = await userService.getAllUsers(page, limit, search);
       
+      // 获取这些用户的社交账号绑定信息
+      const userIds = result.data.map(u => u.id);
+      let socialByUser: Record<string, Array<{ provider: string; providerUserId: string; displayName?: string }>> = {};
+      
+      if (userIds.length > 0) {
+        const pool = databaseService.getPool();
+        const socialResult = await pool.query(`
+          SELECT user_id, provider, provider_user_id, display_name
+          FROM social_accounts
+          WHERE user_id = ANY($1::text[])
+          ORDER BY created_at DESC
+        `, [userIds]);
+
+        for (const row of socialResult.rows) {
+          if (!socialByUser[row.user_id]) {
+            socialByUser[row.user_id] = [];
+          }
+          socialByUser[row.user_id].push({
+            provider: row.provider,
+            providerUserId: row.provider_user_id,
+            displayName: row.display_name
+          });
+        }
+      }
+
       res.json({
-        data: result.data,
+        data: result.data.map(user => ({
+          ...user,
+          socialAccounts: socialByUser[user.id] || []
+        })),
         total: result.total,
         page,
         limit
@@ -454,6 +482,68 @@ export class AdminController {
     } catch (error) {
       console.error('Error fetching user list:', error);
       res.status(500).json({ error: 'Failed to fetch user list' });
+    }
+  }
+
+  /**
+   * 获取指定用户的社交账号绑定
+   */
+  async getUserSocialAccounts(req: Request, res: Response) {
+    try {
+      const userId = req.params.userId;
+
+      if (!userId || Array.isArray(userId)) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
+
+      const accounts = await userService.getUserSocialAccounts(userId);
+
+      res.json({
+        data: accounts.map(acc => ({
+          id: acc.id,
+          provider: acc.provider,
+          providerUserId: acc.provider_user_id,
+          providerEmail: acc.provider_email,
+          displayName: acc.display_name,
+          avatarUrl: acc.avatar_url,
+          createdAt: acc.created_at
+        }))
+      });
+    } catch (error) {
+      console.error('Error fetching user social accounts:', error);
+      res.status(500).json({ error: 'Failed to fetch user social accounts' });
+    }
+  }
+
+  /**
+   * 获取社交账号绑定统计
+   */
+  async getUserSocialStats(req: Request, res: Response) {
+    try {
+      const pool = databaseService.getPool();
+      const result = await pool.query(`
+        SELECT
+          provider,
+          COUNT(*) as count
+        FROM social_accounts
+        GROUP BY provider
+        ORDER BY count DESC
+      `);
+
+      const totalResult = await pool.query('SELECT COUNT(*) as total FROM social_accounts');
+
+      res.json({
+        data: {
+          total: parseInt(totalResult.rows[0].total),
+          breakdown: result.rows.map(row => ({
+            provider: row.provider,
+            count: parseInt(row.count)
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching social account stats:', error);
+      res.status(500).json({ error: 'Failed to fetch social account stats' });
     }
   }
 
@@ -758,18 +848,18 @@ export class AdminController {
     }
   }
 
-  // 获取虚拟公司打包任务列表
-  async getVirtualCompanyBuilds(req: Request, res: Response) {
+  // 获取 AiTeam 打包任务列表
+  async getAiTeamBuilds(req: Request, res: Response) {
     try {
       const jobs = teamSkillPackageService.getAllJobs();
-      
+        
       res.json({
         success: true,
         data: jobs,
         total: jobs.length
       });
     } catch (error) {
-      console.error('Error fetching virtual company builds:', error);
+      console.error('Error fetching AiTeam builds:', error);
       res.status(500).json({ error: 'Failed to fetch build jobs' });
     }
   }

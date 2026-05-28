@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { X, Copy, Check, Share2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -18,17 +19,20 @@ function generateShareText(
   teamDescription?: string,
   roles?: Array<{ role: string; specialty?: string }>,
   category?: string,
+  t?: (key: string, params?: Record<string, string | number>) => string,
 ): string {
   const lines: string[] = [];
 
-  const categoryLabel = category === 'virtual-company' ? 'AI虚拟公司' : 'AI团队技能';
-  lines.push(`🔥 发现了一个超强的${categoryLabel}！`);
+  const categoryLabel = category === 'aiteam'
+    ? (t ? t('categoryVirtualCompany') : 'AI团队')
+    : (t ? t('categoryTeamSkills') : 'AI团队技能');
+  lines.push(t ? t('generateLine1', { categoryLabel }) : `🔥 发现了一个超强的${categoryLabel}！`);
   lines.push('');
   lines.push(`【${teamName}】${teamDescription ? ` - ${teamDescription.slice(0, 100)}${teamDescription.length > 100 ? '…' : ''}` : ''}`);
   lines.push('');
 
   if (roles && roles.length > 0) {
-    lines.push(`包含 ${roles.length} 个专业角色：`);
+    lines.push(t ? t('rolesCount', { count: roles.length }) : `包含 ${roles.length} 个专业角色：`);
     roles.slice(0, 5).forEach((r) => {
       const emoji = getRoleEmoji(r.role);
       const desc = r.specialty ? ` - ${r.specialty}` : '';
@@ -37,11 +41,11 @@ function generateShareText(
     lines.push('');
   }
 
-  lines.push('由 NvwaX AI 自动生成，一键拥有专业AI团队，提升协作效率！');
+  lines.push(t ? t('generatedBy') : '由 NvwaX AI 自动生成，一键拥有专业AI团队，提升协作效率！');
   lines.push('');
-  lines.push(`👉 立即体验：https://nvwax.proclaw.cc/marketplace/team-skills/${teamName.replace(/\s+/g, '-').toLowerCase()}`);
+  lines.push(t ? t('experienceLink', { url: `https://nvwax.proclaw.cc/marketplace/team-skills/${teamName.replace(/\s+/g, '-').toLowerCase()}` }) : `👉 立即体验：https://nvwax.proclaw.cc/marketplace/team-skills/${teamName.replace(/\s+/g, '-').toLowerCase()}`);
   lines.push('');
-  lines.push('#AI团队 #NvwaX #效率工具 #AI虚拟公司');
+  lines.push(t ? t('hashtags') : '#AI团队 #NvwaX #效率工具 #AiTeam');
 
   return lines.join('\n');
 }
@@ -78,6 +82,7 @@ export default function ShareModal({
   roles,
   category,
 }: ShareModalProps) {
+  const t = useTranslations('shareModal');
   const pageUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/marketplace/team-skills/${teamId}`
     : '';
@@ -88,7 +93,7 @@ export default function ShareModal({
   // 当弹窗打开时生成分享文案
   useEffect(() => {
     if (isOpen) {
-      setShareText(generateShareText(teamName, teamDescription, roles, category));
+      setShareText(generateShareText(teamName, teamDescription, roles, category, t));
       setCopied(false);
     }
   }, [isOpen, teamName, teamDescription, roles, category]);
@@ -123,7 +128,7 @@ export default function ShareModal({
   if (!isOpen) return null;
 
   // 确保弹窗打开时有内容
-  const displayText = shareText || generateShareText(teamName, teamDescription, roles, category);
+  const displayText = shareText || generateShareText(teamName, teamDescription, roles, category, t);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -135,8 +140,8 @@ export default function ShareModal({
               <Share2 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">分享团队</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">复制文案分享给好友或社群</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('title')}</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
             </div>
           </div>
           <button
@@ -152,7 +157,7 @@ export default function ShareModal({
           {/* 可编辑文本框 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              分享文案（可编辑）
+              {t('shareLabel')}
             </label>
             <textarea
               ref={textareaRef}
@@ -160,19 +165,19 @@ export default function ShareModal({
               onChange={(e) => setShareText(e.target.value)}
               rows={10}
               className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
-              placeholder="生成分享文案中..."
+              placeholder={t('sharePlaceholder')}
             />
           </div>
 
           {/* 链接展示和复制 */}
           <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-            <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">🔗 链接：</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">{t('linkLabel')}</span>
             <code className="flex-1 text-xs text-blue-600 dark:text-blue-400 truncate">{pageUrl}</code>
             <button
               onClick={handleCopyLink}
               className="shrink-0 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-md transition-colors"
             >
-              复制链接
+              {t('copyLink')}
             </button>
           </div>
         </div>
@@ -183,7 +188,7 @@ export default function ShareModal({
             onClick={onClose}
             className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-colors"
           >
-            关闭
+            {t('close')}
           </button>
           <button
             onClick={handleCopy}
@@ -192,12 +197,12 @@ export default function ShareModal({
             {copied ? (
               <>
                 <Check size={18} />
-                已复制
+                {t('copied')}
               </>
             ) : (
               <>
                 <Copy size={18} />
-                复制全部文案
+                {t('copyAll')}
               </>
             )}
           </button>

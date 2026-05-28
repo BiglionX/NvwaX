@@ -14,10 +14,13 @@ import {
   MessageSquare
 } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 
 export default function TeamSkillDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const t = useTranslations('teamSkill');
+  const locale = useLocale();
 
   const { data, isLoading } = useQuery({
     queryKey: ['team-skill', id],
@@ -29,7 +32,7 @@ export default function TeamSkillDetailPage() {
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center py-12 text-gray-500">加载中...</div>
+        <div className="text-center py-12 text-gray-500">{t('loading')}</div>
       </div>
     );
   }
@@ -39,13 +42,13 @@ export default function TeamSkillDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Team Skill 未找到
+            {t('notFound')}
           </h2>
           <Link
             href="/team-skills"
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >
-            ← 返回模板市场
+            {t('backToMarket')}
           </Link>
         </div>
       </div>
@@ -60,7 +63,7 @@ export default function TeamSkillDetailPage() {
         className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors"
       >
         <ArrowLeft size={20} />
-        返回模板市场
+        {t('backToMarket2')}
       </Link>
 
       {/* Header */}
@@ -80,7 +83,7 @@ export default function TeamSkillDetailPage() {
               <div className="flex items-center gap-1 text-yellow-500">
                 <Star size={20} fill="currentColor" />
                 <span className="font-semibold">4.8</span>
-                <span className="text-gray-500 dark:text-gray-400">(128 评价)</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('reviews', { count: 128 })}</span>
               </div>
             </div>
 
@@ -98,7 +101,7 @@ export default function TeamSkillDetailPage() {
             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-2 whitespace-nowrap"
           >
             <CheckCircle size={20} />
-            应用到项目
+            {t('applyToProject')}
           </button>
         </div>
 
@@ -107,9 +110,9 @@ export default function TeamSkillDetailPage() {
           <div className="flex items-center gap-3">
             <Users className="text-blue-500" size={24} />
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">团队成员</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('teamMembers')}</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {skill.roles?.length || 0} 个角色
+                {t('roleCount', { count: skill.roles?.length || 0 })}
               </p>
             </div>
           </div>
@@ -117,9 +120,9 @@ export default function TeamSkillDetailPage() {
           <div className="flex items-center gap-3">
             <Zap className="text-orange-500" size={24} />
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">工作流步骤</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('workflowSteps')}</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {skill.workflow?.steps?.length || 0} 步
+                {t('stepsCount', { count: skill.workflow?.steps?.length || 0 })}
               </p>
             </div>
           </div>
@@ -127,7 +130,7 @@ export default function TeamSkillDetailPage() {
           <div className="flex items-center gap-3">
             <Calendar className="text-green-500" size={24} />
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">版本</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('version')}</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">
                 {skill.version}
               </p>
@@ -143,7 +146,7 @@ export default function TeamSkillDetailPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
               <Shield className="text-blue-500" size={24} />
-              Leader 配置
+              {t('leaderConfig')}
             </h2>
 
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6">
@@ -169,7 +172,7 @@ export default function TeamSkillDetailPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
               <Users className="text-blue-500" size={24} />
-              团队成员 ({skill.roles?.length || 0})
+              {t('teamMembersTitle', { count: skill.roles?.length || 0 })}
             </h2>
 
             <div className="space-y-4">
@@ -193,7 +196,7 @@ export default function TeamSkillDetailPage() {
 
                   {role.responsibilities && role.responsibilities.length > 0 && (
                     <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">职责</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{t('responsibilities')}</p>
                       <ul className="space-y-1">
                         {role.responsibilities.map((resp: string, rIdx: number) => (
                           <li key={rIdx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -213,7 +216,7 @@ export default function TeamSkillDetailPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
               <Zap className="text-orange-500" size={24} />
-              工作流程 ({skill.workflow?.steps?.length || 0} 步)
+              {t('workflowTitle', { count: skill.workflow?.steps?.length || 0 })}
             </h2>
 
             <div className="space-y-4">
@@ -236,13 +239,13 @@ export default function TeamSkillDetailPage() {
                       </h3>
                       
                       <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                        <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
                           <Users size={16} />
-                          <span>执行者: {step.performed_by}</span>
+                          <span>{t('executor', { name: step.performed_by })}</span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                           <CheckCircle size={16} />
-                          <span>产出: {step.output}</span>
+                          <span>{t('output', { name: step.output })}</span>
                         </div>
                       </div>
                     </div>
@@ -259,13 +262,13 @@ export default function TeamSkillDetailPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <MessageSquare className="text-green-500" size={20} />
-              协作规则
+              {t('collaborationRules')}
             </h3>
 
             <div className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  沟通协议
+                  {t('communicationProtocol')}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {skill.bindingRules?.communication_protocol}
@@ -274,7 +277,7 @@ export default function TeamSkillDetailPage() {
 
               <div>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  冲突解决
+                  {t('conflictResolution')}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {skill.bindingRules?.conflict_resolution}
@@ -283,7 +286,7 @@ export default function TeamSkillDetailPage() {
 
               <div>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  质量标准
+                  {t('qualityStandards')}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {skill.bindingRules?.quality_standards}
@@ -295,36 +298,36 @@ export default function TeamSkillDetailPage() {
           {/* Metadata */}
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              元数据
+              {t('metadata')}
             </h3>
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">版本</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('version')}</span>
                 <span className="text-gray-900 dark:text-white font-medium">{skill.version}</span>
               </div>
               
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">公开状态</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('publicStatus')}</span>
                 <span className={`font-medium ${skill.isPublic ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}`}>
-                  {skill.isPublic ? '公开' : '私有'}
+                  {skill.isPublic ? t('public') : t('private')}
                 </span>
               </div>
 
               {skill.createdAt && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">创建时间</span>
+                  <span className="text-gray-500 dark:text-gray-400">{t('createdAt')}</span>
                   <span className="text-gray-900 dark:text-white font-medium">
-                    {new Date(skill.createdAt).toLocaleDateString('zh-CN')}
+                    {new Date(skill.createdAt).toLocaleDateString(locale)}
                   </span>
                 </div>
               )}
 
               {skill.updatedAt && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">更新时间</span>
+                  <span className="text-gray-500 dark:text-gray-400">{t('updatedAt')}</span>
                   <span className="text-gray-900 dark:text-white font-medium">
-                    {new Date(skill.updatedAt).toLocaleDateString('zh-CN')}
+                    {new Date(skill.updatedAt).toLocaleDateString(locale)}
                   </span>
                 </div>
               )}
@@ -334,16 +337,16 @@ export default function TeamSkillDetailPage() {
           {/* CTA */}
           <div className="bg-linear-to-br from-blue-600 to-blue-700 rounded-xl p-6 text-white">
             <h3 className="text-xl font-bold mb-3">
-              准备好开始了吗？
+            {t('readyToStart')}
             </h3>
             <p className="text-blue-100 text-sm mb-4">
-              将此模板应用到您的项目，立即启动智能团队协作
+            {t('readyDesc')}
             </p>
             <button
               onClick={() => alert('即将实现：选择项目并应用此模板')}
               className="w-full px-4 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
             >
-              应用到项目
+              {t('applyBtn')}
             </button>
           </div>
         </div>

@@ -5,6 +5,7 @@ import type { Agent } from '@/lib/api/agents';
 import type { AiTeam } from '@/lib/api/aiteams';
 import { useState } from 'react';
 import { agentApi } from '@/lib/api/agents';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface DetailModalProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ export default function DetailModal({
   resourceType,
   resource
 }: DetailModalProps) {
+  const t = useTranslations('detailModal');
+  const locale = useLocale();
   const [showSkills, setShowSkills] = useState(true);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [agentDetails, setAgentDetails] = useState<Record<string, Agent>>({});
@@ -31,7 +34,7 @@ export default function DetailModal({
   const aiteam = !isAgent ? (resource as AiTeam) : null;
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('zh-CN', {
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -99,19 +102,19 @@ export default function DetailModal({
           <section>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <Settings size={20} className="text-gray-600 dark:text-gray-400" />
-              基本信息
+              {t('basicInfo')}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">名称</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('name')}</div>
                 <div className="font-medium text-gray-900 dark:text-white">{resource.name}</div>
               </div>
               <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">版本</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('version')}</div>
                 <div className="font-medium text-gray-900 dark:text-white">v{resource.version}</div>
               </div>
               <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">状态</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('status')}</div>
                 <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
                   resource.publishStatus === 'published' 
                     ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
@@ -119,15 +122,15 @@ export default function DetailModal({
                     ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
                 }`}>
-                  {resource.publishStatus === 'published' ? '已发布' : resource.publishStatus === 'draft' ? '草稿' : '私有'}
+                  {resource.publishStatus === 'published' ? t('published') : resource.publishStatus === 'draft' ? t('draft') : t('private')}
                 </span>
               </div>
               <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">类型</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('type')}</div>
                 <div className="font-medium text-gray-900 dark:text-white">
                   {isAgent 
-                    ? (agent?.type === 'single' ? '单个智能体' : '团队成员')
-                    : 'AI团队'
+                    ? (agent?.type === 'single' ? t('typeSingle') : t('typeMember'))
+                    : t('typeAiTeam')
                   }
                 </div>
               </div>
@@ -137,7 +140,7 @@ export default function DetailModal({
           {/* 描述 */}
           {resource.description && (
             <section>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">描述</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">{t('description')}</h3>
               <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                 <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                   {resource.description}
@@ -151,7 +154,7 @@ export default function DetailModal({
             <section>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                 <Tag size={20} className="text-gray-600 dark:text-gray-400" />
-                标签
+                {t('tags')}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {resource.tags.map((tag, index) => (
@@ -174,22 +177,22 @@ export default function DetailModal({
           <section>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <Star size={20} className="text-gray-600 dark:text-gray-400" />
-              统计信息
+              {t('stats')}
             </h3>
             <div className="grid grid-cols-3 gap-4">
               <div className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl text-center">
                 <Download className="mx-auto mb-2 text-blue-600 dark:text-blue-400" size={24} />
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">{resource.downloadCount}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">下载次数</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('downloads')}</div>
               </div>
               <div className="p-4 bg-linear-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-xl text-center">
                 <Star className="mx-auto mb-2 text-yellow-600 dark:text-yellow-400" size={24} />
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">{resource.rating.toFixed(1)}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">评分</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('rating')}</div>
               </div>
               <div className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl text-center">
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">{resource.reviewCount}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">评价数</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t('reviews')}</div>
               </div>
             </div>
           </section>
@@ -199,15 +202,15 @@ export default function DetailModal({
             <section>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <Users size={20} className="text-gray-600 dark:text-gray-400" />
-                执行统计
+                {t('execStats')}
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">执行次数</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('execCount')}</div>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">{aiteam.executionCount}</div>
                 </div>
                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">成功率</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('successRate')}</div>
                   <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                     {aiteam.successRate.toFixed(1)}%
                   </div>
@@ -217,7 +220,7 @@ export default function DetailModal({
               {/* 成员列表 */}
               {aiteam.members && aiteam.members.length > 0 && (
                 <div className="mt-4">
-                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-3">团队成员</h4>
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-3">{t('teamMembers')}</h4>
                   <div className="space-y-2">
                     {aiteam.members.map((member, index) => {
                       const isSelected = selectedAgentId === member.agentId;
@@ -251,12 +254,12 @@ export default function DetailModal({
                               )}
                               {isLoading && (
                                 <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 animate-pulse">
-                                  加载中...
+                                  {t('loading')}
                                 </div>
                               )}
                               {!isLoading && agentDetail?.skills && agentDetail.skills.length > 0 && (
                                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                  {agentDetail.skills.length} 个 Skills
+                                  {t('skillsCount', { count: agentDetail.skills.length })}
                                 </div>
                               )}
                             </div>
@@ -277,17 +280,17 @@ export default function DetailModal({
           <section>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <Calendar size={20} className="text-gray-600 dark:text-gray-400" />
-              时间信息
+              {t('timeInfo')}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">创建时间</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('createdAt')}</div>
                 <div className="font-medium text-gray-900 dark:text-white">
                   {formatDate(resource.createdAt)}
                 </div>
               </div>
               <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">更新时间</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('updatedAt')}</div>
                 <div className="font-medium text-gray-900 dark:text-white">
                   {formatDate(resource.updatedAt)}
                 </div>
@@ -312,7 +315,7 @@ export default function DetailModal({
                     <div className="flex items-center gap-2">
                       <Zap className="text-blue-600 dark:text-blue-400" size={20} />
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {!isAgent && selectedAgentId ? 'Agent Skills' : '使用的 Skills'}
+                        {!isAgent && selectedAgentId ? t('agentSkills') : t('usedSkills')}
                       </h3>
                       <span className="px-2 py-1 bg-blue-600 dark:bg-blue-500 text-white text-xs rounded-full">
                         {!isAgent && selectedAgentId 
@@ -350,7 +353,7 @@ export default function DetailModal({
                                   {skill}
                                 </div>
                                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                  Skill #{index + 1}
+                                  {t('skillLabel', { index: index + 1 })}
                                 </div>
                               </div>
                             </div>
@@ -371,7 +374,7 @@ export default function DetailModal({
             onClick={onClose}
             className="w-full px-4 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition-all shadow-md hover:shadow-lg font-medium"
           >
-            关闭
+            {t('close')}
           </button>
         </div>
       </div>

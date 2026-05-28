@@ -47,6 +47,12 @@ export interface Admin {
   lastLogin?: string;
 }
 
+export interface SocialAccountSummary {
+  provider: string;
+  providerUserId: string;
+  displayName?: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -55,6 +61,7 @@ export interface User {
   bio?: string;
   isBanned?: boolean;
   banReason?: string;
+  socialAccounts?: SocialAccountSummary[];
   createdAt: string;
   updatedAt: string;
 }
@@ -193,6 +200,18 @@ export const adminApi = {
     return response.data;
   },
 
+  // 获取用户社交账号绑定
+  getUserSocialAccounts: async (userId: string) => {
+    const response = await api.get(`/admin/users/${userId}/social-accounts`);
+    return response.data;
+  },
+
+  // 获取社交账号绑定统计
+  getUserSocialStats: async () => {
+    const response = await api.get('/admin/users/social-stats');
+    return response.data.data;
+  },
+
   // ========== 项目管理 ==========
 
   // 获取项目列表（分页）
@@ -258,8 +277,8 @@ export const adminApi = {
     return response.data;
   },
 
-  // 获取虚拟公司打包任务列表
-  getVirtualCompanyBuilds: async () => {
+  // 获取 AiTeam 打包任务列表
+  getAiTeamBuilds: async () => {
     const response = await api.get('/admin/virtual-companies/builds');
     return response.data;
   },

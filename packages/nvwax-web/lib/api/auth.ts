@@ -55,6 +55,26 @@ export interface AuthResponse {
   };
 }
 
+export interface SocialAccountInfo {
+  id: string;
+  provider: 'facebook' | 'wechat' | 'github' | 'google';
+  providerUserId: string;
+  providerEmail?: string;
+  displayName?: string;
+  avatarUrl?: string;
+  createdAt: string;
+}
+
+export interface SocialLoginResponse {
+  success: boolean;
+  data?: {
+    token: string;
+    user: User;
+    isNewUser: boolean;
+  };
+  error?: { code: string; message: string };
+}
+
 export const authApi = {
   // 注册
   register: async (email: string, password: string, name?: string): Promise<AuthResponse> => {
@@ -68,9 +88,39 @@ export const authApi = {
     return response.data;
   },
 
+  // Facebook 登录
+  facebookLogin: async (accessToken: string): Promise<SocialLoginResponse> => {
+    const response = await api.post('/auth/facebook/login', { accessToken });
+    return response.data;
+  },
+
+  // Google 登录
+  googleLogin: async (credential: string): Promise<SocialLoginResponse> => {
+    const response = await api.post('/auth/google/login', { credential });
+    return response.data;
+  },
+
   // 获取当前用户信息
   getProfile: async (): Promise<User> => {
     const response = await api.get('/auth/profile');
+    return response.data;
+  },
+
+  // 获取当前用户绑定的社交账号
+  getSocialAccounts: async (): Promise<{ success: boolean; data: SocialAccountInfo[] }> => {
+    const response = await api.get('/auth/social/accounts');
+    return response.data;
+  },
+
+  // 绑定社交账号
+  bindSocialAccount: async (provider: string, accessToken: string): Promise<{ success: boolean; message?: string }> => {
+    const response = await api.post('/auth/social/bind', { provider, accessToken });
+    return response.data;
+  },
+
+  // 解绑社交账号
+  unbindSocialAccount: async (provider: string, providerUserId: string): Promise<{ success: boolean; message?: string }> => {
+    const response = await api.post('/auth/social/unbind', { provider, providerUserId });
     return response.data;
   },
 

@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "NvwaX - AI Agent & 虚拟公司 制造工厂";
+export const alt = "NvwaX - AI Agent & AiTeam 制造工厂";
 
 export default async function Image() {
   return new ImageResponse(
@@ -85,7 +85,7 @@ export default async function Image() {
             letterSpacing: "2px",
           }}
         >
-          AI Agent & 虚拟公司 制造工厂
+          AI Agent & AiTeam 制造工厂
         </div>
 
         {/* 底部标签行 */}

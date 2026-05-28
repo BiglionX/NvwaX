@@ -7,8 +7,10 @@ import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
 import { Users, Plus, ArrowLeft, Calendar, LayoutGrid, TrendingUp, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function ProjectDetailPage() {
+  const t = useTranslations('project');
   const params = useParams();
   const queryClient = useQueryClient();
   const projectId = params.projectId as string;
@@ -53,7 +55,7 @@ export default function ProjectDetailPage() {
   if (loadingProject || loadingTeams) {
     return (
       <div className="max-w-6xl mx-auto">
-        <div className="text-center py-12 text-gray-500">加载中...</div>
+        <div className="text-center py-12 text-gray-500">{t('loading')}</div>
       </div>
     );
   }
@@ -67,7 +69,7 @@ export default function ProjectDetailPage() {
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
         >
           <ArrowLeft size={16} />
-          返回项目列表
+          {t('backToList')}
         </Link>
       </div>
 
@@ -87,14 +89,14 @@ export default function ProjectDetailPage() {
             className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-lg transition-all shadow-md"
           >
             <LayoutGrid size={20} />
-            从模板创建
+            {t('createFromTemplate')}
           </button>
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
           >
             <Plus size={20} />
-            创建 AiTeam
+            {t('createAiTeam')}
           </button>
         </div>
       </div>
@@ -109,10 +111,10 @@ export default function ProjectDetailPage() {
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
               <Zap className="text-white" size={24} />
             </div>
-            <h3 className="text-lg font-semibold">使用 Nvwa 智能体工厂</h3>
+            <h3 className="text-lg font-semibold">{t('useNvwaFactory')}</h3>
           </div>
           <p className="text-indigo-100 text-sm">
-            通过对话式需求分析，自动生成专属团队配置
+            {t('useNvwaDesc')}
           </p>
         </Link>
 
@@ -124,10 +126,10 @@ export default function ProjectDetailPage() {
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
               <TrendingUp className="text-white" size={24} />
             </div>
-            <h3 className="text-lg font-semibold">浏览 Team Skills 模板</h3>
+            <h3 className="text-lg font-semibold">{t('browseTemplates')}</h3>
           </div>
           <p className="text-orange-100 text-sm">
-            选择现成的团队协作模板，一键应用到项目
+            {t('browseTemplatesDesc')}
           </p>
         </button>
       </div>
@@ -157,7 +159,7 @@ export default function ProjectDetailPage() {
 
             <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
               <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                查看团队 →
+                {t('viewTeam')}
               </span>
             </div>
           </Link>
@@ -167,22 +169,22 @@ export default function ProjectDetailPage() {
       {!teams?.length && (
         <div className="text-center py-12">
           <Users className="mx-auto text-gray-400 mb-4" size={64} />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">暂无 AiTeam</h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-4">创建您的第一个 AiTeam 开始组织 Agent 团队</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('noTeams')}</h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">{t('noTeamsDesc')}</p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => setShowTemplateModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-lg transition-all"
             >
               <LayoutGrid size={20} />
-              从模板创建
+              {t('createFromTemplate')}
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               <Plus size={20} />
-              创建 AiTeam
+              {t('createAiTeam')}
             </button>
           </div>
         </div>
@@ -192,18 +194,18 @@ export default function ProjectDetailPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">创建新 AiTeam</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('createTeamTitle')}</h2>
             <form onSubmit={handleCreateTeam}>
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  团队名称 *
+                  {t('teamNameRequired')}
                 </label>
                 <input
                   type="text"
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
                   className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                  placeholder="输入团队名称"
+                  placeholder={t('teamNamePlaceholder')}
                   required
                 />
               </div>
@@ -214,14 +216,14 @@ export default function ProjectDetailPage() {
                   onClick={() => setShowCreateModal(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
-                  取消
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
                 >
-                  {createMutation.isPending ? '创建中...' : '创建'}
+                  {createMutation.isPending ? t('creating') : t('create')}
                 </button>
               </div>
             </form>
@@ -234,7 +236,7 @@ export default function ProjectDetailPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">选择 Team Skill 模板</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('selectTemplate')}</h2>
               <button
                 onClick={() => setShowTemplateModal(false)}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -244,7 +246,7 @@ export default function ProjectDetailPage() {
             </div>
 
             {loadingTemplates ? (
-              <div className="text-center py-8 text-gray-500">加载中...</div>
+              <div className="text-center py-8 text-gray-500">{t('templateLoading')}</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {templatesData?.data?.data?.map((template: TeamSkill) => (
@@ -276,9 +278,9 @@ export default function ProjectDetailPage() {
                     </p>
 
                     <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                      <span>{template.roles?.length || 0} 个角色</span>
+                      <span>{t('rolesCount', { count: template.roles?.length || 0 })}</span>
                       <span>•</span>
-                      <span>{template.workflow?.steps?.length || 0} 个工作流步骤</span>
+                      <span>{t('workflowStepsCount', { count: template.workflow?.steps?.length || 0 })}</span>
                     </div>
                   </div>
                 ))}
@@ -289,14 +291,14 @@ export default function ProjectDetailPage() {
               <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    团队名称 *
+                    {t('teamNameRequired')}
                   </label>
                   <input
                     type="text"
                     value={newTeamName}
                     onChange={(e) => setNewTeamName(e.target.value)}
                     className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 text-gray-900 dark:text-white"
-                    placeholder={`例如：${selectedTemplate.name}团队`}
+                    placeholder={t('templateNamePlaceholder', { name: selectedTemplate.name })}
                   />
                 </div>
 
@@ -309,23 +311,23 @@ export default function ProjectDetailPage() {
                     }}
                     className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
-                    取消
+                    {t('cancel')}
                   </button>
                   <button
                     onClick={() => {
                       if (!newTeamName.trim()) {
-                        alert('请输入团队名称');
+                        alert(t('alertTeamName'));
                         return;
                       }
                       // TODO: 实现从模板创建团队的逻辑
-                      alert(`即将使用模板 "${selectedTemplate.name}" 创建团队 "${newTeamName}"`);
+                      alert(t('alertCreating', { name: selectedTemplate.name, teamName: newTeamName }));
                       setShowTemplateModal(false);
                       setSelectedTemplate(null);
                       setNewTeamName('');
                     }}
                     className="flex-1 px-4 py-2 bg-linear-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-lg transition-all"
                   >
-                    应用模板并创建
+                    {t('applyAndCreate')}
                   </button>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { virtualCompanyCreationService } from '../services/virtual-company-creation.service.js';
+import { aiteamCreationService } from '../services/aiteam-creation.service.js';
 import { ceoAgentService } from '../services/ceo-agent.service.js';
 import { nvwaxAgentService } from '../services/nvwax-agent.service.js';
 import { agentReuseService } from '../services/agent-reuse.service.js';
@@ -8,15 +8,15 @@ import { databaseService } from '../services/database.service.js';
 import { nvwaxMemoryService } from '../services/nvwax-memory.service.js';
 
 /**
- * 虚拟公司创建控制器
+ * AiTeam 创建控制器
  * 
- * 处理虚拟公司创建会话相关的 HTTP 请求
+ * 处理 AiTeam 创建会话相关的 HTTP 请求
  */
-export class VirtualCompanyCreationController {
+export class AiTeamCreationController {
   
   /**
-   * 创建新的虚拟公司创建会话
-   * POST /api/virtual-company/sessions
+   * 创建新的 AiTeam 创建会话
+   * POST /api/aiteam-creation/sessions
    */
   async createSession(req: Request, res: Response) {
     try {
@@ -30,14 +30,14 @@ export class VirtualCompanyCreationController {
         });
       }
       
-      const session = await virtualCompanyCreationService.createSession(userId);
+      const session = await aiteamCreationService.createSession(userId);
       
       res.status(201).json({
         success: true,
         data: session
       });
     } catch (error) {
-      console.error('Error creating virtual company session:', error);
+      console.error('Error creating aiteam creation session:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to create session'
@@ -47,14 +47,14 @@ export class VirtualCompanyCreationController {
 
   /**
    * 获取会话详情
-   * GET /api/virtual-company/sessions/:id
+   * GET /api/aiteam-creation/sessions/:id
    */
   async getSession(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const sessionId = Array.isArray(id) ? id[0] : id;
       
-      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      const session = await aiteamCreationService.getSessionById(sessionId);
       
       if (!session) {
         return res.status(404).json({
@@ -78,7 +78,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * 获取用户的所有会话
-   * GET /api/virtual-company/sessions
+   * GET /api/aiteam-creation/sessions
    */
   async getUserSessions(req: Request, res: Response) {
     try {
@@ -94,7 +94,7 @@ export class VirtualCompanyCreationController {
       const limit = parseInt(req.query.limit as string) || 10;
       const offset = parseInt(req.query.offset as string) || 0;
       
-      const sessions = await virtualCompanyCreationService.getUserSessions(userId, limit, offset);
+      const sessions = await aiteamCreationService.getUserSessions(userId, limit, offset);
       
       res.json({
         success: true,
@@ -111,7 +111,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * 发送消息到会话（与 NvwaX Agent 对话）
-   * POST /api/virtual-company/sessions/:id/message
+   * POST /api/aiteam-creation/sessions/:id/message
    */
   async sendMessage(req: Request, res: Response) {
     try {
@@ -127,7 +127,7 @@ export class VirtualCompanyCreationController {
       }
       
       // 验证会话存在
-      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      const session = await aiteamCreationService.getSessionById(sessionId);
       if (!session) {
         return res.status(404).json({
           success: false,
@@ -158,7 +158,7 @@ export class VirtualCompanyCreationController {
       
       // 保存 NvwaX 分析结果到会话
       if (nvwaxResponse.analysisResult) {
-        await virtualCompanyCreationService.updateRequirements(
+        await aiteamCreationService.updateRequirements(
           sessionId,
           nvwaxResponse.analysisResult as any
         );
@@ -167,13 +167,13 @@ export class VirtualCompanyCreationController {
       // 保存团队设计
       if (nvwaxResponse.teamDesign) {
         // 保存团队设计到数据库
-        await virtualCompanyCreationService.updateTeamDesign(
+        await aiteamCreationService.updateTeamDesign(
           sessionId,
           nvwaxResponse.teamDesign
         );
         
         // 更新进度
-        await virtualCompanyCreationService.updateProgress(sessionId, {
+        await aiteamCreationService.updateProgress(sessionId, {
           currentStep: 2,
           percentage: 28,
           steps: [
@@ -202,7 +202,7 @@ export class VirtualCompanyCreationController {
       const newStatus = phaseToStatusMap[nvwaxResponse.phase];
       if (newStatus && newStatus !== session.status) {
         console.log(`🔄 Updating session ${sessionId} status from ${session.status} to ${newStatus}`);
-        await virtualCompanyCreationService.updateStatus(sessionId, newStatus as any);
+        await aiteamCreationService.updateStatus(sessionId, newStatus as any);
       }
       
       // 广播进度更新（SSE 服务会自动从数据库读取最新状态）
@@ -233,7 +233,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * 更新需求信息
-   * PUT /api/virtual-company/sessions/:id/requirements
+   * PUT /api/aiteam-creation/sessions/:id/requirements
    */
   async updateRequirements(req: Request, res: Response) {
     try {
@@ -241,7 +241,7 @@ export class VirtualCompanyCreationController {
       const sessionId = Array.isArray(id) ? id[0] : id;
       const requirements = req.body;
       
-      await virtualCompanyCreationService.updateRequirements(sessionId, requirements);
+      await aiteamCreationService.updateRequirements(sessionId, requirements);
       
       res.json({
         success: true,
@@ -258,7 +258,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * 更新选定的角色
-   * PUT /api/virtual-company/sessions/:id/roles
+   * PUT /api/aiteam-creation/sessions/:id/roles
    */
   async updateRoles(req: Request, res: Response) {
     try {
@@ -273,7 +273,7 @@ export class VirtualCompanyCreationController {
         });
       }
       
-      await virtualCompanyCreationService.updateSelectedRoles(sessionId, roles);
+      await aiteamCreationService.updateSelectedRoles(sessionId, roles);
       
       res.json({
         success: true,
@@ -290,14 +290,14 @@ export class VirtualCompanyCreationController {
 
   /**
    * 获取会话进度（用于 SSE）
-   * GET /api/virtual-company/sessions/:id/progress
+   * GET /api/aiteam-creation/sessions/:id/progress
    */
   async getProgress(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const sessionId = Array.isArray(id) ? id[0] : id;
       
-      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      const session = await aiteamCreationService.getSessionById(sessionId);
       
       if (!session) {
         return res.status(404).json({
@@ -330,7 +330,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * 删除会话
-   * DELETE /api/virtual-company/sessions/:id
+   * DELETE /api/aiteam-creation/sessions/:id
    */
   async deleteSession(req: Request, res: Response) {
     try {
@@ -345,7 +345,7 @@ export class VirtualCompanyCreationController {
         });
       }
       
-      const deleted = await virtualCompanyCreationService.deleteSession(sessionId, userId);
+      const deleted = await aiteamCreationService.deleteSession(sessionId, userId);
       
       if (!deleted) {
         return res.status(404).json({
@@ -376,7 +376,7 @@ export class VirtualCompanyCreationController {
     
     switch (session.status) {
       case 'initiated':
-        return '您好！我是您的虚拟公司 CEO。请问您需要创建什么类型的团队？例如：营销团队、开发团队、设计团队等。';
+        return '您好！我是您的 AiTeam 创建助手。请问您需要创建什么类型的团队？例如：营销团队、开发团队、设计团队等。';
       
       case 'requirements_gathering':
         return '明白了！接下来我需要了解一些细节。您希望这个团队主要负责什么工作？有哪些具体的目标或产出？';
@@ -395,7 +395,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * 触发 Agent 复用决策
-   * POST /api/virtual-company/sessions/:id/decide-agents
+   * POST /api/aiteam-creation/sessions/:id/decide-agents
    */
   async decideAgents(req: Request, res: Response) {
     try {
@@ -411,7 +411,7 @@ export class VirtualCompanyCreationController {
       }
       
       // 获取会话中的角色配置
-      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      const session = await aiteamCreationService.getSessionById(sessionId);
       if (!session) {
         return res.status(404).json({
           success: false,
@@ -457,7 +457,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * 用户手动确认 Agent 决策
-   * POST /api/virtual-company/sessions/:id/confirm-agent
+   * POST /api/aiteam-creation/sessions/:id/confirm-agent
    */
   async confirmAgentDecision(req: Request, res: Response) {
     try {
@@ -502,7 +502,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * 获取 Agent 决策摘要
-   * GET /api/virtual-company/sessions/:id/agent-decisions
+   * GET /api/aiteam-creation/sessions/:id/agent-decisions
    */
   async getAgentDecisions(req: Request, res: Response) {
     try {
@@ -526,7 +526,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * SSE 进度追踪
-   * GET /api/virtual-company/sessions/:id/stream
+   * GET /api/aiteam-creation/sessions/:id/stream
    */
   async streamProgress(req: Request, res: Response) {
     try {
@@ -534,7 +534,7 @@ export class VirtualCompanyCreationController {
       const sessionId = Array.isArray(id) ? id[0] : id;
       
       // 验证会话存在
-      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      const session = await aiteamCreationService.getSessionById(sessionId);
       if (!session) {
         return res.status(404).json({
           success: false,
@@ -560,7 +560,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * 手动触发进度广播（用于测试）
-   * POST /api/virtual-company/sessions/:id/broadcast
+   * POST /api/aiteam-creation/sessions/:id/broadcast
    */
   async broadcastProgress(req: Request, res: Response) {
     try {
@@ -589,7 +589,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * 确认并保存团队到用户中心
-   * POST /api/virtual-company/sessions/:id/confirm
+   * POST /api/aiteam-creation/sessions/:id/confirm
    */
   async confirmAndSaveTeam(req: Request, res: Response) {
     try {
@@ -608,7 +608,7 @@ export class VirtualCompanyCreationController {
       console.log(`✅ Confirming and saving team for session ${sessionId}...`);
 
       // 获取会话
-      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      const session = await aiteamCreationService.getSessionById(sessionId);
       if (!session) {
         return res.status(404).json({
           success: false,
@@ -619,7 +619,7 @@ export class VirtualCompanyCreationController {
       // 获取完整的团队配置
       const pool = databaseService.getPool();
       const result = await pool.query(
-        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM virtual_company_sessions WHERE id = $1',
+        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM aiteam_creation_sessions WHERE id = $1',
         [sessionId]
       );
 
@@ -644,8 +644,8 @@ export class VirtualCompanyCreationController {
       }
 
       // 更新会话状态为 completed
-      await virtualCompanyCreationService.updateStatus(sessionId, 'completed');
-      await virtualCompanyCreationService.updateProgress(sessionId, {
+      await aiteamCreationService.updateStatus(sessionId, 'completed');
+      await aiteamCreationService.updateProgress(sessionId, {
         currentStep: 7,
         percentage: 100,
         steps: [
@@ -681,8 +681,8 @@ export class VirtualCompanyCreationController {
       if (documentPackage) {
         // 保存文档包 URL
         await pool.query(
-          'UPDATE virtual_company_sessions SET document_package_url = $1 WHERE id = $2',
-          [`/api/virtual-company/sessions/${sessionId}/download`, sessionId]
+          'UPDATE aiteam_creation_sessions SET document_package_url = $1 WHERE id = $2',
+          [`/api/aiteam-creation/sessions/${sessionId}/download`, sessionId]
         );
       }
 
@@ -693,7 +693,7 @@ export class VirtualCompanyCreationController {
         data: {
           sessionId,
           documentPackage,
-          downloadUrl: `/api/virtual-company/sessions/${sessionId}/download`,
+          downloadUrl: `/api/aiteam-creation/sessions/${sessionId}/download`,
           message: '团队已保存到用户中心，文档包已生成'
         }
       });
@@ -708,7 +708,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * 下载文档包
-   * GET /api/virtual-company/sessions/:id/download
+   * GET /api/aiteam-creation/sessions/:id/download
    */
   async downloadDocumentPackage(req: Request, res: Response) {
     try {
@@ -727,7 +727,7 @@ export class VirtualCompanyCreationController {
       console.log(` Downloading document package for session ${sessionId}...`);
 
       // 获取会话
-      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      const session = await aiteamCreationService.getSessionById(sessionId);
       if (!session || session.userId !== userId) {
         return res.status(404).json({
           success: false,
@@ -738,7 +738,7 @@ export class VirtualCompanyCreationController {
       // 获取完整的团队配置
       const pool = databaseService.getPool();
       const result = await pool.query(
-        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM virtual_company_sessions WHERE id = $1',
+        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM aiteam_creation_sessions WHERE id = $1',
         [sessionId]
       );
 
@@ -781,8 +781,8 @@ export class VirtualCompanyCreationController {
       }
 
       // 生成 ZIP 文件
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
+      const JSzip = (await import('jszip')).default;
+      const zip = new JSzip();
 
       // 添加所有文档到 ZIP
       for (const doc of documentPackage.documents) {
@@ -812,7 +812,8 @@ export class VirtualCompanyCreationController {
 
   /**
    * 集成到ProClaw
-   * POST /api/virtual-company/sessions/:id/integrate-proclaw
+   * POST /api/aiteam-creation/sessions/:id/integrate-proclaw
+   * TODO: ProClaw 功能尚未完善，保留接口为占位
    */
   async integrateToProClaw(req: Request, res: Response) {
     try {
@@ -831,7 +832,7 @@ export class VirtualCompanyCreationController {
       console.log(` Integrating team to ProClaw for session ${sessionId}...`);
 
       // 获取会话
-      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      const session = await aiteamCreationService.getSessionById(sessionId);
       if (!session || session.userId !== userId) {
         return res.status(404).json({
           success: false,
@@ -842,7 +843,7 @@ export class VirtualCompanyCreationController {
       // 获取完整的团队配置
       const pool = databaseService.getPool();
       const result = await pool.query(
-        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM virtual_company_sessions WHERE id = $1',
+        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM aiteam_creation_sessions WHERE id = $1',
         [sessionId]
       );
 
@@ -864,18 +865,18 @@ export class VirtualCompanyCreationController {
         });
       }
 
-      // TODO: 实际实现 ProClaw 集成逻辑
-      // 目前返回模拟数据
+      // TODO: ProClaw 功能尚未完善，目前返回模拟数据
+      // 后续实现：导出 AiTeam 配置文件到 ProClaw 桌面端
       const proclawTeamId = `proclaw_team_${Date.now()}`;
       
-      console.log(`✅ Team integrated to ProClaw: ${proclawTeamId}`);
+      console.log(`✅ Team integrated to ProClaw: ${proclawTeamId} (TODO: 待完善)`);
 
       res.json({
         success: true,
         data: {
           proclawTeamId,
           sessionId,
-          message: '团队已成功集成到 ProClaw'
+          message: '团队已成功集成到 ProClaw（功能开发中）'
         }
       });
     } catch (error) {
@@ -889,7 +890,7 @@ export class VirtualCompanyCreationController {
 
   /**
    * 触发 NvwaX 完整匹配流程（Agent + Skill）
-   * POST /api/virtual-company/sessions/:id/nvwax-match
+   * POST /api/aiteam-creation/sessions/:id/nvwax-match
    */
   async triggerNvwaXMatch(req: Request, res: Response) {
     try {
@@ -897,7 +898,7 @@ export class VirtualCompanyCreationController {
       const sessionId = Array.isArray(id) ? id[0] : id;
       
       // 验证会话存在
-      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      const session = await aiteamCreationService.getSessionById(sessionId);
       if (!session) {
         return res.status(404).json({
           success: false,
@@ -908,8 +909,8 @@ export class VirtualCompanyCreationController {
       console.log(`🚀 Triggering NvwaX match for session ${sessionId}`);
       
       // 更新状态为 agent_searching
-      await virtualCompanyCreationService.updateStatus(sessionId, 'agent_searching');
-      await virtualCompanyCreationService.updateStepStatus(
+      await aiteamCreationService.updateStatus(sessionId, 'agent_searching');
+      await aiteamCreationService.updateStepStatus(
         sessionId,
         3,
         'in_progress',
@@ -954,7 +955,7 @@ export class VirtualCompanyCreationController {
             // 保存 CEO 配置到数据库
             const pool = databaseService.getPool();
             await pool.query(
-              'UPDATE virtual_company_sessions SET ceo_config = $1 WHERE id = $2',
+              'UPDATE aiteam_creation_sessions SET ceo_config = $1 WHERE id = $2',
               [JSON.stringify(ceoConfig), sessionId]
             );
             
@@ -973,7 +974,7 @@ export class VirtualCompanyCreationController {
       const agentMatches = await nvwaxAgentService.matchAgentsForTeam(teamDesign);
       
       // 保存 Agent 匹配结果
-      await virtualCompanyCreationService.updateProgress(sessionId, {
+      await aiteamCreationService.updateProgress(sessionId, {
         currentStep: 3,
         percentage: 42,
         steps: [
@@ -988,7 +989,7 @@ export class VirtualCompanyCreationController {
       });
       
       // 更新状态为 skill_matching
-      await virtualCompanyCreationService.updateStatus(sessionId, 'skill_matching');
+      await aiteamCreationService.updateStatus(sessionId, 'skill_matching');
       
       // 广播进度更新
       sseProgressService.broadcastProgress(sessionId).catch(err => {
@@ -1000,7 +1001,7 @@ export class VirtualCompanyCreationController {
       const skillMatches = await nvwaxAgentService.matchSkillsForTeam(teamDesign);
       
       // 保存 Skill 匹配结果
-      await virtualCompanyCreationService.updateProgress(sessionId, {
+      await aiteamCreationService.updateProgress(sessionId, {
         currentStep: 4,
         percentage: 57,
         steps: [
@@ -1015,13 +1016,13 @@ export class VirtualCompanyCreationController {
       });
       
       // 更新状态为 confirming
-      await virtualCompanyCreationService.updateStatus(sessionId, 'confirming');
+      await aiteamCreationService.updateStatus(sessionId, 'confirming');
       
       // 保存完整的团队配置到数据库
       console.log('💾 Saving complete team configuration...');
       const pool = databaseService.getPool();
       await pool.query(
-        `UPDATE virtual_company_sessions 
+        `UPDATE aiteam_creation_sessions 
          SET team_design = $1, 
              ceo_config = $2, 
              agent_matches = $3, 
@@ -1059,7 +1060,7 @@ export class VirtualCompanyCreationController {
             // 保存文档包到数据库
             const pool = databaseService.getPool();
             await pool.query(
-              'UPDATE virtual_company_sessions SET document_package_url = $1 WHERE id = $2',
+              'UPDATE aiteam_creation_sessions SET document_package_url = $1 WHERE id = $2',
               ['/api/documents/download/' + sessionId, sessionId]
             );
             
@@ -1123,8 +1124,8 @@ export class VirtualCompanyCreationController {
   }
 
   /**
-   * 发布虚拟公司到 Agent 广场
-   * POST /api/virtual-company/sessions/:id/publish-to-marketplace
+   * 发布 AiTeam 到 Agent 广场
+   * POST /api/aiteam-creation/sessions/:id/publish-to-marketplace
    */
   async publishToMarketplace(req: Request, res: Response) {
     try {
@@ -1140,10 +1141,10 @@ export class VirtualCompanyCreationController {
         });
       }
 
-      console.log(`🚀 Publishing virtual company to marketplace for session ${sessionId}...`);
+      console.log(`🚀 Publishing AiTeam to marketplace for session ${sessionId}...`);
 
       // 获取会话
-      const session = await virtualCompanyCreationService.getSessionById(sessionId);
+      const session = await aiteamCreationService.getSessionById(sessionId);
       if (!session) {
         return res.status(404).json({
           success: false,
@@ -1154,7 +1155,7 @@ export class VirtualCompanyCreationController {
       // 获取完整的团队配置
       const pool = databaseService.getPool();
       const result = await pool.query(
-        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM virtual_company_sessions WHERE id = $1',
+        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM aiteam_creation_sessions WHERE id = $1',
         [sessionId]
       );
 
@@ -1205,14 +1206,14 @@ export class VirtualCompanyCreationController {
         ]
       );
 
-      console.log(`✅ Virtual company published to marketplace: ${teamSkillId}`);
+      console.log(`✅ AiTeam published to marketplace: ${teamSkillId}`);
 
       res.json({
         success: true,
         data: {
           teamSkillId,
           teamName,
-          message: '虚拟公司已成功发布到 Agent 广场'
+          message: 'AiTeam 已成功发布到 Agent 广场'
         }
       });
     } catch (error) {
@@ -1226,4 +1227,4 @@ export class VirtualCompanyCreationController {
 }
 
 // 导出单例实例
-export const virtualCompanyCreationController = new VirtualCompanyCreationController();
+export const aiteamCreationController = new AiTeamCreationController();

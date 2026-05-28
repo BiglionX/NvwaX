@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export interface PaginationProps {
   /** 当前页码 */
@@ -41,6 +42,7 @@ export default function Pagination({
   showQuickJumper = false,
   className = '',
 }: PaginationProps) {
+  const t = useTranslations('pagination');
   // 生成页码数组
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
@@ -94,10 +96,10 @@ export default function Pagination({
     <div className={`flex items-center justify-between gap-4 ${className}`}>
       {/* 页码信息 */}
       <div className="text-sm text-gray-600 dark:text-gray-400">
-        第 <span className="font-semibold text-gray-900 dark:text-white">{current}</span> / {total} 页
+        {t('pageInfo', { current, total })}
         {pageSize && (
           <span className="ml-2">
-            （共 {total * pageSize} 条）
+            {t('totalCount', { count: total * pageSize })}
           </span>
         )}
       </div>
@@ -116,7 +118,7 @@ export default function Pagination({
                 : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
               }
             `}
-            aria-label="首页"
+            aria-label={t('firstPage')}
           >
             <ChevronsLeft size={18} />
           </button>
@@ -133,7 +135,7 @@ export default function Pagination({
               : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
             }
           `}
-          aria-label="上一页"
+          aria-label={t('prevPage')}
         >
           <ChevronLeft size={18} />
         </button>
@@ -173,7 +175,7 @@ export default function Pagination({
               : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
             }
           `}
-          aria-label="下一页"
+          aria-label={t('nextPage')}
         >
           <ChevronRight size={18} />
         </button>
@@ -190,7 +192,7 @@ export default function Pagination({
                 : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
               }
             `}
-            aria-label="末页"
+            aria-label={t('lastPage')}
           >
             <ChevronsRight size={18} />
           </button>
@@ -200,7 +202,7 @@ export default function Pagination({
       {/* 快速跳转 */}
       {showQuickJumper && (
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400">跳至</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">{t('jumpTo')}</span>
           <input
             type="number"
             min={1}
@@ -216,7 +218,7 @@ export default function Pagination({
             }}
             className="w-16 px-2 py-1.5 text-sm border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:border-blue-500 dark:focus:border-blue-600 bg-white dark:bg-gray-800"
           />
-          <span className="text-sm text-gray-600 dark:text-gray-400">页</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">{t('page')}</span>
         </div>
       )}
     </div>

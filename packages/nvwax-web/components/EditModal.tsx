@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Save, Loader2 } from 'lucide-react';
 import type { Agent } from '@/lib/api/agents';
 import type { AiTeam } from '@/lib/api/aiteams';
+import { useTranslations } from 'next-intl';
 
 interface EditModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export default function EditModal({
   resource,
   onSave
 }: EditModalProps) {
+  const t = useTranslations('editModal');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -93,7 +95,7 @@ export default function EditModal({
         {/* 头部 */}
         <div className="sticky top-0 bg-white dark:bg-gray-800 flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 z-10">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            编辑{resourceType === 'agent' ? 'Agent' : 'AiTeam'}
+            {t('title', { type: resourceType === 'agent' ? 'Agent' : 'AiTeam' })}
           </h2>
           <button
             onClick={onClose}
@@ -109,14 +111,14 @@ export default function EditModal({
             {/* 名称 */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                名称 <span className="text-red-500">*</span>
+                {t('name')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 dark:text-white transition-all"
-                placeholder="输入名称"
+                placeholder={t('namePlaceholder')}
                 required
               />
             </div>
@@ -124,13 +126,13 @@ export default function EditModal({
             {/* 描述 */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                描述
+                {t('description')}
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 dark:text-white transition-all resize-none"
-                placeholder="输入描述信息"
+                placeholder={t('descPlaceholder')}
                 rows={4}
               />
             </div>
@@ -138,35 +140,35 @@ export default function EditModal({
             {/* 版本 */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                版本号
+                {t('version')}
               </label>
               <input
                 type="text"
                 value={formData.version}
                 onChange={(e) => setFormData({ ...formData, version: e.target.value })}
                 className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 dark:text-white transition-all"
-                placeholder="例如: 1.0.0"
+                placeholder={t('versionPlaceholder')}
               />
             </div>
 
             {/* 分类 */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                分类
+                {t('category')}
               </label>
               <input
                 type="text"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 dark:text-white transition-all"
-                placeholder="例如: 客服、开发、营销"
+                placeholder={t('categoryPlaceholder')}
               />
             </div>
 
             {/* 标签 */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                标签
+                {t('tags')}
               </label>
               <div className="flex gap-2 mb-3">
                 <input
@@ -175,14 +177,14 @@ export default function EditModal({
                   onChange={(e) => setNewTag(e.target.value)}
                   onKeyPress={handleKeyPress}
                   className="flex-1 px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 text-gray-900 dark:text-white transition-all"
-                  placeholder="输入标签后按回车添加"
+                  placeholder={t('tagPlaceholder')}
                 />
                 <button
                   type="button"
                   onClick={handleAddTag}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors font-medium"
                 >
-                  添加
+                  {t('addTag')}
                 </button>
               </div>
               {formData.tags.length > 0 && (
@@ -219,7 +221,7 @@ export default function EditModal({
               disabled={isSaving}
               className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium disabled:opacity-50"
             >
-              取消
+              {t('cancel')}
             </button>
             <button
               type="submit"
@@ -229,12 +231,12 @@ export default function EditModal({
               {isSaving ? (
                 <>
                   <Loader2 size={18} className="animate-spin" />
-                  保存中...
+                  {t('saving')}
                 </>
               ) : (
                 <>
                   <Save size={18} />
-                  保存更改
+                  {t('save')}
                 </>
               )}
             </button>

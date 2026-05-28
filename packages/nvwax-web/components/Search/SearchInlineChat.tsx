@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Loader2, Bot, User, Star, ExternalLink, Search, Users } from 'lucide-react';
 import type { Agent, SearchAiTeam } from '@/lib/api/search';
 import { Card, Badge, Tag } from '@/components/UI';
+import { useTranslations } from 'next-intl';
 
 /**
  * 聊天消息
@@ -13,7 +14,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   results?: Agent[];
-  /** AiTeam（虚拟公司）搜索结果 */
+  /** AiTeam 搜索结果 */
   aiteamResults?: SearchAiTeam[];
   suggestions?: string[];
   canGenerate?: boolean;
@@ -24,6 +25,7 @@ interface ChatMessage {
  * 与 AiSearchPanel 共享相同的 AI 搜索 API 逻辑，但以内联方式渲染
  */
 export default function SearchInlineChat() {
+  const t = useTranslations('searchChat');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -64,19 +66,15 @@ export default function SearchInlineChat() {
         setMessages([{
           id: 'welcome',
           role: 'assistant',
-          content: '你好！我是 **AI Search Agent**，专门帮你搜索和发现 AI Agent 的智能助手。\n\n告诉我你需要的 Agent 类型或功能，我来帮你从 GitHub、Gitee、ModelScope 等平台搜索！',
-          suggestions: [
-            '找一个文案写作 Agent',
-            '需要数据处理的 AI',
-            '帮我搜图片生成的 Agent'
-          ]
+          content: t('welcome'),
+          suggestions: t.raw('welcomeSuggestions')
         }]);
       }
     } catch {
       setMessages([{
         id: 'error',
         role: 'assistant',
-        content: '抱歉，AI 搜索服务暂时不可用，请稍后重试。'
+        content: t('serviceError')
       }]);
     } finally {
       setIsCreatingSession(false);
@@ -110,20 +108,20 @@ export default function SearchInlineChat() {
         setMessages(prev => [...prev, {
           id: `ai-${Date.now()}`,
           role: 'assistant',
-          content: data.data.reply || '没有找到相关结果。',
+          content: data.data.reply || t('noResults'),
           results: data.data.results,
           aiteamResults: data.data.aiteamResults,
           suggestions: data.data.suggestions,
           canGenerate: data.data.canGenerate
         }]);
       } else {
-        throw new Error(data.error?.message || 'API 返回错误');
+        throw new Error(data.error?.message || t('apiReturnError'));
       }
     } catch {
       setMessages(prev => [...prev, {
         id: `ai-error-${Date.now()}`,
         role: 'assistant',
-        content: '抱歉，搜索过程中出错了，请重试或换个说法描述你的需求。'
+        content: t('apiError')
       }]);
     } finally {
       setIsLoading(false);
@@ -179,7 +177,7 @@ export default function SearchInlineChat() {
                 <div className="space-y-2 mt-2">
                   <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                     <Search size={12} />
-                    搜索结果 ({msg.results.length} 个)
+                    {t('resultCount', { count: msg.results.length })}
                   </p>
                   <div className="grid gap-2">
                     {msg.results.map((agent) => (
@@ -190,7 +188,7 @@ export default function SearchInlineChat() {
                               {agent.name}
                             </h4>
                             <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
-                              {agent.description || '暂无描述'}
+                              {agent.description || t('noDescription')}
                             </p>
                           </div>
                           <Badge variant={agent.source === 'github' ? 'default' : 'warning'} size="sm" className="shrink-0">
@@ -220,7 +218,7 @@ export default function SearchInlineChat() {
                             className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 mt-2"
                           >
                             <ExternalLink size={12} />
-                            查看详情
+                            {t('viewDetail')}
                           </a>
                         )}
                       </Card>
@@ -234,7 +232,7 @@ export default function SearchInlineChat() {
                 <div className="space-y-2 mt-3">
                   <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                     <Users size={12} />
-                    虚拟公司推荐 ({msg.aiteamResults.length} 个)
+                    {t('aiTeamCount', { count: msg.aiteamResults.length })}
                   </p>
                   <div className="grid gap-2">
                     {msg.aiteamResults.map((aiteam) => (
@@ -248,15 +246,15 @@ export default function SearchInlineChat() {
                               </h4>
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
-                              {aiteam.description || '暂无描述'}
+                              {aiteam.description || t('noDescription')}
                             </p>
                           </div>
-                          <Badge variant="info" size="sm" className="shrink-0">虚拟公司</Badge>
+                          <Badge variant="info" size="sm" className="shrink-0">{t('virtualCompanyBadge')}</Badge>
                         </div>
                         <div className="flex items-center gap-3 mt-2">
                           <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                             <Users size={12} />
-                            <span>{aiteam.members?.length || 0} 成员</span>
+                            <span>{t('memberCount', { count: aiteam.members?.length || 0 })}</span>
                           </div>
                           {aiteam.rating > 0 && (
                             <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
@@ -311,7 +309,7 @@ export default function SearchInlineChat() {
             <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-tl-md px-4 py-3">
               <div className="flex items-center gap-2">
                 <Loader2 size={14} className="animate-spin text-blue-500" />
-                <span className="text-sm text-gray-500 dark:text-gray-400">正在搜索...</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{t('searching')}</span>
               </div>
             </div>
           </div>
@@ -329,7 +327,7 @@ export default function SearchInlineChat() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="描述你需要的 Agent，如：帮我找一个文案写作的 AI..."
+            placeholder={t('placeholder')}
             className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all"
             disabled={isLoading || isCreatingSession}
           />

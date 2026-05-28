@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { VirtualCompanyCreationService } from './virtual-company-creation.service.js';
+import { AiTeamCreationService } from './aiteam-creation.service.js';
 import { agentCompatibilityService, RoleRequirement } from './agent-compatibility.service.js';
 import { 
   CEO_AGENT_SYSTEM_PROMPT,
@@ -19,10 +19,10 @@ export interface CEOResponse {
 
 export class CEOAgentService {
   private openai: OpenAI | null = null;
-  private creationService: VirtualCompanyCreationService;
+  private creationService: AiTeamCreationService;
 
   constructor() {
-    this.creationService = new VirtualCompanyCreationService();
+    this.creationService = new AiTeamCreationService();
     
     // 初始化 DeepSeek 客户端（使用 OpenAI SDK，兼容 API）
     const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;

@@ -185,7 +185,7 @@ export default function TeamSkillPackageModal({
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                打包虚拟公司
+                打包 AiTeam
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 {teamSkillName}

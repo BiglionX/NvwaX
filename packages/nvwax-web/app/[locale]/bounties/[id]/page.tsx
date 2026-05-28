@@ -5,11 +5,14 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import Link from 'next/link';
 import { ArrowLeft, Clock, Award, CheckCircle, AlertCircle } from 'lucide-react';
 import { bountyApi } from '@/lib/api/bounty';
+import { useTranslations, useLocale } from 'next-intl';
 
 export default function BountyDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const t = useTranslations('bountyDetail');
+  const locale = useLocale();
 
   const { data: bounty, isLoading } = useQuery({
     queryKey: ['bounty', id],
@@ -19,11 +22,11 @@ export default function BountyDetailPage() {
   const claimMutation = useMutation({
     mutationFn: () => bountyApi.claimBounty(id),
     onSuccess: () => {
-      alert('✅ 领取成功！');
+      alert(t('claimSuccess'));
       router.refresh();
     },
     onError: (error: Error) => {
-      alert('❌ 领取失败：' + error.message);
+      alert(t('claimFailed') + error.message);
     },
   });
 
@@ -43,25 +46,25 @@ export default function BountyDetailPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
         <div className="text-6xl mb-4">🔍</div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">悬赏不存在</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('notFound')}</h2>
         <Link href="/bounties" className="text-blue-600 hover:underline">
-          返回悬赏列表
+          {t('backToList')}
         </Link>
       </div>
     );
   }
 
   const statusLabels = {
-    open: '开放中',
-    claimed: '已领取',
-    submitted: '待验证',
-    verified: '已验证',
-    completed: '已完成',
-    cancelled: '已取消',
+    open: t('statusOpen'),
+    claimed: t('statusClaimed'),
+    submitted: t('statusSubmitted'),
+    verified: t('statusVerified'),
+    completed: t('statusCompleted'),
+    cancelled: t('statusCancelled'),
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('zh-CN', {
+    return new Date(dateString).toLocaleString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -78,7 +81,7 @@ export default function BountyDetailPage() {
         className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 mb-6"
       >
         <ArrowLeft size={18} />
-        返回悬赏列表
+        {t('backToList')}
       </Link>
 
       {/* Header */}
@@ -102,7 +105,7 @@ export default function BountyDetailPage() {
         {/* Skills */}
         {bounty.requiredSkills && bounty.requiredSkills.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">所需技能</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">{t('requiredSkills')}</h3>
             <div className="flex flex-wrap gap-2">
               {bounty.requiredSkills.map((skill, index) => (
                 <span
@@ -119,14 +122,14 @@ export default function BountyDetailPage() {
         {/* Meta Info */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
           <div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">悬赏金额</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('rewardAmount')}</div>
             <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold">
               <Award size={18} />
-              {bounty.rewardAmount} {bounty.currency === 'points' ? '积分' : bounty.currency}
+              {bounty.rewardAmount} {bounty.currency === 'points' ? t('points') : bounty.currency}
             </div>
           </div>
           <div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">发布时间</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('publishTime')}</div>
             <div className="flex items-center gap-1 text-gray-700 dark:text-gray-300 text-sm">
               <Clock size={16} />
               {formatDate(bounty.createdAt)}
@@ -134,14 +137,14 @@ export default function BountyDetailPage() {
           </div>
           {bounty.deadline && (
             <div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">截止时间</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('deadline')}</div>
               <div className="text-gray-700 dark:text-gray-300 text-sm">
                 {formatDate(bounty.deadline)}
               </div>
             </div>
           )}
           <div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">状态</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('status')}</div>
             <div className="text-gray-700 dark:text-gray-300 text-sm">
               {statusLabels[bounty.status]}
             </div>
@@ -157,10 +160,10 @@ export default function BountyDetailPage() {
             disabled={claimMutation.isPending}
             className="w-full px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
-            {claimMutation.isPending ? '领取中...' : '领取此悬赏'}
+            {claimMutation.isPending ? t('claiming') : t('claim')}
           </button>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-            领取后需在截止时间内完成任务并提交成果
+            {t('claimHint')}
           </p>
         </div>
       )}

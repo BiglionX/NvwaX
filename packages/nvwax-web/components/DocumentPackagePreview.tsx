@@ -1,5 +1,6 @@
 import React from 'react';
 import { Download, FileText, Package } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface DocumentContent {
   title: string;
@@ -43,6 +44,8 @@ const DocumentPackagePreview: React.FC<DocumentPackagePreviewProps> = ({
   onDownloadJSON,
   onDownloadMarkdown
 }) => {
+  const t = useTranslations('docPackage');
+  const locale = useLocale();
   const handleDownloadJSON = () => {
     if (onDownloadJSON) {
       onDownloadJSON();
@@ -65,7 +68,7 @@ const DocumentPackagePreview: React.FC<DocumentPackagePreviewProps> = ({
       onDownloadMarkdown();
     } else {
       // 默认下载行为：打包为 ZIP（这里简化为分别下载）
-      alert('Markdown 格式需要后端支持 ZIP 打包，当前使用 JSON 格式下载');
+      alert(t('markdownAlert'));
       handleDownloadJSON();
     }
   };
@@ -93,28 +96,28 @@ const DocumentPackagePreview: React.FC<DocumentPackagePreviewProps> = ({
         <div className="flex items-center gap-3 mb-3">
           <Package className="w-6 h-6 text-blue-600" />
           <h3 className="text-xl font-bold text-gray-900">
-            📦 团队经营配置文档包
+            {t('title')}
           </h3>
         </div>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-gray-600">团队名称：</span>
+                        <span className="text-gray-600">{t('teamName')}</span>
             <span className="font-medium text-gray-900">{docPackage.packageInfo.teamName}</span>
           </div>
           <div>
-            <span className="text-gray-600">团队类型：</span>
+                        <span className="text-gray-600">{t('teamType')}</span>
             <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
               {docPackage.packageInfo.teamType}
             </span>
           </div>
           <div>
-            <span className="text-gray-600">文档数量：</span>
-            <span className="font-medium text-gray-900">{docPackage.packageInfo.totalDocuments} 个</span>
+                        <span className="text-gray-600">{t('docCount')}</span>
+                        <span className="font-medium text-gray-900">{t('docCountValue', { count: docPackage.packageInfo.totalDocuments })}</span>
           </div>
           <div>
-            <span className="text-gray-600">生成时间：</span>
+                        <span className="text-gray-600">{t('generatedAt')}</span>
             <span className="font-medium text-gray-900">
-              {new Date(docPackage.packageInfo.generatedAt).toLocaleString('zh-CN')}
+                            {new Date(docPackage.packageInfo.generatedAt).toLocaleString(locale)}
             </span>
           </div>
         </div>
@@ -124,7 +127,7 @@ const DocumentPackagePreview: React.FC<DocumentPackagePreviewProps> = ({
       <div>
         <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
           <FileText className="w-4 h-4" />
-          文档列表
+          {t('docList')}
         </h4>
         <div className="space-y-3">
           {docPackage.documents.map((doc, index) => (
@@ -158,24 +161,24 @@ const DocumentPackagePreview: React.FC<DocumentPackagePreviewProps> = ({
           className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center justify-center gap-2"
         >
           <Download className="w-4 h-4" />
-          下载 JSON 格式
+          {t('downloadJson')}
         </button>
         <button
           onClick={handleDownloadMarkdown}
           className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors flex items-center justify-center gap-2"
         >
           <Download className="w-4 h-4" />
-          下载 Markdown 格式
+          {t('downloadMarkdown')}
         </button>
       </div>
 
       {/* 提示信息 */}
       <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
-        <p className="font-medium mb-1">💡 提示：</p>
+                <p className="font-medium mb-1">{t('tipTitle')}</p>
         <ul className="list-disc list-inside space-y-1 text-xs">
-          <li>JSON 格式适合程序化处理，包含完整结构</li>
-          <li>Markdown 格式适合阅读和编辑，人类友好</li>
-          <li>文档包包含所有团队经营所需的配置和指南</li>
+                    <li>{t('tip1')}</li>
+                    <li>{t('tip2')}</li>
+                    <li>{t('tip3')}</li>
         </ul>
       </div>
     </div>

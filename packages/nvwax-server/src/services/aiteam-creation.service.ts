@@ -4,16 +4,16 @@ import { databaseService } from './database.service.js';
 import { sseProgressService } from './sse-progress.service.js';
 
 /**
- * 虚拟公司创建会话类型定义
+ * AiTeam 创建会话类型定义
  */
-export interface VirtualCompanySession {
+export interface AiTeamSession {
   id: string;
   userId: string;
   status: SessionStatus;
   conversationHistory: ConversationMessage[];
   requirements: UserRequirements;
   selectedRoles: SelectedRole[];
-  teamDesign?: any; // 团队设计方案
+  teamDesign?: any;
   progress: CreationProgress;
   finalTeamSkillId?: string;
   createdAt: Date;
@@ -59,15 +59,15 @@ export interface SelectedRole {
   specialty: string;
   agentType: string;
   responsibilities: string[];
-  sourceAgentId?: string;      // 如果来自开源 Agent
-  isNewlyCreated?: boolean;    // 是否新创建的 Agent
-  compatibilityScore?: number; // 兼容性评分 (0-100)
-  customizedName?: string;     // 自定义名称
-  customizedDescription?: string;  // 自定义描述
-  customizedResponsibilities?: string[];  // 自定义职责
-  requiredSkills?: string[];   // 所需技能
-  priority?: 'high' | 'medium' | 'low';  // 优先级
-  isLeader?: boolean;          // 是否为 Leader
+  sourceAgentId?: string;
+  isNewlyCreated?: boolean;
+  compatibilityScore?: number;
+  customizedName?: string;
+  customizedDescription?: string;
+  customizedResponsibilities?: string[];
+  requiredSkills?: string[];
+  priority?: 'high' | 'medium' | 'low';
+  isLeader?: boolean;
 }
 
 export interface CreationProgress {
@@ -88,9 +88,9 @@ export interface ProgressStep {
 }
 
 /**
- * 虚拟公司创建服务
+ * AiTeam 创建服务
  * 
- * 负责管理虚拟公司创建的完整流程：
+ * 负责管理 AiTeam 创建的完整流程：
  * 1. 会话管理（创建、更新、查询）
  * 2. 需求收集和分析
  * 3. 角色推荐和选择
@@ -99,7 +99,7 @@ export interface ProgressStep {
  * 6. 进度追踪
  * 7. 最终团队生成
  */
-export class VirtualCompanyCreationService {
+export class AiTeamCreationService {
   private pool: Pool;
 
   constructor() {
@@ -107,9 +107,9 @@ export class VirtualCompanyCreationService {
   }
 
   /**
-   * 创建新的虚拟公司创建会话
+   * 创建新的 AiTeam 创建会话
    */
-  async createSession(userId: string): Promise<VirtualCompanySession> {
+  async createSession(userId: string): Promise<AiTeamSession> {
     const id = uuidv4();
     const now = new Date();
 
@@ -130,7 +130,7 @@ export class VirtualCompanyCreationService {
     };
 
     await this.pool.query(
-      `INSERT INTO virtual_company_sessions 
+      `INSERT INTO aiteam_creation_sessions 
         (id, user_id, status, conversation_history, requirements, selected_roles, progress, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
@@ -146,7 +146,7 @@ export class VirtualCompanyCreationService {
       ]
     );
 
-    console.log(`✅ Created virtual company session: ${id} for user ${userId}`);
+    console.log(`✅ Created aiteam creation session: ${id} for user ${userId}`);
 
     const session = await this.getSessionById(id);
     if (!session) {
@@ -158,9 +158,9 @@ export class VirtualCompanyCreationService {
   /**
    * 获取会话详情
    */
-  async getSessionById(sessionId: string): Promise<VirtualCompanySession | null> {
+  async getSessionById(sessionId: string): Promise<AiTeamSession | null> {
     const result = await this.pool.query(
-      'SELECT * FROM virtual_company_sessions WHERE id = $1',
+      'SELECT * FROM aiteam_creation_sessions WHERE id = $1',
       [sessionId]
     );
 
@@ -174,9 +174,9 @@ export class VirtualCompanyCreationService {
   /**
    * 获取用户的所有会话
    */
-  async getUserSessions(userId: string, limit: number = 10, offset: number = 0): Promise<VirtualCompanySession[]> {
+  async getUserSessions(userId: string, limit: number = 10, offset: number = 0): Promise<AiTeamSession[]> {
     const result = await this.pool.query(
-      `SELECT * FROM virtual_company_sessions 
+      `SELECT * FROM aiteam_creation_sessions 
        WHERE user_id = $1 
        ORDER BY created_at DESC 
        LIMIT $2 OFFSET $3`,
@@ -205,7 +205,7 @@ export class VirtualCompanyCreationService {
     const updatedHistory = [...session.conversationHistory, message];
 
     await this.pool.query(
-      `UPDATE virtual_company_sessions 
+      `UPDATE aiteam_creation_sessions 
        SET conversation_history = $1, updated_at = CURRENT_TIMESTAMP 
        WHERE id = $2`,
       [JSON.stringify(updatedHistory), sessionId]
@@ -224,7 +224,7 @@ export class VirtualCompanyCreationService {
     const updatedRequirements = { ...session.requirements, ...requirements };
 
     await this.pool.query(
-      `UPDATE virtual_company_sessions 
+      `UPDATE aiteam_creation_sessions 
        SET requirements = $1, updated_at = CURRENT_TIMESTAMP 
        WHERE id = $2`,
       [JSON.stringify(updatedRequirements), sessionId]
@@ -236,7 +236,7 @@ export class VirtualCompanyCreationService {
    */
   async updateSelectedRoles(sessionId: string, roles: SelectedRole[]): Promise<void> {
     await this.pool.query(
-      `UPDATE virtual_company_sessions 
+      `UPDATE aiteam_creation_sessions 
        SET selected_roles = $1, updated_at = CURRENT_TIMESTAMP 
        WHERE id = $2`,
       [JSON.stringify(roles), sessionId]
@@ -259,7 +259,7 @@ export class VirtualCompanyCreationService {
     }
 
     await this.pool.query(
-      `UPDATE virtual_company_sessions 
+      `UPDATE aiteam_creation_sessions 
        SET ${updates.join(', ')} 
        WHERE id = $${values.length}`,
       values
@@ -285,7 +285,7 @@ export class VirtualCompanyCreationService {
     const updatedProgress = { ...session.progress, ...progress };
 
     await this.pool.query(
-      `UPDATE virtual_company_sessions 
+      `UPDATE aiteam_creation_sessions 
        SET progress = $1, updated_at = CURRENT_TIMESTAMP 
        WHERE id = $2`,
       [JSON.stringify(updatedProgress), sessionId]
@@ -302,7 +302,7 @@ export class VirtualCompanyCreationService {
    */
   async updateTeamDesign(sessionId: string, teamDesign: any): Promise<void> {
     await this.pool.query(
-      'UPDATE virtual_company_sessions SET team_design = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      'UPDATE aiteam_creation_sessions SET team_design = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       [JSON.stringify(teamDesign), sessionId]
     );
     
@@ -353,7 +353,7 @@ export class VirtualCompanyCreationService {
    */
   async linkTeamSkill(sessionId: string, teamSkillId: string): Promise<void> {
     await this.pool.query(
-      `UPDATE virtual_company_sessions 
+      `UPDATE aiteam_creation_sessions 
        SET final_team_skill_id = $1, updated_at = CURRENT_TIMESTAMP 
        WHERE id = $2`,
       [teamSkillId, sessionId]
@@ -365,7 +365,7 @@ export class VirtualCompanyCreationService {
    */
   async deleteSession(sessionId: string, userId: string): Promise<boolean> {
     const result = await this.pool.query(
-      'DELETE FROM virtual_company_sessions WHERE id = $1 AND user_id = $2',
+      'DELETE FROM aiteam_creation_sessions WHERE id = $1 AND user_id = $2',
       [sessionId, userId]
     );
 
@@ -377,14 +377,14 @@ export class VirtualCompanyCreationService {
    */
   async cleanupExpiredSessions(): Promise<number> {
     const result = await this.pool.query(
-      `DELETE FROM virtual_company_sessions 
+      `DELETE FROM aiteam_creation_sessions 
        WHERE status NOT IN ('completed', 'failed', 'cancelled')
          AND created_at < NOW() - INTERVAL '24 hours'`
     );
 
     const deletedCount = result.rowCount || 0;
     if (deletedCount > 0) {
-      console.log(`🧹 Cleaned up ${deletedCount} expired virtual company sessions`);
+      console.log(`🧹 Cleaned up ${deletedCount} expired aiteam creation sessions`);
     }
 
     return deletedCount;
@@ -405,7 +405,7 @@ export class VirtualCompanyCreationService {
   /**
    * 将数据库行映射为会话对象
    */
-  private mapRowToSession(row: any): VirtualCompanySession {
+  private mapRowToSession(row: any): AiTeamSession {
     return {
       id: row.id,
       userId: row.user_id,
@@ -413,7 +413,7 @@ export class VirtualCompanyCreationService {
       conversationHistory: row.conversation_history || [],
       requirements: row.requirements || {},
       selectedRoles: row.selected_roles || [],
-      teamDesign: row.team_design || null, // 添加 team_design 字段映射
+      teamDesign: row.team_design || null,
       progress: row.progress || {
         currentStep: 0,
         totalSteps: 7,
@@ -429,4 +429,4 @@ export class VirtualCompanyCreationService {
 }
 
 // 导出单例实例
-export const virtualCompanyCreationService = new VirtualCompanyCreationService();
+export const aiteamCreationService = new AiTeamCreationService();

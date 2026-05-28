@@ -137,8 +137,8 @@ export class NvwaLeaderController {
   }
 
   /**
-   * 创建虚拟公司（自然语言创建 AI 团队）
-   * POST /api/nvwa/create-virtual-company
+   * 创建 AiTeam（自然语言创建 AI 团队）
+   * POST /api/nvwa/create-aiteam
    * 
    * 请求体:
    * {
@@ -150,7 +150,7 @@ export class NvwaLeaderController {
    *   isPublic?: boolean        // 是否公开到市场（默认 true）
    * }
    */
-  async createVirtualCompany(req: Request, res: Response) {
+  async createAiTeam(req: Request, res: Response) {
     try {
       const { 
         description, 
@@ -171,15 +171,15 @@ export class NvwaLeaderController {
         });
       }
 
-      // Step 1: 生成虚拟公司团队配置
-      console.log(' Creating virtual company from Nvwa data...');
+      // Step 1: 生成 AiTeam 团队配置
+      console.log(' Creating AiTeam from Nvwa data...');
       const teamConfig = await nvwaLeaderService.generateTeamFromNvwa({
         description,
         dataSources: dataSources || [],
         outputs: outputs || [],
         implementation: implementation || '',
         skills: skills || []
-      }, true); // isVirtualCompany = true
+      }, true);
 
       // Step 2: 保存到 team_skills 表（公开到市场）
       const result = await nvwaLeaderService.saveTeamToProject(
@@ -189,7 +189,7 @@ export class NvwaLeaderController {
         isPublic
       );
 
-      console.log(`✅ Virtual company created: ${result.teamName} (ID: ${result.teamSkillId})`);
+      console.log(`✅ AiTeam created: ${result.teamName} (ID: ${result.teamSkillId})`);
 
       res.status(201).json({ 
         success: true, 
@@ -200,10 +200,10 @@ export class NvwaLeaderController {
         }
       });
     } catch (error) {
-      console.error('Error creating virtual company:', error);
+      console.error('Error creating AiTeam:', error);
       res.status(500).json({ 
         success: false, 
-        error: '创建虚拟公司失败' 
+        error: '创建 AiTeam 失败' 
       });
     }
   }

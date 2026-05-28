@@ -15,9 +15,10 @@ export class ProClawBackendService {
   }
 
   /**
-   * 获取虚拟公司配置用于导出到 ProClaw
+   * 获取 AiTeam 配置用于导出到 ProClaw
+   * TODO: ProClaw 功能尚未完善，保留接口为占位
    */
-  async getVirtualCompanyConfigForProClaw(teamSkillId: string): Promise<Record<string, unknown> | null> {
+  async getAiTeamConfigForProClaw(teamSkillId: string): Promise<Record<string, unknown> | null> {
     try {
       const result = await this.pool.query(
         'SELECT * FROM team_skills WHERE id = $1',
@@ -45,8 +46,33 @@ export class ProClawBackendService {
         }
       };
     } catch (error) {
-      console.error('Failed to get virtual company config:', error);
+      console.error('Failed to get AiTeam config:', error);
       return null;
     }
+  }
+
+  /**
+   * 将 AiTeam 集成到 ProClaw
+   * TODO: ProClaw 功能尚未完善，以下为占位实现
+   * 后续流程：
+   * 1. 导出 AiTeam 配置为 JSON
+   * 2. 调用 ProClaw API 导入配置
+   * 3. 返回 ProClaw 中的团队 ID
+   */
+  async integrateToProClaw(teamSkillId: string, options?: {
+    inventoryModule?: boolean;
+  }): Promise<ProClawExportResult> {
+    // TODO: 实现真实的 ProClaw 集成
+    console.log(`[TODO] Integrating AiTeam ${teamSkillId} to ProClaw (inventory: ${options?.inventoryModule ?? false})`);
+    
+    // ProClaw 本地开发路径: D:\BigLionX\ProClaw
+    // ProClaw 域名: https://proclaw.cc
+    
+    return {
+      success: true,
+      proClawAppId: `proclaw_team_${Date.now()}`,
+      downloadUrl: `https://proclaw.cc/download?team=${teamSkillId}`,
+      message: 'AiTeam 已导出，请在 ProClaw 桌面端中导入（功能开发中）'
+    };
   }
 }

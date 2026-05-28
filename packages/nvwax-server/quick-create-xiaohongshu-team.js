@@ -53,10 +53,10 @@ async function login() {
   return { token, userId };
 }
 
-async function createVirtualCompany(token, userId) {
-  console.log('\n🏢 Creating virtual company: 小红书运营团队...');
+async function createAiTeam(token, userId) {
+  console.log('\n🏢 Creating AiTeam: 小红书运营团队...');
   
-  // 直接创建一个完整的虚拟公司会话
+  // 直接创建一个完整的 AiTeam 会话
   const sessionData = {
     requirements: `我想创建一个小红书运营团队，实现完全自动化的内容运营。具体要求：
 
@@ -72,7 +72,7 @@ async function createVirtualCompany(token, userId) {
     teamType: 'xiaohongshu_operations'
   };
   
-  const response = await fetch(`${API_BASE}/virtual-company/sessions`, {
+  const response = await fetch(`${API_BASE}/aiteam-creation/sessions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ async function createVirtualCompany(token, userId) {
 async function sendMessageToSession(token, sessionId, message) {
   console.log(`\n💬 Sending message to session ${sessionId}...`);
   
-  const response = await fetch(`${API_BASE}/virtual-company/sessions/${sessionId}/message`, {
+  const response = await fetch(`${API_BASE}/aiteam-creation/sessions/${sessionId}/message`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ async function sendMessageToSession(token, sessionId, message) {
 async function confirmAndSaveTeam(token, sessionId) {
   console.log(`\n✅ Confirming and saving team for session ${sessionId}...`);
   
-  const response = await fetch(`${API_BASE}/virtual-company/sessions/${sessionId}/confirm`, {
+  const response = await fetch(`${API_BASE}/aiteam-creation/sessions/${sessionId}/confirm`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -234,8 +234,8 @@ async function main() {
       throw new Error('No token received from login');
     }
     
-    // Step 2: Create virtual company session
-    const session = await createVirtualCompany(token, userId);
+    // Step 2: Create AiTeam session
+    const session = await createAiTeam(token, userId);
     
     // Step 3: Send initial message to trigger CEO Agent
     const phase1Result = await sendMessageToSession(
@@ -256,7 +256,7 @@ async function main() {
     if (!teamSkillId) {
       console.warn('⚠️ No teamSkillId found, trying to get from session...');
       // Try to get session details
-      const sessionResponse = await fetch(`${API_BASE}/virtual-company/sessions/${session.id}`, {
+      const sessionResponse = await fetch(`${API_BASE}/aiteam-creation/sessions/${session.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const sessionDetails = await sessionResponse.json();
@@ -271,7 +271,7 @@ async function main() {
     console.log('='.repeat(70));
     console.log('\nSummary:');
     console.log('  ✅ Logged in as admin');
-    console.log('  ✅ Created virtual company session:', session.id);
+    console.log('  ✅ Created AiTeam session:', session.id);
     console.log('  ✅ Confirmed team design');
     console.log('  ✅ Published to marketplace');
     console.log('\nYou can now view it at:');

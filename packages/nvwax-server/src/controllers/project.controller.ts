@@ -329,7 +329,7 @@ export class ProjectController {
 
       const pool = databaseService.getPool();
       const proClawService = new ProClawBackendService(pool);
-      const config = await proClawService.getVirtualCompanyConfigForProClaw(id as string);
+      const config = await proClawService.getAiTeamConfigForProClaw(id as string);
 
       if (!config) {
         return res.status(404).json({ error: 'Team Skill not found' });

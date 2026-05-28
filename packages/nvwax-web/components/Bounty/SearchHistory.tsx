@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { History, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface SearchHistoryProps {
   onSearch: (query: string) => void;
@@ -11,6 +12,7 @@ const STORAGE_KEY = 'bounty_search_history';
 const MAX_HISTORY = 10;
 
 export default function SearchHistory({ onSearch }: SearchHistoryProps) {
+  const t = useTranslations('bountySearch');
   // 使用 lazy initialization 加载搜索历史
   const [history, setHistory] = useState<string[]>(() => {
     if (typeof window === 'undefined') return [];
@@ -63,13 +65,13 @@ export default function SearchHistory({ onSearch }: SearchHistoryProps) {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
           <History size={14} />
-          <span>搜索历史</span>
+          <span>{""}{t('searchHistory')}</span>
         </div>
         <button
           onClick={clearHistory}
           className="text-xs text-gray-500 hover:text-red-500 transition-colors"
         >
-          清空
+          {t('clear')}
         </button>
       </div>
       

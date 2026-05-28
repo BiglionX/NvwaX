@@ -68,7 +68,7 @@ export default function MarketplaceClient() {
     enabled: selectedCategory === 'all' || selectedCategory === 'aiteams'
   });
 
-  // 查询 Team Skills（虚拟公司/团队）
+  // 查询 Team Skills（AiTeam）
   const { data: teamSkillsData, isLoading: loadingTeamSkills } = useQuery({
     queryKey: ['team-skills', selectedCategory, debouncedSearch],
     queryFn: () => {
@@ -81,7 +81,7 @@ export default function MarketplaceClient() {
           limit: 30
         });
       }
-      // "全部"、"智能体"、"AI团队"、"虚拟公司"都获取所有公开的 team_skills
+      // "全部"、"智能体"、"AI团队"、"AiTeam"都获取所有公开的 team_skills
       return teamSkillApi.getMarketplaceTeamSkills(1, 30);
     },
     enabled: selectedCategory !== 'agents'
@@ -399,7 +399,7 @@ export default function MarketplaceClient() {
         </>
       )}
 
-      {/* Team Skills Grid - 只显示虚拟公司 */}
+      {/* AiTeam Grid */}
       {(selectedCategory === 'all' || selectedCategory === 'virtual-company') && (
         <>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -691,7 +691,7 @@ export default function MarketplaceClient() {
             </div>
           </Link>
 
-          {/* 创建虚拟公司 */}
+          {/* 创建 AiTeam */}
           <Link href="/nvwa" onClick={() => setShowCreateModal(false)} className="block">
             <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:shadow-md transition-all group">
               <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-1 flex items-center gap-2">

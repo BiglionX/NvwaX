@@ -63,7 +63,7 @@ export default function HomeClient() {
             </span>
           </h1>
           <p className="text-lg sm:text-xl text-blue-200/80 mb-2 font-medium">
-            AI Agent & 虚拟公司 制造工厂
+            AI Agent & AiTeam 制造工厂
           </p>
           <p className="text-sm sm:text-base text-slate-400 mb-10">
             搜索 · 发现 · 创建 · 发布
@@ -79,7 +79,7 @@ export default function HomeClient() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="搜索 AI Agent、虚拟公司..."
+                  placeholder="搜索 AI Agent、AiTeam..."
                   className="flex-1 px-4 py-3.5 bg-transparent text-white placeholder-slate-400 outline-none text-base"
                 />
                 <button
@@ -106,7 +106,7 @@ export default function HomeClient() {
               className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/15 backdrop-blur-sm border border-white/20 hover:border-white/30 text-white font-semibold rounded-xl transition-all duration-200 active:scale-[0.98]"
             >
               <Users size={20} />
-              创建虚拟公司（AI team）
+              创建 AiTeam
             </Link>
           </div>
 

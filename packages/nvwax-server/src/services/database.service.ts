@@ -259,9 +259,9 @@ class DatabaseService {
         )
       `);
 
-      // 创建虚拟公司会话表
+      // 创建 AiTeam 会话表
       await client.query(`
-        CREATE TABLE IF NOT EXISTS virtual_company_sessions (
+        CREATE TABLE IF NOT EXISTS aiteam_creation_sessions (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           user_id TEXT NOT NULL,
           status TEXT NOT NULL DEFAULT 'initiated',
@@ -280,16 +280,16 @@ class DatabaseService {
           completed_at TIMESTAMP WITH TIME ZONE
         )
       `);
-
-      // 确保虚拟公司会话表的额外列存在（兼容旧表）
+      
+      // 确保 AiTeam 会话表的额外列存在（兼容旧表）
       try {
-        await client.query(`ALTER TABLE virtual_company_sessions ADD COLUMN IF NOT EXISTS team_design JSONB DEFAULT '{}'::jsonb`);
-        await client.query(`ALTER TABLE virtual_company_sessions ADD COLUMN IF NOT EXISTS ceo_config JSONB DEFAULT '{}'::jsonb`);
-        await client.query(`ALTER TABLE virtual_company_sessions ADD COLUMN IF NOT EXISTS agent_matches JSONB DEFAULT '{}'::jsonb`);
-        await client.query(`ALTER TABLE virtual_company_sessions ADD COLUMN IF NOT EXISTS skill_matches JSONB DEFAULT '{}'::jsonb`);
-        await client.query(`ALTER TABLE virtual_company_sessions ADD COLUMN IF NOT EXISTS document_package_url TEXT`);
+        await client.query(`ALTER TABLE aiteam_creation_sessions ADD COLUMN IF NOT EXISTS team_design JSONB DEFAULT '{}'::jsonb`);
+        await client.query(`ALTER TABLE aiteam_creation_sessions ADD COLUMN IF NOT EXISTS ceo_config JSONB DEFAULT '{}'::jsonb`);
+        await client.query(`ALTER TABLE aiteam_creation_sessions ADD COLUMN IF NOT EXISTS agent_matches JSONB DEFAULT '{}'::jsonb`);
+        await client.query(`ALTER TABLE aiteam_creation_sessions ADD COLUMN IF NOT EXISTS skill_matches JSONB DEFAULT '{}'::jsonb`);
+        await client.query(`ALTER TABLE aiteam_creation_sessions ADD COLUMN IF NOT EXISTS document_package_url TEXT`);
       } catch (error) {
-        console.log('Virtual company sessions extra columns already exist or not needed');
+        console.log('AiTeam sessions extra columns already exist or not needed');
       }
 
       // 创建用户Token配额表
@@ -362,6 +362,23 @@ class DatabaseService {
         )
       `);
 
+      // 创建社交账号表（第三方登录：Facebook、微信等）
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS social_accounts (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          provider TEXT NOT NULL,
+          provider_user_id TEXT NOT NULL,
+          provider_email TEXT,
+          display_name TEXT,
+          avatar_url TEXT,
+          raw_data JSONB DEFAULT '{}'::jsonb,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(provider, provider_user_id)
+        )
+      `);
+
       // 创建索引以提高查询性能
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
@@ -390,10 +407,10 @@ class DatabaseService {
         CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
         CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read) WHERE is_read = FALSE;
         
-        -- 虚拟公司会话表索引
-        CREATE INDEX IF NOT EXISTS idx_vcs_user_id ON virtual_company_sessions(user_id);
-        CREATE INDEX IF NOT EXISTS idx_vcs_status ON virtual_company_sessions(status);
-        CREATE INDEX IF NOT EXISTS idx_vcs_created_at ON virtual_company_sessions(created_at DESC);
+        -- AiTeam 创建会话表索引
+        CREATE INDEX IF NOT EXISTS idx_acs_user_id ON aiteam_creation_sessions(user_id);
+        CREATE INDEX IF NOT EXISTS idx_acs_status ON aiteam_creation_sessions(status);
+        CREATE INDEX IF NOT EXISTS idx_acs_created_at ON aiteam_creation_sessions(created_at DESC);
 
         -- Token配额表索引
         CREATE INDEX IF NOT EXISTS idx_utq_user_id ON user_token_quotas(user_id);
@@ -409,6 +426,11 @@ class DatabaseService {
         -- Token订单表索引
         CREATE INDEX IF NOT EXISTS idx_to_user_id ON token_orders(user_id);
         CREATE INDEX IF NOT EXISTS idx_to_status ON token_orders(status);
+        
+        -- 社交账号表索引
+        CREATE INDEX IF NOT EXISTS idx_social_accounts_user_id ON social_accounts(user_id);
+        CREATE INDEX IF NOT EXISTS idx_social_accounts_provider ON social_accounts(provider);
+        CREATE INDEX IF NOT EXISTS idx_social_accounts_provider_id ON social_accounts(provider, provider_user_id);
       `);
 
       console.log('✓ Database schema initialized successfully');

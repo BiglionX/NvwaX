@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Bot, Send, Sparkles, Loader } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface Message {
   id: string;
@@ -10,12 +11,13 @@ interface Message {
   timestamp: Date;
 }
 
-interface VirtualCompanyChatProps {
+interface AiTeamChatProps {
   sessionId: string;
   onComplete?: (data: Record<string, unknown>) => void;
 }
 
-export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCompanyChatProps) {
+export default function AiTeamChat({ sessionId, onComplete }: AiTeamChatProps) {
+  const t = useTranslations('vcChat');
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +50,7 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch(`${API_URL}/virtual-company/sessions/${sessionId}`, {
+      const response = await fetch(`${API_URL}/aiteam-creation/sessions/${sessionId}`, {
         headers,
       });
       const data = await response.json();
@@ -94,7 +96,7 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch(`${API_URL}/virtual-company/sessions/${sessionId}/message`, {
+      const response = await fetch(`${API_URL}/aiteam-creation/sessions/${sessionId}/message`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ content: userMessage })
@@ -129,7 +131,7 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
       const errorMessage: Message = {
         id: Math.random().toString(36).substr(2, 9),
         role: 'ceo_agent',
-        content: '抱歉，我遇到了问题，请稍后再试。',
+        content: t('errorMessage'),
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -152,8 +154,8 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 dark:text-gray-400 py-12">
             <Bot className="w-16 h-16 mx-auto mb-4 text-blue-500 opacity-80" />
-            <p className="text-lg font-medium">NvwaX Aiteam架构师 正在等待您的消息</p>
-            <p className="text-sm mt-2">描述您想要创建的团队类型或业务目标</p>
+            <p className="text-lg font-medium">{t('waitingTitle')}</p>
+            <p className="text-sm mt-2">{t('waitingDesc')}</p>
           </div>
         ) : (
           messages.map((message) => (
@@ -209,7 +211,7 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
         <div className="border-t bg-white dark:bg-gray-800 p-4 transition-all">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
             <Sparkles size={14} className="text-yellow-500" />
-            已提取的需求：
+            {t('extractedTitle')}
           </h3>
           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1 bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg">
             {Object.entries(extractedData).map(([key, value]) => (
@@ -230,7 +232,7 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="描述您想要创建的团队..."
+            placeholder={t('placeholder')}
             className="flex-1 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white transition-shadow"
             rows={2}
             disabled={isLoading}
@@ -244,7 +246,7 @@ export default function VirtualCompanyChat({ sessionId, onComplete }: VirtualCom
           </button>
         </div>
         <div className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-          <span className="hidden sm:inline">按 Enter 发送，</span> Shift + Enter 换行
+          <span className="hidden sm:inline">{t('sendEnter')}</span> {t('shiftEnter')}
         </div>
       </div>
     </div>

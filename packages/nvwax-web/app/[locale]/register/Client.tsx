@@ -6,8 +6,11 @@ import Link from 'next/link';
 import { authApi } from '@/lib/api/auth';
 import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Card, Input, Button, Alert, Space } from '@/components/UI';
+import { useTranslations } from 'next-intl';
+import SocialLoginButtons from '@/components/SocialLoginButtons';
 
 export default function RegisterClient() {
+  const t = useTranslations('register');
   const router = useRouter();
   const [formData, setFormData] = useState({
     email: '',
@@ -24,15 +27,13 @@ export default function RegisterClient() {
     e.preventDefault();
     setError('');
 
-    // 验证密码匹配
     if (formData.password !== formData.confirmPassword) {
-      setError('两次输入的密码不一致');
+      setError(t('passwordMismatch'));
       return;
     }
 
-    // 验证密码长度
     if (formData.password.length < 6) {
-      setError('密码长度至少为6个字符');
+      setError(t('passwordTooShort'));
       return;
     }
 
@@ -49,7 +50,7 @@ export default function RegisterClient() {
       router.push('/profile');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } } };
-      setError(error.response?.data?.error || '注册失败，请稍后重试');
+      setError(error.response?.data?.error || t('registerFailed'));
     } finally {
       setLoading(false);
     }
@@ -65,10 +66,10 @@ export default function RegisterClient() {
               <User className="text-white" size={32} />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              创建账户
+              {t('createAccount')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              加入 NvwaX，开始您的 AI 之旅
+              {t('subtitle')}
             </p>
           </div>
 
@@ -90,7 +91,7 @@ export default function RegisterClient() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                label="邮箱地址 *"
+                label={t('emailLabel')}
                 placeholder="your@email.com"
                 prefix={<Mail size={20} />}
                 required
@@ -100,8 +101,8 @@ export default function RegisterClient() {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                label="昵称（可选）"
-                placeholder="您的昵称"
+                label={t('nicknameLabel')}
+                placeholder={t('nicknamePlaceholder')}
                 prefix={<User size={20} />}
               />
 
@@ -109,15 +110,15 @@ export default function RegisterClient() {
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                label="密码 *"
-                placeholder="至少6个字符"
+                label={t('passwordLabel')}
+                placeholder={t('passwordPlaceholder')}
                 prefix={<Lock size={20} />}
                 suffix={
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                    aria-label={showPassword ? '隐藏密码' : '显示密码'}
+                    aria-label={showPassword ? t('hidePassword') : t('showPassword')}
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
@@ -129,15 +130,15 @@ export default function RegisterClient() {
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                label="确认密码 *"
-                placeholder="再次输入密码"
+                label={t('confirmPasswordLabel')}
+                placeholder={t('confirmPasswordPlaceholder')}
                 prefix={<Lock size={20} />}
                 suffix={
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                    aria-label={showConfirmPassword ? '隐藏密码' : '显示密码'}
+                    aria-label={showConfirmPassword ? t('hidePassword') : t('showPassword')}
                   >
                     {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
@@ -153,7 +154,7 @@ export default function RegisterClient() {
                 loading={loading}
                 rightIcon={!loading ? <ArrowRight size={20} /> : undefined}
               >
-                {loading ? '注册中...' : '创建账户'}
+                {loading ? t('registering') : t('registerBtn')}
               </Button>
             </Space>
           </form>
@@ -161,12 +162,12 @@ export default function RegisterClient() {
           {/* Login Link */}
           <div className="mt-6 text-center">
             <p className="text-gray-600 dark:text-gray-400">
-              已有账户？{' '}
+              {t('hasAccount')}{' '}
               <Link
                 href="/login"
                 className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
               >
-                立即登录
+                {t('loginNow')}
               </Link>
             </p>
           </div>
@@ -177,9 +178,12 @@ export default function RegisterClient() {
               href="/"
               className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             >
-              ← 返回首页
+              {t('backHome')}
             </Link>
           </div>
+
+          {/* 社交登录按钮 */}
+          <SocialLoginButtons />
         </Card>
       </div>
     </div>

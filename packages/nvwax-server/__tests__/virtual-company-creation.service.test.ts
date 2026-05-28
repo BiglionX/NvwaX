@@ -1,9 +1,9 @@
 /**
- * 虚拟公司创建服务 - 单元测试
+ * AiTeam 创建服务 - 单元测试
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { VirtualCompanyCreationService } from '../src/services/virtual-company-creation.service.js';
+import { AiTeamCreationService } from '../src/services/aiteam-creation.service.js';
 
 // Mock database service
 jest.mock('../src/services/database.service.js', () => ({

@@ -9,6 +9,7 @@ import { adminApi } from '@/lib/api/admin';
 import { useAuth } from '@/hooks/useAuth';
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Card, Input, Button, Alert, Space } from '@/components/UI';
+import SocialLoginButtons from '@/components/SocialLoginButtons';
 
 // 将使用 useSearchParams 的逻辑提取到单独组件
 function LoginForm() {
@@ -193,6 +194,9 @@ function LoginForm() {
               {tc('back')}
             </Link>
           </div>
+
+          {/* 社交登录按钮 */}
+          <SocialLoginButtons />
         </Card>
       </div>
     </div>

@@ -2,7 +2,7 @@
  * Nvwa Agent Service
  * 
  * 为 Nvwa 普通 Agent 创建流程提供审查、搜索和验证功能
- * 复用阶段一在虚拟公司中实现的工作流引擎能力
+ * 复用阶段一在 AiTeam 中实现的工作流引擎能力
  */
 
 import axios from 'axios';

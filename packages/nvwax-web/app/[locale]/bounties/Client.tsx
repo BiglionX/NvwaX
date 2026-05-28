@@ -9,8 +9,10 @@ import BountyCard from '@/components/Bounty/BountyCard';
 import SearchHistory from '@/components/Bounty/SearchHistory';
 import PopularSearches from '@/components/Bounty/PopularSearches';
 import SearchSuggestions from '@/components/Bounty/SearchSuggestions';
+import { useTranslations } from 'next-intl';
 
 export default function BountiesClient() {
+  const t = useTranslations('bountyList');
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<string>('open');
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,15 +65,15 @@ export default function BountiesClient() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">悬赏市场</h1>
-          <p className="text-gray-600 dark:text-gray-400">发布任务，寻找技能，获得奖励</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('pageTitle')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('pageSubtitle')}</p>
         </div>
         <Link
           href="/bounties/create"
           className="px-6 py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl transition-all flex items-center gap-2 shadow-lg"
         >
           <Plus size={20} />
-          发布悬赏
+          {t('publishBounty')}
         </Link>
       </div>
 
@@ -86,11 +88,11 @@ export default function BountiesClient() {
               onChange={(e) => setStatus(e.target.value)}
               className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <option value="open">开放中</option>
-              <option value="claimed">已领取</option>
-              <option value="submitted">待验证</option>
-              <option value="completed">已完成</option>
-              <option value="cancelled">已取消</option>
+              <option value="open">{t('statusOpen')}</option>
+              <option value="claimed">{t('statusClaimed')}</option>
+              <option value="submitted">{t('statusSubmitted')}</option>
+              <option value="completed">{t('statusCompleted')}</option>
+              <option value="cancelled">{t('statusCancelled')}</option>
             </select>
           </div>
 
@@ -100,7 +102,7 @@ export default function BountiesClient() {
               <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="搜索悬赏标题或描述..."
+                placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
@@ -120,12 +122,12 @@ export default function BountiesClient() {
               onChange={(e) => setSkillFilter(e.target.value)}
               className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <option value="">所有技能</option>
-              <option value="customer-service">客服</option>
-              <option value="database-connector">数据库</option>
-              <option value="code-generation">代码生成</option>
-              <option value="data-analysis">数据分析</option>
-              <option value="api-integration">API集成</option>
+              <option value="">{t('allSkills')}</option>
+              <option value="customer-service">{t('skillCustomerService')}</option>
+              <option value="database-connector">{t('skillDatabase')}</option>
+              <option value="code-generation">{t('skillCodeGen')}</option>
+              <option value="data-analysis">{t('skillDataAnalysis')}</option>
+              <option value="api-integration">{t('skillApiIntegration')}</option>
             </select>
           </div>
         </div>
@@ -149,14 +151,14 @@ export default function BountiesClient() {
       ) : bounties.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">📭</div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">暂无悬赏</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">成为第一个发布悬赏的人吧！</p>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t('noBounties')}</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{t('noBountiesDesc')}</p>
           <Link
             href="/bounties/create"
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors"
           >
             <Plus size={20} />
-            发布悬赏
+            {t('publishBounty')}
           </Link>
         </div>
       ) : (
@@ -175,11 +177,11 @@ export default function BountiesClient() {
                 disabled={page === 1}
                 className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                上一页
+                {t('prevPage')}
               </button>
               
               <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
-                第 {page} / {pagination.totalPages} 页（共 {pagination.total} 条）
+                {t('pageInfo', { current: page, total: pagination.totalPages, count: pagination.total })}
               </span>
 
               <button
@@ -187,7 +189,7 @@ export default function BountiesClient() {
                 disabled={page === pagination.totalPages}
                 className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                下一页
+                {t('nextPage')}
               </button>
             </div>
           )}

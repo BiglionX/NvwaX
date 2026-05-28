@@ -236,7 +236,7 @@ ${rulesList}
   async saveToSession(sessionId: string, ceoConfig: CEOConfig): Promise<void> {
     try {
       await this.pool.query(
-        `UPDATE virtual_company_sessions 
+        `UPDATE aiteam_creation_sessions
          SET ceo_config = $1, updated_at = NOW()
          WHERE id = $2`,
         [JSON.stringify(ceoConfig), sessionId]
@@ -255,7 +255,7 @@ ${rulesList}
   async getFromSession(sessionId: string): Promise<CEOConfig | null> {
     try {
       const result = await this.pool.query(
-        'SELECT ceo_config FROM virtual_company_sessions WHERE id = $1',
+        'SELECT ceo_config FROM aiteam_creation_sessions WHERE id = $1',
         [sessionId]
       );
 

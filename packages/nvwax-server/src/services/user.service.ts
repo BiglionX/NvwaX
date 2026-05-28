@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { tokenQuotaService } from './token-quota.service.js';
+import { SocialAccount, OAuthProvider } from '../types/oauth.types.js';
 
 export interface User {
   id: string;
@@ -35,6 +36,224 @@ export class UserService {
   private readonly SALT_ROUNDS = 10;
   private readonly CROSS_AUTH_SECRET = 'proclaw-nvwax-bridge-2026'; // 与 ProClaw 共享
   private readonly CROSS_AUTH_MAX_AGE = 5 * 60; // 5 分钟有效期
+
+  // ───────── 社交账号 OAuth 相关方法 ─────────
+
+  /**
+   * 根据第三方账号查询用户
+   * @param provider 第三方平台
+   * @param providerUserId 第三方平台用户ID
+   * @returns 用户信息（如已绑定）或 null
+   */
+  async findUserBySocialAccount(provider: OAuthProvider, providerUserId: string): Promise<{ user: User; socialAccount: SocialAccount } | null> {
+    const result = await this.pool.query(`
+      SELECT u.*, sa.id as sa_id, sa.provider, sa.provider_user_id, sa.provider_email, sa.display_name, sa.avatar_url, sa.raw_data, sa.created_at as sa_created_at, sa.updated_at as sa_updated_at
+      FROM users u
+      INNER JOIN social_accounts sa ON sa.user_id = u.id
+      WHERE sa.provider = $1 AND sa.provider_user_id = $2
+    `, [provider, providerUserId]);
+
+    if (result.rows.length === 0) return null;
+
+    const row = result.rows[0];
+    const socialAccount: SocialAccount = {
+      id: row.sa_id,
+      user_id: row.id,
+      provider: row.provider,
+      provider_user_id: row.provider_user_id,
+      provider_email: row.provider_email,
+      display_name: row.display_name,
+      avatar_url: row.avatar_url,
+      raw_data: row.raw_data,
+      created_at: row.sa_created_at,
+      updated_at: row.sa_updated_at
+    };
+
+    return {
+      user: this.formatUser(row),
+      socialAccount
+    };
+  }
+
+  /**
+   * 通过社交账号创建用户（首次登录时）
+   * @param info 社交账号信息
+   * @returns 创建的用户
+   */
+  async createUserFromSocialAccount(info: {
+    provider: OAuthProvider;
+    providerUserId: string;
+    email?: string;
+    name?: string;
+    avatarUrl?: string;
+    rawData: Record<string, any>;
+  }): Promise<LoginResult> {
+    const email = info.email || `${info.providerUserId}@${info.provider}.oauth`;
+    const name = info.name || info.providerUserId;
+
+    // 创建用户
+    const id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    await this.pool.query(
+      'INSERT INTO users (id, email, name, avatar) VALUES ($1, $2, $3, $4)',
+      [id, email, name, info.avatarUrl || null]
+    );
+
+    // 创建社交账号关联
+    await this.pool.query(`
+      INSERT INTO social_accounts (id, user_id, provider, provider_user_id, provider_email, display_name, avatar_url, raw_data)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `, [
+      `sa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id,
+      info.provider,
+      info.providerUserId,
+      info.email || null,
+      info.name || null,
+      info.avatarUrl || null,
+      JSON.stringify(info.rawData)
+    ]);
+
+    // 初始化Token配额
+    try {
+      await tokenQuotaService.createUserQuota(id);
+    } catch (err) {
+      console.error('Failed to create token quota for user:', id, err);
+    }
+
+    const user = await this.getUserById(id);
+    if (!user) {
+      throw new Error('Failed to create user from social account');
+    }
+
+    const token = this.generateToken(user);
+    const { password: _, ...userWithoutPassword } = user;
+
+    return { user: userWithoutPassword, token };
+  }
+
+  /**
+   * 获取用户绑定的所有社交账号
+   */
+  async getUserSocialAccounts(userId: string): Promise<SocialAccount[]> {
+    const result = await this.pool.query(
+      'SELECT * FROM social_accounts WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId]
+    );
+    return result.rows.map(this.formatSocialAccount);
+  }
+
+  /**
+   * 为已有用户绑定社交账号
+   */
+  async bindSocialAccount(userId: string, info: {
+    provider: OAuthProvider;
+    providerUserId: string;
+    email?: string;
+    name?: string;
+    avatarUrl?: string;
+    rawData: Record<string, any>;
+  }): Promise<SocialAccount> {
+    // 检查该社交账号是否已被其他用户绑定
+    const existing = await this.pool.query(
+      'SELECT * FROM social_accounts WHERE provider = $1 AND provider_user_id = $2',
+      [info.provider, info.providerUserId]
+    );
+
+    if (existing.rows.length > 0) {
+      const sa = existing.rows[0];
+      if (sa.user_id !== userId) {
+        throw new Error('This social account is already bound to another user');
+      }
+      // 已绑定到当前用户，更新信息
+      const updated = await this.pool.query(`
+        UPDATE social_accounts SET provider_email = $1, display_name = $2, avatar_url = $3, raw_data = $4, updated_at = CURRENT_TIMESTAMP
+        WHERE provider = $5 AND provider_user_id = $6
+        RETURNING *
+      `, [
+        info.email || null,
+        info.name || null,
+        info.avatarUrl || null,
+        JSON.stringify(info.rawData),
+        info.provider,
+        info.providerUserId
+      ]);
+      return this.formatSocialAccount(updated.rows[0]);
+    }
+
+    // 未绑定，创建新关联
+    const result = await this.pool.query(`
+      INSERT INTO social_accounts (id, user_id, provider, provider_user_id, provider_email, display_name, avatar_url, raw_data)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *
+    `, [
+      `sa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId,
+      info.provider,
+      info.providerUserId,
+      info.email || null,
+      info.name || null,
+      info.avatarUrl || null,
+      JSON.stringify(info.rawData)
+    ]);
+
+    // 如果用户没有头像，用社交账号头像填充
+    if (info.avatarUrl) {
+      await this.pool.query(
+        'UPDATE users SET avatar = $1 WHERE id = $2 AND (avatar IS NULL OR avatar = \'\')',
+        [info.avatarUrl, userId]
+      );
+    }
+
+    return this.formatSocialAccount(result.rows[0]);
+  }
+
+  /**
+   * 解绑用户的社交账号
+   */
+  async unbindSocialAccount(userId: string, provider: OAuthProvider, providerUserId: string): Promise<boolean> {
+    // 检查用户是否还有其他登录方式
+    const userResult = await this.pool.query('SELECT password FROM users WHERE id = $1', [userId]);
+    if (userResult.rows.length === 0) return false;
+
+    const hasPassword = !!userResult.rows[0].password;
+    const socialCountResult = await this.pool.query(
+      'SELECT COUNT(*) as count FROM social_accounts WHERE user_id = $1',
+      [userId]
+    );
+    const socialCount = parseInt(socialCountResult.rows[0].count);
+
+    // 如果用户没有密码且只有一个社交账号，不允许解绑
+    if (!hasPassword && socialCount <= 1) {
+      throw new Error('Cannot unbind the only login method. Please set a password first.');
+    }
+
+    const result = await this.pool.query(
+      'DELETE FROM social_accounts WHERE user_id = $1 AND provider = $2 AND provider_user_id = $3',
+      [userId, provider, providerUserId]
+    );
+
+    return (result.rowCount || 0) > 0;
+  }
+
+  /**
+   * 格式化社交账号数据
+   */
+  private formatSocialAccount(row: any): SocialAccount {
+    return {
+      id: row.id,
+      user_id: row.user_id,
+      provider: row.provider,
+      provider_user_id: row.provider_user_id,
+      provider_email: row.provider_email,
+      display_name: row.display_name,
+      avatar_url: row.avatar_url,
+      raw_data: typeof row.raw_data === 'string' ? JSON.parse(row.raw_data) : row.raw_data,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    };
+  }
+
+  // ───────── 原有方法 ─────────
 
   // 注册用户
   async registerUser(email: string, password: string, name?: string): Promise<LoginResult> {

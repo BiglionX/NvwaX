@@ -3,13 +3,14 @@ import { searchController } from '../controllers/search.controller.js';
 import { projectController } from '../controllers/project.controller.js';
 import { userController } from '../controllers/user.controller.js';
 import { userAuthController } from '../controllers/user-auth.controller.js';
+import { socialAuthController } from '../controllers/social-auth.controller.js';
 import { bountyController } from '../controllers/bounty.controller.js';
 import { teamSkillController } from '../controllers/team-skill.controller.js';
 import { userAuthMiddleware } from '../middleware/user-auth.middleware.js';
 import teamSkillRouter from './team-skill.routes.js';
 import nvwaLeaderRouter from './nvwa-leader.routes.js';
 import nvwaAgentRouter from './nvwa-agent.routes.js';
-import virtualCompanyRouter from './virtual-company.routes.js';
+import aiteamCreationRouter from './aiteam-creation.routes.js';
 import teamExecutionRouter from './team-execution.routes.js';
 import adminRouter from './admin.routes.js';
 import sdkRouter from './sdk.routes.js';
@@ -82,6 +83,14 @@ router.post('/auth/login', userAuthController.login);
 router.post('/auth/proclaw-cross-auth', userAuthController.proclawCrossAuth);
 router.get('/auth/profile', userAuthController.getProfile);
 
+// Social login routes
+router.post('/auth/facebook/login', socialAuthController.facebookLogin.bind(socialAuthController));
+router.post('/auth/google/login', socialAuthController.googleLogin.bind(socialAuthController));
+router.post('/auth/wechat/login', socialAuthController.wechatLogin.bind(socialAuthController));
+router.get('/auth/social/accounts', socialAuthController.getSocialAccounts.bind(socialAuthController));
+router.post('/auth/social/bind', socialAuthController.bindSocialAccount.bind(socialAuthController));
+router.post('/auth/social/unbind', socialAuthController.unbindSocialAccount.bind(socialAuthController));
+
 // Bounty routes
 router.post('/bounties', userAuthMiddleware, bountyController.createBounty);
 router.get('/bounties', bountyController.getBounties);
@@ -106,7 +115,7 @@ router.use('/nvwa', nvwaLeaderRouter);
 router.use('/nvwa-agent', nvwaAgentRouter);
 
 // Virtual Company Creation routes
-router.use('/virtual-company', virtualCompanyRouter);
+router.use('/aiteam-creation', aiteamCreationRouter);
 
 // Team Execution routes
 router.use('/', teamExecutionRouter);

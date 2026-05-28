@@ -26,6 +26,10 @@ router.get('/users/stats', adminController.getUserStats);
 router.post('/users/:id/ban', adminController.banUser);
 router.post('/users/:id/unban', adminController.unbanUser);
 
+// 社交账号管理
+router.get('/users/social-stats', adminController.getUserSocialStats);
+router.get('/users/:userId/social-accounts', adminController.getUserSocialAccounts);
+
 // 项目管理
 router.get('/projects', adminController.getProjectList);
 router.get('/projects/stats', adminController.getProjectStats);
@@ -49,7 +53,7 @@ router.post('/crawler/clean', adminController.cleanOldAgents);
 
 // AI 业务管理
 router.get('/agents', adminController.getAgentList);
-router.get('/virtual-companies/builds', adminController.getVirtualCompanyBuilds);
+router.get('/virtual-companies/builds', adminController.getAiTeamBuilds);
 
 // 通知管理
 router.post('/notifications/announce', adminController.sendSystemAnnouncement);
