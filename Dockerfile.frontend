@@ -51,6 +51,9 @@ COPY --from=frontend-builder /app/packages/nvwax-web/next.config.ts ./packages/n
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nvwax -u 1001
 
+# Fix permissions for .next directory (nvwax user needs write access for image cache)
+RUN chown -R nvwax:nodejs /app/packages/nvwax-web
+
 USER nvwax
 
 WORKDIR /app/packages/nvwax-web
