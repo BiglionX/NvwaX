@@ -11,7 +11,7 @@ import AiSearchPanel from '@/components/Marketplace/AiSearchPanel';
  */
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isHome = pathname === '/';
+  const isHome = pathname === '/' || pathname === '/en';
   const { isOpen, initialMessage, onAutoGenerate, closeAiSearch } = useAiSearch();
 
   return (
