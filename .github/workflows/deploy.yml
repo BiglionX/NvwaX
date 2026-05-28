@@ -32,13 +32,13 @@ jobs:
               git clone https://github.com/BiglionX/NvwaX.git /opt/nvwax
             fi
             cd /opt/nvwax
+            echo "🧹 Cleaning disk before pull..."
+            docker system prune -a -f --volumes 2>/dev/null || true
+            docker builder prune -a -f 2>/dev/null || true
             echo "📥 Pulling latest code..."
             git pull origin main
             echo " Stopping old containers..."
             docker-compose down
-            echo "🧹 Cleaning up disk space..."
-            docker system prune -a -f --volumes 2>/dev/null || true
-            docker builder prune -a -f 2>/dev/null || true
             echo " Building and starting containers..."
             docker-compose up -d --build
             echo " Waiting for services to start..."
