@@ -157,10 +157,15 @@ export const teamSkillApi = {
    */
   getMarketplaceTeamSkills: async (
     page = 1,
-    limit = 20
+    limit = 20,
+    category?: string
   ): Promise<{ success: boolean; data: TeamSkillSearchResult }> => {
+    const params: Record<string, string | number> = { page, limit };
+    if (category) {
+      params.category = category;
+    }
     const response = await apiClient.get('/team-skills/marketplace', {
-      params: { page, limit }
+      params
     });
     return response.data;
   },

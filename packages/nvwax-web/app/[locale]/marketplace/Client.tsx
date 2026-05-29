@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { Button, Input, Space, Container, Card, Badge, Tag, Modal } from '@/components/UI';
 import { useAiSearch } from '@/contexts/AiSearchContext';
 
-type Category = 'all' | 'agents' | 'aiteams' | 'virtual-company';
+type Category = 'all' | 'agents' | 'aiteams' | 'virtual-company' | 'website_operations' | 'social_media';
 
 export default function MarketplaceClient() {
   const t = useTranslations('marketplace');
@@ -82,6 +82,10 @@ export default function MarketplaceClient() {
         });
       }
       // "全部"、"智能体"、"AI团队"、"AiTeam"都获取所有公开的 team_skills
+      // 选择特定分类时按分类筛选
+      if (selectedCategory === 'website_operations' || selectedCategory === 'social_media') {
+        return teamSkillApi.getMarketplaceTeamSkills(1, 30, selectedCategory);
+      }
       return teamSkillApi.getMarketplaceTeamSkills(1, 30);
     },
     enabled: selectedCategory !== 'agents'
@@ -93,6 +97,8 @@ export default function MarketplaceClient() {
     { value: 'agents', label: t('agents') },
     { value: 'aiteams', label: t('aiteams'), icon: Users },
     { value: 'virtual-company', label: t('virtualCompany') },
+    { value: 'website_operations', label: t('websiteOperations') },
+    { value: 'social_media', label: t('socialMedia') },
   ];
 
   const isLoading = loadingAgents || loadingAiteams || loadingTeamSkills;
@@ -444,6 +450,146 @@ export default function MarketplaceClient() {
                   </p>
                   
                   {/* 显示团队成员数量 */}
+                  {skill.roles && Array.isArray(skill.roles) && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      <Users size={16} />
+                      <span>{t('roleCount', { count: skill.roles.length })}</span>
+                    </div>
+                  )}
+
+                  {skill.category && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <Tag variant="primary" size="sm">
+                        {skill.category}
+                      </Tag>
+                    </div>
+                  )}
+
+                  <Button variant="primary" fullWidth>
+                    {t('viewDetail')}
+                  </Button>
+                </Card>
+              </Link>
+            ))}
+          </div>
+          ) : null}
+        </>
+      )}
+
+      {/* Website Operations */}
+      {(selectedCategory === 'all' || selectedCategory === 'website_operations') && (
+        <>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span className="text-2xl">🌐</span>
+            {t('websiteOperations')}
+            {teamSkillsData?.data?.data && (
+              <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                {t('countLabel', { count: teamSkillsData.data.data.filter((s: TeamSkill) => s.category === 'website_operations').length })}
+              </span>
+            )}
+          </h2>
+          {loadingTeamSkills ? (
+            <div className="flex items-center justify-center py-8 mb-8 gap-3 text-gray-400 dark:text-gray-500">
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm">{t('searching')}</span>
+            </div>
+          ) : teamSkillsData?.data?.data ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {teamSkillsData.data.data?.filter((skill: TeamSkill) => skill.category === 'website_operations').map((skill: TeamSkill) => (
+              <Link
+                key={skill.id}
+                href={`/marketplace/team-skills/${skill.id}`}
+                className="block"
+              >
+                <Card className="hover:-translate-y-1 hover:shadow-xl transition-all group">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {skill.name}
+                    </h3>
+                    {skill.category === 'website_operations' && (
+                      <Badge variant="info">
+                        {t('websiteOperations')}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
+                    {skill.description}
+                  </p>
+                  
+                  {skill.roles && Array.isArray(skill.roles) && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      <Users size={16} />
+                      <span>{t('roleCount', { count: skill.roles.length })}</span>
+                    </div>
+                  )}
+
+                  {skill.category && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <Tag variant="primary" size="sm">
+                        {skill.category}
+                      </Tag>
+                    </div>
+                  )}
+
+                  <Button variant="primary" fullWidth>
+                    {t('viewDetail')}
+                  </Button>
+                </Card>
+              </Link>
+            ))}
+          </div>
+          ) : null}
+        </>
+      )}
+
+      {/* Social Media */}
+      {(selectedCategory === 'all' || selectedCategory === 'social_media') && (
+        <>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span className="text-2xl">📱</span>
+            {t('socialMedia')}
+            {teamSkillsData?.data?.data && (
+              <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                {t('countLabel', { count: teamSkillsData.data.data.filter((s: TeamSkill) => s.category === 'social_media').length })}
+              </span>
+            )}
+          </h2>
+          {loadingTeamSkills ? (
+            <div className="flex items-center justify-center py-8 mb-8 gap-3 text-gray-400 dark:text-gray-500">
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm">{t('searching')}</span>
+            </div>
+          ) : teamSkillsData?.data?.data ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {teamSkillsData.data.data?.filter((skill: TeamSkill) => skill.category === 'social_media').map((skill: TeamSkill) => (
+              <Link
+                key={skill.id}
+                href={`/marketplace/team-skills/${skill.id}`}
+                className="block"
+              >
+                <Card className="hover:-translate-y-1 hover:shadow-xl transition-all group">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {skill.name}
+                    </h3>
+                    {skill.category === 'social_media' && (
+                      <Badge variant="info">
+                        {t('socialMedia')}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
+                    {skill.description}
+                  </p>
+                  
                   {skill.roles && Array.isArray(skill.roles) && (
                     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
                       <Users size={16} />

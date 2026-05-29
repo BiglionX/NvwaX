@@ -138,6 +138,16 @@ export default function TeamSkillDetailPage() {
                   AiTeam
                 </span>
               )}
+              {skill.category === 'website_operations' && (
+                <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 flex items-center gap-1">
+                  网站运营
+                </span>
+              )}
+              {skill.category === 'social_media' && (
+                <span className="px-3 py-1 text-sm rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 flex items-center gap-1">
+                  社交运营
+                </span>
+              )}
             </div>
             <p className="text-gray-600 dark:text-gray-300 text-lg">
               {skill.description || '专业的全栈开发团队，包含产品经理、UI/UX设计师、前端/后端开发、数据库专家、测试工程师和DevOps工程师。提供从需求分析、界面设计、开发实现、自动化测试到CI/CD部署的端到端解决方案，确保高质量交付。'}
