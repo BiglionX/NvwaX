@@ -662,12 +662,12 @@ export default function MarketplaceClient() {
           ) : microbizData?.data ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {microbizData.data.map((team: MicroBizTeam) => (
-                <Link
+                <div
                   key={team.id}
-                  href={`/team-skills/${team.id}`}
                   className="block"
                 >
-                  <div className="hover:-translate-y-1 hover:shadow-xl transition-all group border-l-4 rounded-xl border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-800" style={{ borderLeftColor: team.color || '#7C3AED' }}>
+                  <div className="border-l-4 rounded-xl" style={{ borderLeftColor: team.color || '#7C3AED' }}>
+                    <Card className="hover:-translate-y-1 hover:shadow-xl transition-all group">
                     <div className="flex items-start justify-between mb-3">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {team.name}
@@ -703,11 +703,22 @@ export default function MarketplaceClient() {
                       </div>
                     )}
 
-                    <Button variant="primary" fullWidth>
-                      {t('microbizInstall')}
-                    </Button>
-                  </div>
-                </Link>
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/marketplace/team-skills/${team.id}`}
+                        className="flex-1"
+                      >
+                        <Button variant="outline" fullWidth>
+                          {t('viewDetail')}
+                        </Button>
+                      </Link>
+                      <Button variant="primary" fullWidth>
+                        {t('microbizInstall')}
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+              </div>
               ))}
             </div>
           ) : null}
