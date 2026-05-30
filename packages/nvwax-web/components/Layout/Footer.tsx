@@ -20,6 +20,8 @@ export default function Footer() {
       { label: t('nav.marketplace'), href: '/marketplace' },
       { label: t('nav.projects'), href: '/projects' },
       { label: t('nav.profile'), href: '/profile' },
+      { label: 'SkillHub', href: 'https://skillhub.proclaw.cc', external: true },
+      { label: 'ProClaw', href: 'https://proclaw.cc', external: true },
     ],
     resources: [
       { label: 'Docs', href: 'https://github.com/BigLionX/NvwaX#readme', external: true },
@@ -100,16 +102,31 @@ export default function Footer() {
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className={`text-sm transition-colors ${
-                      isHome
-                        ? 'text-slate-400 hover:text-blue-400'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
+                  {'external' in link && link.external ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`text-sm transition-colors ${
+                        isHome
+                          ? 'text-slate-400 hover:text-blue-400'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                      }`}
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      href={link.href}
+                      className={`text-sm transition-colors ${
+                        isHome
+                          ? 'text-slate-400 hover:text-blue-400'
+                          : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
