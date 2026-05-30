@@ -303,6 +303,45 @@ export class TeamSkillService {
   }
 
   /**
+   * 获取行业插件的 Agent 明细
+   */
+  async getIndustryAgents(teamSkillId: string): Promise<any[]> {
+    const result = await this.pool.query(
+      'SELECT * FROM industry_agents WHERE team_skill_id = $1 ORDER BY sort_order ASC',
+      [teamSkillId]
+    );
+    return result.rows.map(row => ({
+      id: row.id,
+      teamSkillId: row.team_skill_id,
+      name: row.name,
+      description: row.description,
+      proclawAgentId: row.proclaw_agent_id,
+      role: row.role,
+      capabilities: typeof row.capabilities === 'string' ? JSON.parse(row.capabilities) : row.capabilities,
+      permissions: typeof row.permissions === 'string' ? JSON.parse(row.permissions) : row.permissions,
+      inputSchema: typeof row.input_schema === 'string' ? JSON.parse(row.input_schema) : row.input_schema,
+      outputSchema: typeof row.output_schema === 'string' ? JSON.parse(row.output_schema) : row.output_schema,
+      apiBindings: typeof row.api_bindings === 'string' ? JSON.parse(row.api_bindings) : row.api_bindings,
+      modelConfig: typeof row.model_config === 'string' ? JSON.parse(row.model_config) : row.model_config,
+      systemPrompt: row.system_prompt,
+      sortOrder: row.sort_order
+    }));
+  }
+
+  /**
+   * 获取行业插件的所有类别
+   */
+  async getIndustryPluginCategories(): Promise<string[]> {
+    const result = await this.pool.query(
+      `SELECT DISTINCT binding_rules->>'industry_type' AS industry_type 
+       FROM team_skills 
+       WHERE category = 'industry-plugin' AND is_public = true
+       ORDER BY industry_type`
+    );
+    return result.rows.map(row => row.industry_type).filter(Boolean);
+  }
+
+  /**
    * 格式化数据库行为 TeamSkill 对象
    */
   private formatTeamSkill(row: any): TeamSkill {

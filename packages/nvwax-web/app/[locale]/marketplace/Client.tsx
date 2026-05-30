@@ -7,12 +7,12 @@ import { searchApi, Agent, SkillRecommendation } from '@/lib/api/search';
 import { aiteamApi, AiTeam } from '@/lib/api/aiteams';
 import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
 import { microbizApi, MicroBizTeam } from '@/lib/api/microbiz';
-import { Star, Download, ExternalLink, Users, Search, X, TrendingUp, Plus, Sparkles, Store } from 'lucide-react';
+import { Star, Download, ExternalLink, Users, Search, X, TrendingUp, Plus, Sparkles, Store, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 import { Button, Input, Space, Container, Card, Badge, Tag, Modal } from '@/components/UI';
 import { useAiSearch } from '@/contexts/AiSearchContext';
 
-type Category = 'all' | 'agents' | 'aiteams' | 'virtual-company' | 'website_operations' | 'social_media' | 'microbiz';
+type Category = 'all' | 'agents' | 'aiteams' | 'virtual-company' | 'website_operations' | 'social_media' | 'microbiz' | 'industry-plugin';
 
 export default function MarketplaceClient() {
   const t = useTranslations('marketplace');
@@ -84,7 +84,7 @@ export default function MarketplaceClient() {
       }
       // "全部"、"智能体"、"AI团队"、"AiTeam"都获取所有公开的 team_skills
       // 选择特定分类时按分类筛选
-      if (selectedCategory === 'website_operations' || selectedCategory === 'social_media') {
+      if (selectedCategory === 'website_operations' || selectedCategory === 'social_media' || selectedCategory === 'industry-plugin') {
         return teamSkillApi.getMarketplaceTeamSkills(1, 30, selectedCategory);
       }
       return teamSkillApi.getMarketplaceTeamSkills(1, 30);
@@ -112,10 +112,21 @@ export default function MarketplaceClient() {
     { value: 'virtual-company', label: t('virtualCompany') },
     { value: 'website_operations', label: t('websiteOperations') },
     { value: 'social_media', label: t('socialMedia') },
+    { value: 'industry-plugin', label: t('industryPlugin'), icon: Briefcase },
     { value: 'microbiz', label: t('microbiz'), icon: Store },
   ];
 
   const isLoading = loadingAgents || loadingAiteams || loadingTeamSkills;
+
+  // 行业插件颜色映射
+  const getIndustryColor = (skill: TeamSkill): string => {
+    const name = skill.name.toLowerCase();
+    if (name.includes('餐饮')) return '#10B981'; // emerald
+    if (name.includes('美业')) return '#EC4899'; // pink
+    if (name.includes('宠物')) return '#F59E0B'; // amber
+    if (name.includes('cloud')) return '#6366F1'; // indigo
+    return '#10B981';
+  };
 
   // 当搜索无结果时，加载推荐
   const isSearchEmpty = useCallback(() => {
@@ -626,6 +637,78 @@ export default function MarketplaceClient() {
               </Link>
             ))}
           </div>
+          ) : null}
+        </>
+      )}
+
+      {/* 行业插件专区 */}
+      {(selectedCategory === 'all' || selectedCategory === 'industry-plugin') && (
+        <>
+          {/* 行业插件专区横幅 */}
+          <Card className="mb-8 bg-linear-to-r from-emerald-600 to-teal-600 text-white shadow-lg">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                <Briefcase size={28} />
+                行业插件
+              </h2>
+              <p className="text-emerald-100 text-sm mb-4">
+                面向 ProClaw 桌面端的行业专用 AI 团队，涵盖餐饮、美业、宠物、Cloud 四大行业，即装即用。
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Badge variant="info" className="bg-emerald-500/30 text-white border-emerald-300/30">餐饮行业</Badge>
+                <Badge variant="info" className="bg-emerald-500/30 text-white border-emerald-300/30">美业行业</Badge>
+                <Badge variant="info" className="bg-emerald-500/30 text-white border-emerald-300/30">宠物行业</Badge>
+                <Badge variant="info" className="bg-emerald-500/30 text-white border-emerald-300/30">Cloud平台</Badge>
+              </div>
+            </div>
+          </Card>
+
+          {loadingTeamSkills ? (
+            <div className="flex items-center justify-center py-8 mb-8 gap-3 text-gray-400 dark:text-gray-500">
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm">{t('searching')}</span>
+            </div>
+          ) : teamSkillsData?.data?.data ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {teamSkillsData.data.data?.filter((skill: TeamSkill) => skill.category === 'industry-plugin').map((skill: TeamSkill) => (
+                <Link
+                  key={skill.id}
+                  href={`/marketplace/team-skills/${skill.id}`}
+                  className="block"
+                >
+                  <div className="h-full border-t-4 rounded-xl overflow-hidden" style={{ borderTopColor: getIndustryColor(skill) }}>
+                  <Card className="hover:-translate-y-1 hover:shadow-xl transition-all group h-full rounded-t-none">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        {skill.name}
+                      </h3>
+                      <Badge variant="info" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                        行业插件
+                      </Badge>
+                    </div>
+                    
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">
+                      {skill.description}
+                    </p>
+                    
+                    {skill.roles && Array.isArray(skill.roles) && (
+                      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        <Users size={16} />
+                        <span>{skill.roles.length} 个 AI 助手</span>
+                      </div>
+                    )}
+
+                    <Button variant="primary" fullWidth className="bg-emerald-600! hover:bg-emerald-700!">
+                      {t('viewDetail')}
+                    </Button>
+                  </Card>
+                  </div>
+                </Link>
+              ))}
+            </div>
           ) : null}
         </>
       )}

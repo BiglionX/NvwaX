@@ -16,7 +16,6 @@ export class ProClawBackendService {
 
   /**
    * 获取 AiTeam 配置用于导出到 ProClaw
-   * TODO: ProClaw 功能尚未完善，保留接口为占位
    */
   async getAiTeamConfigForProClaw(teamSkillId: string): Promise<Record<string, unknown> | null> {
     try {
@@ -32,7 +31,7 @@ export class ProClawBackendService {
       const skill = result.rows[0];
       
       // 构建符合 ProClaw 要求的配置格式
-      return {
+      const config: Record<string, unknown> = {
         teamName: skill.name,
         description: skill.description,
         leaderConfig: typeof skill.leader_config === 'string' ? JSON.parse(skill.leader_config) : skill.leader_config,
@@ -42,9 +41,34 @@ export class ProClawBackendService {
         metadata: {
           source: 'nvwax',
           createdAt: new Date().toISOString(),
-          version: skill.version
+          version: skill.version,
+          category: skill.category
         }
       };
+
+      // 如果是行业插件，附带 agent 明细数据
+      if (skill.category === 'industry-plugin') {
+        const agentsResult = await this.pool.query(
+          'SELECT * FROM industry_agents WHERE team_skill_id = $1 ORDER BY sort_order ASC',
+          [teamSkillId]
+        );
+        
+        config.agents = agentsResult.rows.map(row => ({
+          id: row.proclaw_agent_id,
+          name: row.name,
+          description: row.description,
+          role: row.role,
+          capabilities: typeof row.capabilities === 'string' ? JSON.parse(row.capabilities) : row.capabilities,
+          permissions: typeof row.permissions === 'string' ? JSON.parse(row.permissions) : row.permissions,
+          inputSchema: typeof row.input_schema === 'string' ? JSON.parse(row.input_schema) : row.input_schema,
+          outputSchema: typeof row.output_schema === 'string' ? JSON.parse(row.output_schema) : row.output_schema,
+          apiBindings: typeof row.api_bindings === 'string' ? JSON.parse(row.api_bindings) : row.api_bindings,
+          modelConfig: typeof row.model_config === 'string' ? JSON.parse(row.model_config) : row.model_config,
+          systemPrompt: row.system_prompt
+        }));
+      }
+
+      return config;
     } catch (error) {
       console.error('Failed to get AiTeam config:', error);
       return null;

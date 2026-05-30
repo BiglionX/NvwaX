@@ -2,11 +2,12 @@
 
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { teamSkillApi } from '@/lib/api/team-skills';
+import { teamSkillApi, IndustryAgent } from '@/lib/api/team-skills';
 import { 
   ArrowLeft, Users, Workflow, Shield,
   Package, Sparkles, CheckCircle, Clock, Zap,
-  Monitor, Share2, X
+  Monitor, Share2, X, Briefcase, Cpu, Key,
+  Terminal
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -45,7 +46,13 @@ export default function TeamSkillDetailPage() {
 
   const skill = data?.data;
 
-  // 解析 JSON 字段
+  // 如果是行业插件，获取 Agent 明细
+  const isIndustryPlugin = skill?.category === 'industry-plugin';
+  const { data: industryData } = useQuery({
+    queryKey: ['industry-agents', id],
+    queryFn: () => teamSkillApi.getIndustryAgents(id),
+    enabled: isIndustryPlugin
+  });
   const leaderConfig = safeParseJSON(skill?.leaderConfig);
   const roles = Array.isArray(skill?.roles) ? skill.roles : safeParseJSON(skill?.roles) || [];
   const workflow = safeParseJSON(skill?.workflow);
@@ -146,6 +153,12 @@ export default function TeamSkillDetailPage() {
               {skill.category === 'social_media' && (
                 <span className="px-3 py-1 text-sm rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 flex items-center gap-1">
                   社交运营
+                </span>
+              )}
+              {isIndustryPlugin && (
+                <span className="px-3 py-1 text-sm rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 flex items-center gap-1">
+                  <Briefcase size={14} />
+                  行业插件
                 </span>
               )}
             </div>
@@ -290,6 +303,89 @@ export default function TeamSkillDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* 行业插件 Agent 明细 */}
+        {isIndustryPlugin && industryData?.data && (
+          <div className="lg:col-span-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <Cpu className="text-emerald-500" size={24} />
+                AI 助手明细
+                <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                  ({industryData.data.length} 个 Agent)
+                </span>
+              </h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                {industryData.data.map((agent: IndustryAgent) => (
+                  <div
+                    key={agent.id}
+                    className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                  >
+                    {/* Agent 头部 */}
+                    <div className="bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-4 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
+                            {agent.name}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                            {agent.description}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center gap-1">
+                          <Key size={12} />
+                          <span>角色: {agent.role}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Cpu size={12} />
+                          <span>{agent.capabilities?.length || 0} 项能力</span>
+                        </div>
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-mono">
+                          {agent.proclawAgentId}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Agent 详情 */}
+                    <div className="p-4 space-y-3 bg-white dark:bg-gray-800">
+                      {/* 能力集 */}
+                      {agent.capabilities && agent.capabilities.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1">
+                            <Zap size={12} className="text-yellow-500" />
+                            能力集
+                          </h4>
+                          <div className="flex flex-wrap gap-1.5">
+                            {agent.capabilities.map((cap: string, idx: number) => (
+                              <span key={idx} className="px-2 py-0.5 text-xs rounded-full bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
+                                {cap}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 系统提示词 */}
+                      {agent.systemPrompt && (
+                        <div>
+                          <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
+                            <Terminal size={12} className="text-rose-500" />
+                            系统提示词
+                          </h4>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg line-clamp-2 hover:line-clamp-none transition-all cursor-pointer">
+                            {agent.systemPrompt}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 右侧：协作规则和信息 */}
         <div className="space-y-6">

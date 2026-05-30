@@ -318,6 +318,79 @@ export class TeamSkillController {
       res.status(500).json({ success: false, error: 'Failed to fetch build status' });
     }
   }
+
+  /**
+   * 获取行业插件的 Agent 明细
+   * GET /api/team-skills/:id/industry-agents
+   */
+  async getIndustryAgents(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const teamSkillId = Array.isArray(id) ? id[0] : id;
+
+      // 验证 Team Skill 存在且是行业插件
+      const teamSkill = await teamSkillService.getTeamSkillById(teamSkillId);
+      if (!teamSkill) {
+        return res.status(404).json({ success: false, error: 'Team Skill not found' });
+      }
+      if (teamSkill.category !== 'industry-plugin') {
+        return res.status(400).json({ success: false, error: 'Not an industry plugin team' });
+      }
+
+      const agents = await teamSkillService.getIndustryAgents(teamSkillId);
+
+      res.json({ success: true, data: agents });
+    } catch (error) {
+      console.error('Error fetching industry agents:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch industry agents' });
+    }
+  }
+
+  /**
+   * 获取行业插件分类列表
+   * GET /api/team-skills/industry-categories
+   */
+  async getIndustryCategories(req: Request, res: Response) {
+    try {
+      const categories = await teamSkillService.getIndustryPluginCategories();
+      res.json({ success: true, data: categories });
+    } catch (error) {
+      console.error('Error fetching industry categories:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch industry categories' });
+    }
+  }
+
+  /**
+   * 获取行业插件详情（包含 Agent 明细）
+   * GET /api/team-skills/:id/industry-detail
+   */
+  async getIndustryDetail(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const teamSkillId = Array.isArray(id) ? id[0] : id;
+
+      const teamSkill = await teamSkillService.getTeamSkillById(teamSkillId);
+      if (!teamSkill) {
+        return res.status(404).json({ success: false, error: 'Team Skill not found' });
+      }
+      if (teamSkill.category !== 'industry-plugin') {
+        return res.status(400).json({ success: false, error: 'Not an industry plugin team' });
+      }
+
+      const agents = await teamSkillService.getIndustryAgents(teamSkillId);
+
+      res.json({
+        success: true,
+        data: {
+          ...teamSkill,
+          agents
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching industry detail:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch industry detail' });
+    }
+  }
 }
 
 export const teamSkillController = new TeamSkillController();

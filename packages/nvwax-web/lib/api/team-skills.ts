@@ -78,6 +78,23 @@ export interface LeaderAgentExecutionResult {
   timestamp: string;
 }
 
+export interface IndustryAgent {
+  id: string;
+  teamSkillId: string;
+  name: string;
+  description: string;
+  proclawAgentId: string;
+  role: string;
+  capabilities: string[];
+  permissions: string[];
+  inputSchema: Record<string, unknown>;
+  outputSchema: Record<string, unknown>;
+  apiBindings: Record<string, unknown>[];
+  modelConfig: Record<string, unknown>;
+  systemPrompt: string;
+  sortOrder: number;
+}
+
 /**
  * Team Skill API 客户端
  */
@@ -226,6 +243,30 @@ export const teamSkillApi = {
   getBuildStatus: async (jobId: string) => {
     const response = await apiClient.get(`/team-skill-builds/${jobId}`);
     return response.data.data;
+  },
+
+  /**
+   * 获取行业插件的 Agent 明细
+   */
+  getIndustryAgents: async (id: string): Promise<{ success: boolean; data: IndustryAgent[] }> => {
+    const response = await apiClient.get(`/team-skills/${id}/industry-agents`);
+    return response.data;
+  },
+
+  /**
+   * 获取行业插件详情（含 Agent 明细）
+   */
+  getIndustryDetail: async (id: string): Promise<{ success: boolean; data: TeamSkill & { agents: IndustryAgent[] } }> => {
+    const response = await apiClient.get(`/team-skills/${id}/industry-detail`);
+    return response.data;
+  },
+
+  /**
+   * 获取行业插件分类列表
+   */
+  getIndustryCategories: async (): Promise<{ success: boolean; data: string[] }> => {
+    const response = await apiClient.get('/team-skills/industry-categories');
+    return response.data;
   },
 
   /**
