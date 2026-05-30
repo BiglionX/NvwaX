@@ -63,7 +63,7 @@ docker-compose ps
 
 echo ' Health check...'
 curl -f http://localhost:3001/health || echo ' Backend not ready yet'
-curl -f http://localhost:3000 || echo ' Frontend not ready yet'
+curl -f http://localhost:3000/api/health || echo ' Frontend not ready yet'
 
 echo ' Deployment completed!'
 "@
