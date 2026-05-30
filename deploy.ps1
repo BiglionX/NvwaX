@@ -46,8 +46,12 @@ Write-Host "`n Deploying on server..." -ForegroundColor Yellow
 $DeployCommand = @"
 cd $ServerDir
 
-echo ' Pulling latest changes...'
+echo '📥 Pulling latest changes...'
 git pull origin main || echo 'Not a git repo, skipping...'
+
+echo '🧹 Cleaning old Docker resources...'
+docker system prune -a -f --volumes 2>$null || true
+docker builder prune -a -f 2>$null || true
 
 echo ' Stopping old containers...'
 docker-compose down

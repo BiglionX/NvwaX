@@ -33,11 +33,15 @@ echo "🚀 Deploying on server..."
 ssh ${SERVER_USER}@${SERVER_HOST} << 'EOF'
   cd /opt/nvwax
   
-  echo " Pulling latest changes..."
+  echo "📥 Pulling latest changes..."
   git pull origin main || echo "Not a git repo, skipping..."
   
   echo " Installing dependencies..."
   npm install --production
+  
+  echo "🧹 Cleaning old Docker resources..."
+  docker system prune -a -f --volumes 2>/dev/null || true
+  docker builder prune -a -f 2>/dev/null || true
   
   echo " Stopping old containers..."
   docker-compose down
