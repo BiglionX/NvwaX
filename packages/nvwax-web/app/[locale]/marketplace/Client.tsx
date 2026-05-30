@@ -6,12 +6,13 @@ import { useQuery } from '@tanstack/react-query';
 import { searchApi, Agent, SkillRecommendation } from '@/lib/api/search';
 import { aiteamApi, AiTeam } from '@/lib/api/aiteams';
 import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
-import { Star, Download, ExternalLink, Users, Search, X, TrendingUp, Plus, Sparkles } from 'lucide-react';
+import { microbizApi, MicroBizTeam } from '@/lib/api/microbiz';
+import { Star, Download, ExternalLink, Users, Search, X, TrendingUp, Plus, Sparkles, Store } from 'lucide-react';
 import Link from 'next/link';
 import { Button, Input, Space, Container, Card, Badge, Tag, Modal } from '@/components/UI';
 import { useAiSearch } from '@/contexts/AiSearchContext';
 
-type Category = 'all' | 'agents' | 'aiteams' | 'virtual-company' | 'website_operations' | 'social_media';
+type Category = 'all' | 'agents' | 'aiteams' | 'virtual-company' | 'website_operations' | 'social_media' | 'microbiz';
 
 export default function MarketplaceClient() {
   const t = useTranslations('marketplace');
@@ -91,6 +92,18 @@ export default function MarketplaceClient() {
     enabled: selectedCategory !== 'agents'
   });
 
+  // 查询 MicroBiz 团队
+  const { data: microbizData, isLoading: loadingMicrobiz } = useQuery({
+    queryKey: ['microbiz-teams', selectedCategory],
+    queryFn: () => {
+      if (selectedCategory === 'microbiz' || selectedCategory === 'all') {
+        return microbizApi.getTeams();
+      }
+      return microbizApi.getTeams(selectedCategory);
+    },
+    enabled: selectedCategory === 'microbiz' || selectedCategory === 'all' || selectedCategory === 'social_media'
+  });
+
   // 分类选项
   const categories: { value: Category; label: string; icon?: React.ElementType }[] = [
     { value: 'all', label: t('all') },
@@ -99,6 +112,7 @@ export default function MarketplaceClient() {
     { value: 'virtual-company', label: t('virtualCompany') },
     { value: 'website_operations', label: t('websiteOperations') },
     { value: 'social_media', label: t('socialMedia') },
+    { value: 'microbiz', label: t('microbiz'), icon: Store },
   ];
 
   const isLoading = loadingAgents || loadingAiteams || loadingTeamSkills;
@@ -612,6 +626,90 @@ export default function MarketplaceClient() {
               </Link>
             ))}
           </div>
+          ) : null}
+        </>
+      )}
+
+      {/* MicroBiz AI Team Suite */}
+      {(selectedCategory === 'all' || selectedCategory === 'microbiz') && (
+        <>
+          {/* MicroBiz 专区横幅 */}
+          <Card className="mb-8 bg-linear-to-r from-purple-600 to-orange-600 text-white shadow-lg">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                <Store size={28} />
+                {t('microbiz')}
+              </h2>
+              <p className="text-purple-100 text-sm mb-4">
+                {t('microbizDesc')}
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Badge variant="info">{t('microbizSocialMedia')}</Badge>
+                <Badge variant="info">{t('microbizLocalDeals')}</Badge>
+                <Badge variant="info">{t('microbizMiniProgram')}</Badge>
+              </div>
+            </div>
+          </Card>
+
+          {loadingMicrobiz ? (
+            <div className="flex items-center justify-center py-8 mb-8 gap-3 text-gray-400 dark:text-gray-500">
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm">{t('searching')}</span>
+            </div>
+          ) : microbizData?.data ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {microbizData.data.map((team: MicroBizTeam) => (
+                <Link
+                  key={team.id}
+                  href={`/team-skills/${team.id}`}
+                  className="block"
+                >
+                  <div className="hover:-translate-y-1 hover:shadow-xl transition-all group border-l-4 rounded-xl border-gray-200 dark:border-gray-700 p-5 bg-white dark:bg-gray-800" style={{ borderLeftColor: team.color || '#7C3AED' }}>
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {team.name}
+                      </h3>
+                      <Badge variant="info" className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                        {t('microbiz')}
+                      </Badge>
+                    </div>
+                    
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">
+                      {team.description}
+                    </p>
+                    
+                    {/* Agent 数量 */}
+                    {team.agents && team.agents.length > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
+                        <Users size={16} />
+                        <span>{t('microbizAgentCount', { count: team.agents.length })}</span>
+                      </div>
+                    )}
+
+                    {/* 数据来源 */}
+                    {team.dataSources && team.dataSources.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {team.dataSources.slice(0, 2).map((ds, idx) => (
+                          <Tag key={idx} variant="primary" size="sm">
+                            {ds.name}
+                          </Tag>
+                        ))}
+                        {team.dataSources.length > 2 && (
+                          <span className="text-xs text-gray-400">+{team.dataSources.length - 2}</span>
+                        )}
+                      </div>
+                    )}
+
+                    <Button variant="primary" fullWidth>
+                      {t('microbizInstall')}
+                    </Button>
+                  </div>
+                </Link>
+              ))}
+            </div>
           ) : null}
         </>
       )}

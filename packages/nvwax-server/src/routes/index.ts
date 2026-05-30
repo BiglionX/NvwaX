@@ -23,6 +23,7 @@ import aiteamRouter from './aiteam.routes.js';
 import notificationRouter from './notification.routes.js';
 import downloadRouter from './download.routes.js';
 import aiSearchRouter from './ai-search.routes.js';
+import microbizRouter from './microbiz.routes.js';
 
 const router = Router();
 
@@ -149,6 +150,9 @@ router.use('/ai-search', aiSearchRouter);
 
 // Download routes (打包文件下载)
 router.use('/downloads', downloadRouter);
+
+// MicroBiz AI Team Suite routes
+router.use('/microbiz', microbizRouter);
 
 // V1 API routes (OpenAI-compatible)
 router.use('/v1', v1Router);

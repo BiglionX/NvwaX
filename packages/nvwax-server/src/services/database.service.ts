@@ -379,6 +379,63 @@ class DatabaseService {
         )
       `);
 
+      // 创建 MicroBiz 小商家经营 AI Team 套件表
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS microbiz_teams (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          category TEXT NOT NULL,
+          icon TEXT,
+          color TEXT DEFAULT '#7C3AED',
+          leader_config JSONB DEFAULT '{}'::jsonb,
+          workflow JSONB DEFAULT '{}'::jsonb,
+          account_bindings_template JSONB DEFAULT '[]'::jsonb,
+          notification_config JSONB DEFAULT '{}'::jsonb,
+          data_sources JSONB DEFAULT '[]'::jsonb,
+          version TEXT DEFAULT '1.0.0',
+          is_public BOOLEAN DEFAULT true,
+          sort_order INTEGER DEFAULT 0,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS microbiz_agents (
+          id TEXT PRIMARY KEY,
+          team_id TEXT NOT NULL REFERENCES microbiz_teams(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          description TEXT,
+          role TEXT NOT NULL,
+          capabilities JSONB DEFAULT '[]'::jsonb,
+          input_schema JSONB DEFAULT '{}'::jsonb,
+          output_schema JSONB DEFAULT '{}'::jsonb,
+          api_bindings JSONB DEFAULT '[]'::jsonb,
+          model_config JSONB DEFAULT '{"model":"deepseek","temperature":0.7}'::jsonb,
+          system_prompt TEXT,
+          sort_order INTEGER DEFAULT 0,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS microbiz_installations (
+          id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          status TEXT NOT NULL DEFAULT 'installing',
+          selected_teams JSONB DEFAULT '[]'::jsonb,
+          account_bindings JSONB DEFAULT '{}'::jsonb,
+          preferences JSONB DEFAULT '{}'::jsonb,
+          agent_status JSONB DEFAULT '{}'::jsonb,
+          installed_from TEXT DEFAULT 'marketplace',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(user_id)
+        )
+      `);
+
       // 创建索引以提高查询性能
       await client.query(`
         CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
@@ -431,6 +488,13 @@ class DatabaseService {
         CREATE INDEX IF NOT EXISTS idx_social_accounts_user_id ON social_accounts(user_id);
         CREATE INDEX IF NOT EXISTS idx_social_accounts_provider ON social_accounts(provider);
         CREATE INDEX IF NOT EXISTS idx_social_accounts_provider_id ON social_accounts(provider, provider_user_id);
+        
+        -- MicroBiz 表索引
+        CREATE INDEX IF NOT EXISTS idx_microbiz_teams_category ON microbiz_teams(category);
+        CREATE INDEX IF NOT EXISTS idx_microbiz_teams_public ON microbiz_teams(is_public);
+        CREATE INDEX IF NOT EXISTS idx_microbiz_agents_team ON microbiz_agents(team_id);
+        CREATE INDEX IF NOT EXISTS idx_microbiz_installations_user ON microbiz_installations(user_id);
+        CREATE INDEX IF NOT EXISTS idx_microbiz_installations_status ON microbiz_installations(status);
       `);
 
       console.log('✓ Database schema initialized successfully');

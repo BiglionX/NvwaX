@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { User as UserIcon, Folder, Award, Settings, LogOut, Coins, ShoppingCart } from 'lucide-react';
+import { User as UserIcon, Folder, Award, Settings, LogOut, Coins, ShoppingCart, Store } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function UserCenterLayout({ children }: { children: React.ReactNode }) {
@@ -16,6 +16,7 @@ export default function UserCenterLayout({ children }: { children: React.ReactNo
     { label: '购买Token', icon: ShoppingCart, path: '/token-purchase' },
     { label: '我的Agent仓库', icon: Folder, path: '/agent-repository' },
     { label: '我的悬赏', icon: Award, path: '/my-bounties' },
+    { label: 'MicroBiz管理', icon: Store, path: '/microbiz' },
     { label: '账号设置', icon: Settings, path: '/settings' }
   ];
 
