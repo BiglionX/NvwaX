@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { v4 as uuidv4 } from 'uuid';
 import { agentSearchService, Agent } from './agent-search.service.js';
 import { AiTeam, aiteamService } from './aiteam.service.js';
+import { tokenQuotaService } from './token-quota.service.js';
 
 /**
  * AI 搜索会话
@@ -115,7 +116,7 @@ class AiSearchAgentService {
   /**
    * 处理用户消息
    */
-  async chat(sessionId: string, message: string): Promise<ChatResponse> {
+  async chat(sessionId: string, message: string, userId?: string): Promise<ChatResponse> {
     const session = this.sessions.get(sessionId);
     if (!session) {
       throw new Error(`Session not found: ${sessionId}`);
@@ -136,7 +137,7 @@ class AiSearchAgentService {
     }
 
     // 第一步：AI 分析意图
-    const intentAnalysis = await this.analyzeIntent(message, session);
+    const intentAnalysis = await this.analyzeIntent(message, session, userId);
     
     // === 非搜索意图分发 ===
     if (intentAnalysis.intentType === 'non_search') {
@@ -237,7 +238,8 @@ class AiSearchAgentService {
       agents,
       aiteams,
       intentAnalysis, 
-      session
+      session,
+      userId
     );
 
     const assistantMessage: SearchMessage = {
@@ -279,7 +281,7 @@ class AiSearchAgentService {
   /**
    * AI 分析用户意图
    */
-  private async analyzeIntent(message: string, session: SearchSession): Promise<IntentAnalysis> {
+  private async analyzeIntent(message: string, session: SearchSession, userId?: string): Promise<IntentAnalysis> {
     const systemPrompt = `你是一个专业的对话式 Agent 搜索助手（AI Search Agent），运行在 AI Agent 工厂（NvwaX）平台，帮助用户从全球开源社区（GitHub、Gitee、ModelScope）搜索 AI Agent / AiTeam，或回答关于搜索结果的问题。
 
 **核心任务：判断用户意图类型并返回 JSON。**
@@ -324,6 +326,20 @@ class AiSearchAgentService {
         });
 
         const response = completion.choices[0]?.message?.content || '';
+
+        // 从 DeepSeek 响应中获取真实 Token 消耗并记录
+        if (userId && completion.usage?.total_tokens) {
+          tokenQuotaService.checkAndDeductTokens(userId, completion.usage.total_tokens, {
+            endpoint: '/api/ai-search/chat',
+            sourceType: 'ai_search',
+            description: 'AI 搜索 - 意图分析',
+            model: 'deepseek-v4-flash',
+            metadata: {
+              prompt_tokens: completion.usage.prompt_tokens,
+              completion_tokens: completion.usage.completion_tokens
+            }
+          }).catch(err => console.error('[TokenQuota] Failed to deduct tokens for AI Search intent analysis:', err));
+        }
         return this.parseIntentResponse(response, message);
       }
     } catch (error) {
@@ -513,13 +529,14 @@ class AiSearchAgentService {
     results: Agent[],
     aiteamResults: AiTeam[],
     analysis: IntentAnalysis,
-    session: SearchSession
+    session: SearchSession,
+    userId?: string
   ): Promise<ChatResponse> {
     const hasResults = results.length > 0 || aiteamResults.length > 0;
 
     if (hasResults) {
       // 有搜索结果 — 让 AI 整理呈现（传入完整搜索数据和对话上下文）
-      return this.formatResultsReply(results, aiteamResults, analysis, userMessage, session);
+      return this.formatResultsReply(results, aiteamResults, analysis, userMessage, session, userId);
     } else {
       // 无结果 — 建议 AI 生成
       const reply = `我搜索了 GitHub、Gitee 和 ModelScope，但目前没有找到与"**${analysis.intent}**"完全匹配的 Agent。\n\n不过别担心！作为 AI Agent 工厂，我们可以直接用 AI 为您生成一个定制的 Agent。\n\n点击下方按钮，AI 将根据您的需求自动创建：`;
@@ -541,7 +558,8 @@ class AiSearchAgentService {
     aiteamResults: AiTeam[],
     analysis: IntentAnalysis,
     userMessage: string,
-    session: SearchSession
+    session: SearchSession,
+    userId?: string
   ): Promise<ChatResponse> {
     const topResults = results.slice(0, 6);
     const totalCount = results.length;
@@ -591,6 +609,20 @@ ${conversationContext}` : ''}
           max_tokens: 1000
         });
         reply = completion.choices[0]?.message?.content || this.getDefaultResultsReply(results, analysis);
+
+        // 从 DeepSeek 响应中获取真实 Token 消耗并记录
+        if (userId && completion.usage?.total_tokens) {
+          tokenQuotaService.checkAndDeductTokens(userId, completion.usage.total_tokens, {
+            endpoint: '/api/ai-search/chat',
+            sourceType: 'ai_search',
+            description: 'AI 搜索 - 结果整理',
+            model: 'deepseek-v4-flash',
+            metadata: {
+              prompt_tokens: completion.usage.prompt_tokens,
+              completion_tokens: completion.usage.completion_tokens
+            }
+          }).catch(err => console.error('[TokenQuota] Failed to deduct tokens for AI Search result formatting:', err));
+        }
       } catch {
         reply = this.getDefaultResultsReply(results, analysis);
       }

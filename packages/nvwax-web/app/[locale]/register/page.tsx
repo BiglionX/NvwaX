@@ -11,7 +11,7 @@ export const metadata: Metadata = {
       "加入 NvwaX，探索 AI Agent 和 AiTeam 的无限可能。",
   },
   alternates: {
-    canonical: "https://nvwax.com/register",
+    canonical: "https://nvwax.proclaw.cc/register",
   },
 };
 

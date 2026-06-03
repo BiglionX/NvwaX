@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { AiTeamCreationService } from './aiteam-creation.service.js';
 import { agentCompatibilityService, RoleRequirement } from './agent-compatibility.service.js';
+import { tokenQuotaService } from './token-quota.service.js';
 import { 
   CEO_AGENT_SYSTEM_PROMPT,
   CEO_AGENT_INITIAL_MESSAGE,
@@ -40,7 +41,7 @@ export class CEOAgentService {
   /**
    * 处理用户消息并生成 CEO Agent 回复
    */
-  async processMessage(sessionId: string, userMessage: string): Promise<CEOResponse> {
+  async processMessage(sessionId: string, userMessage: string, userId?: string): Promise<CEOResponse> {
     try {
       // 获取会话信息
       const session = await this.creationService.getSessionById(sessionId);
@@ -58,7 +59,7 @@ export class CEOAgentService {
       let response: CEOResponse;
       
       if (this.openai) {
-        response = await this.callLLM(conversationHistory, userMessage, session.status);
+        response = await this.callLLM(conversationHistory, userMessage, session.status, userId);
       } else {
         // 使用模拟响应（开发测试用）
         response = await this.getMockResponse(userMessage, session.status);
@@ -83,7 +84,8 @@ export class CEOAgentService {
   private async callLLM(
     history: Array<{role: string, content: string}>,
     userMessage: string,
-    currentStatus: string
+    currentStatus: string,
+    userId?: string
   ): Promise<CEOResponse> {
     if (!this.openai) {
       throw new Error('OpenAI client not initialized');
@@ -110,6 +112,20 @@ export class CEOAgentService {
       });
 
       const assistantMessage = completion.choices[0]?.message?.content || '';
+
+      // 从 DeepSeek 响应中获取真实 Token 消耗并记录
+      if (userId && completion.usage?.total_tokens) {
+        tokenQuotaService.checkAndDeductTokens(userId, completion.usage.total_tokens, {
+          endpoint: '/aiteam-creation/ceo-agent',
+          sourceType: 'ceo_agent',
+          description: 'CEO Agent 对话',
+          model: 'deepseek-v4-flash',
+          metadata: {
+            prompt_tokens: completion.usage.prompt_tokens,
+            completion_tokens: completion.usage.completion_tokens
+          }
+        }).catch(err => console.error('[TokenQuota] Failed to deduct tokens for CEO Agent:', err));
+      }
       
       // 解析回复
       return this.parseLLMResponse(assistantMessage);

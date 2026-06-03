@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: t("ogDesc"),
     },
     alternates: {
-      canonical: "https://nvwax.com/search",
+      canonical: "https://nvwax.proclaw.cc/search",
     },
   };
 }

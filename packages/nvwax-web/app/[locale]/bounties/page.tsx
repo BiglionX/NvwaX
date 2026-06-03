@@ -11,7 +11,7 @@ export const metadata: Metadata = {
       "发布悬赏任务，寻找 AI Agent 开发技能，获得丰厚奖励。",
   },
   alternates: {
-    canonical: "https://nvwax.com/bounties",
+    canonical: "https://nvwax.proclaw.cc/bounties",
   },
 };
 

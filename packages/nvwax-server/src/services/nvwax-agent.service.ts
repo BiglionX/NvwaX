@@ -9,6 +9,7 @@ import { agentCompatibilityService } from './agent-compatibility.service.js';
 import { skillMatchingService } from './skill-matching.service.js';
 import { ceoAgentGenerator, CEOConfig, TeamContext } from './ceo-agent-generator.service.js';
 import { documentGeneratorService, DocumentPackage } from './document-generator.service.js';
+import { tokenQuotaService } from './token-quota.service.js';
 
 /**
  * NvwaX 需求分析结果
@@ -140,10 +141,10 @@ export class NvwaXAgentService {
   /**
    * 分析用户需求
    */
-  async analyzeRequirements(userInput: string): Promise<RequirementAnalysis> {
+  async analyzeRequirements(userInput: string, userId?: string): Promise<RequirementAnalysis> {
     try {
       if (this.openai) {
-        return await this.analyzeWithLLM(userInput);
+        return await this.analyzeWithLLM(userInput, userId);
       } else {
         return this.getMockAnalysis(userInput);
       }
@@ -156,7 +157,7 @@ export class NvwaXAgentService {
   /**
    * 使用 LLM 进行需求分析
    */
-  private async analyzeWithLLM(userInput: string): Promise<RequirementAnalysis> {
+  private async analyzeWithLLM(userInput: string, userId?: string): Promise<RequirementAnalysis> {
     if (!this.openai) {
       throw new Error('OpenAI client not initialized');
     }
@@ -172,6 +173,20 @@ export class NvwaXAgentService {
       temperature: 0.3,
       max_tokens: 500
     });
+
+    // 从 DeepSeek 响应中获取真实 Token 消耗并记录
+    if (userId && completion.usage?.total_tokens) {
+      tokenQuotaService.checkAndDeductTokens(userId, completion.usage.total_tokens, {
+        endpoint: '/aiteam-creation/analyze',
+        sourceType: 'agent_factory',
+        description: 'NvwaX 需求分析',
+        model: 'deepseek-v4-flash',
+        metadata: {
+          prompt_tokens: completion.usage.prompt_tokens,
+          completion_tokens: completion.usage.completion_tokens
+        }
+      }).catch(err => console.error('[TokenQuota] Failed to deduct tokens for analyzeWithLLM:', err));
+    }
 
     const response = completion.choices[0]?.message?.content || '';
     
@@ -271,10 +286,10 @@ export class NvwaXAgentService {
   /**
    * 设计团队结构
    */
-  async designTeam(requirements: RequirementAnalysis): Promise<TeamDesign> {
+  async designTeam(requirements: RequirementAnalysis, userId?: string): Promise<TeamDesign> {
     try {
       if (this.openai) {
-        return await this.designWithLLM(requirements);
+        return await this.designWithLLM(requirements, userId);
       } else {
         return this.getMockTeamDesign(requirements);
       }
@@ -287,7 +302,7 @@ export class NvwaXAgentService {
   /**
    * 使用 LLM 设计团队
    */
-  private async designWithLLM(requirements: RequirementAnalysis): Promise<TeamDesign> {
+  private async designWithLLM(requirements: RequirementAnalysis, userId?: string): Promise<TeamDesign> {
     if (!this.openai) {
       throw new Error('OpenAI client not initialized');
     }
@@ -309,6 +324,20 @@ export class NvwaXAgentService {
       temperature: 0.5,
       max_tokens: 1000
     });
+
+    // 从 DeepSeek 响应中获取真实 Token 消耗并记录
+    if (userId && completion.usage?.total_tokens) {
+      tokenQuotaService.checkAndDeductTokens(userId, completion.usage.total_tokens, {
+        endpoint: '/aiteam-creation/design-team',
+        sourceType: 'agent_factory',
+        description: 'NvwaX 团队设计',
+        model: 'deepseek-v4-flash',
+        metadata: {
+          prompt_tokens: completion.usage.prompt_tokens,
+          completion_tokens: completion.usage.completion_tokens
+        }
+      }).catch(err => console.error('[TokenQuota] Failed to deduct tokens for designWithLLM:', err));
+    }
 
     const response = completion.choices[0]?.message?.content || '';
     
@@ -598,7 +627,8 @@ export class NvwaXAgentService {
   async processMessage(
     userInput: string,
     currentPhase?: NvwaXPhase,
-    context?: any
+    context?: any,
+    userId?: string
   ): Promise<NvwaXResponse> {
     try {
       let response: NvwaXResponse;
@@ -618,7 +648,7 @@ export class NvwaXAgentService {
           if (isConfirmation && context?.analysisResult) {
             // 用户确认了需求分析，直接进入团队设计阶段
             console.log('✅ User confirmed requirements, proceeding to team design');
-            const design = await this.designTeam(context.analysisResult);
+            const design = await this.designTeam(context.analysisResult, userId);
             response = {
               message: this.generateTeamDesignResponse(design),
               phase: 'ceo_generation',
@@ -629,7 +659,7 @@ export class NvwaXAgentService {
             };
           } else {
             // 首次分析需求
-            const analysis = await this.analyzeRequirements(userInput);
+            const analysis = await this.analyzeRequirements(userInput, userId);
             response = {
               message: this.generateRequirementsResponse(analysis),
               phase: 'team_design',
@@ -645,8 +675,8 @@ export class NvwaXAgentService {
         case 'team_design':
           // 设计团队
           const design = context?.analysisResult 
-            ? await this.designTeam(context.analysisResult)
-            : await this.designTeam(await this.analyzeRequirements(userInput));
+            ? await this.designTeam(context.analysisResult, userId)
+            : await this.designTeam(await this.analyzeRequirements(userInput, userId), userId);
           
           // 🔍 新增：调用审查器工作流
           try {

@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import OpenAI from 'openai';
 import { databaseService } from './database.service.js';
 import { apiKeyService } from './api-key.service.js';
 import { tokenQuotaService } from './token-quota.service.js';
@@ -42,9 +43,15 @@ export interface ChatCompletionResponse {
 
 export class MarketingAgentService {
   private pool: Pool;
+  private openai: OpenAI;
 
   constructor() {
     this.pool = databaseService.getPool();
+    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || '';
+    this.openai = new OpenAI({
+      apiKey,
+      baseURL: 'https://api.deepseek.com/v1'
+    });
   }
 
   /**
@@ -81,19 +88,13 @@ export class MarketingAgentService {
       console.log(`   Category: ${teamConfig.category}`);
       console.log(`   Members: ${teamConfig.members.length}`);
 
-      // Step 3: Execute the team workflow
-      // For now, we'll use a simplified approach
-      // In production, this would orchestrate multiple agents
-      const response = await this.executeTeamWorkflow(
+      // Step 3 & 4: 执行团队工作流并从 DeepSeek 响应获取真实 Token 消耗
+      const result = await this.executeTeamWorkflow(
         teamConfig,
         userMessage,
         request
       );
-
-      // Step 4: Calculate token usage (simplified estimation)
-      const promptTokens = this.estimateTokens(userMessage);
-      const completionTokens = this.estimateTokens(response);
-      const totalTokens = promptTokens + completionTokens;
+      const { response, promptTokens, completionTokens, totalTokens } = result;
 
       // Step 5: Record API usage
       const responseTime = Date.now() - startTime;
@@ -271,7 +272,7 @@ export class MarketingAgentService {
     teamConfig: any,
     userQuery: string,
     request: ChatCompletionRequest
-  ): Promise<string> {
+  ): Promise<{ response: string; promptTokens: number; completionTokens: number; totalTokens: number }> {
     console.log(`🔄 Executing workflow for team: ${teamConfig.name}`);
 
     // For now, we'll use a mock response based on the team type
@@ -282,157 +283,140 @@ export class MarketingAgentService {
     
     const category = teamConfig.category || 'general';
     
-    // Generate context-aware response based on team category
-    let response = '';
-    
-    switch (category) {
-      case 'marketing':
-        response = await this.generateMarketingResponse(userQuery, teamConfig);
-        break;
-      case 'customer-service':
-        response = await this.generateCustomerServiceResponse(userQuery, teamConfig);
-        break;
-      case 'development':
-        response = await this.generateDevelopmentResponse(userQuery, teamConfig);
-        break;
-      case 'analysis':
-        response = await this.generateAnalysisResponse(userQuery, teamConfig);
-        break;
-      default:
-        response = await this.generateGeneralResponse(userQuery, teamConfig);
-    }
+    // Generate system prompt based on team category
+    const systemPrompts: Record<string, string> = {
+      'marketing': `You are a professional AI Marketing Team consisting of a Marketing Strategist, Content Creator, and Data Analyst. Your task is to provide comprehensive marketing advice and strategies.
 
-    return response;
+User query: ${userQuery}
+
+Provide:
+1. A detailed strategy overview
+2. Key recommendations
+3. Next steps`,
+      'customer-service': `You are a professional AI Customer Service Team consisting of a Support Agent and Technical Specialist. Your task is to help resolve customer inquiries.
+
+User query: ${userQuery}
+
+Provide:
+1. A clear, helpful response
+2. Additional support options`,
+      'development': `You are a professional AI Development Team consisting of a Software Engineer, Frontend Developer, and QA Engineer. Your task is to provide technical solutions.
+
+User query: ${userQuery}
+
+Provide:
+1. A detailed technical solution
+2. Implementation steps
+3. Best practices`,
+      'analysis': `You are a professional AI Data Analysis Team consisting of a Data Scientist and Business Analyst. Your task is to analyze data and provide insights.
+
+User query: ${userQuery}
+
+Provide:
+1. A detailed analysis
+2. Key insights
+3. Recommendations`,
+      'general': `You are a professional AI Assistant Team. Your task is to help answer user queries comprehensively.
+
+User query: ${userQuery}
+
+Provide:
+1. A comprehensive answer
+2. Relevant details and context`
+    };
+
+    const systemContent = systemPrompts[category] || systemPrompts['general'];
+    const messages = [
+      { role: 'system' as const, content: systemContent },
+      ...request.messages
+    ];
+
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: request.model || 'deepseek-v4-flash',
+        messages,
+        temperature: request.temperature ?? 0.7,
+        max_tokens: request.max_tokens ?? 2000
+      });
+
+      const response = completion.choices[0]?.message?.content || '';
+      const promptTokens = completion.usage?.prompt_tokens || 0;
+      const completionTokens = completion.usage?.completion_tokens || 0;
+      const totalTokens = completion.usage?.total_tokens || 0;
+
+      return { response, promptTokens, completionTokens, totalTokens };
+    } catch (error) {
+      console.error(`[MarketingAgent] DeepSeek call failed for category ${category}:`, error);
+      // 降级：返回 mock 响应，使用估算 token
+      const fallbackResponse = this.getFallbackResponse(category, userQuery);
+      return { 
+        response: fallbackResponse, 
+        promptTokens: Math.ceil(userQuery.length / 4),
+        completionTokens: Math.ceil(fallbackResponse.length / 4),
+        totalTokens: Math.ceil((userQuery.length + fallbackResponse.length) / 4)
+      };
+    }
   }
 
   /**
    * Generate marketing-focused response
    */
-  private async generateMarketingResponse(query: string, teamConfig: any): Promise<string> {
-    // In production, this would call the marketing team agents
-    return `Based on your marketing query, our AI Marketing Team suggests:
+  private getFallbackResponse(category: string, userQuery: string): string {
+    switch (category) {
+      case 'marketing':
+        return `Based on your marketing query, our AI Marketing Team suggests:
 
 **Strategy Overview:**
-${this.generateMockMarketingAdvice(query)}
+For "${userQuery.substring(0, 50)}...", consider implementing a data-driven marketing strategy.
 
 **Key Recommendations:**
 1. Focus on customer segmentation and personalized messaging
 2. Leverage data analytics to optimize campaign performance
 3. Implement A/B testing for continuous improvement
-4. Utilize multi-channel marketing approach
 
-**Next Steps:**
-- Define your target audience segments
-- Set clear KPIs and metrics
-- Create a content calendar
-- Monitor and adjust based on performance data
-
-Would you like me to elaborate on any of these points or help you create a specific marketing plan?`;
-  }
-
-  /**
-   * Generate customer service response
-   */
-  private async generateCustomerServiceResponse(query: string, teamConfig: any): Promise<string> {
-    return `I understand your concern. Let me help you with that.
+Would you like me to elaborate on any of these points?`;
+      case 'customer-service':
+        return `I understand your concern. Let me help you with that.
 
 **Response:**
-${this.generateMockCustomerServiceReply(query)}
-
-**Additional Support:**
-- If you need further assistance, please don't hesitate to ask
-- You can also check our FAQ section for common questions
-- Our support team is available 24/7
+I've reviewed your inquiry about "${userQuery.substring(0, 50)}..." and I'm here to provide you with the best possible assistance.
 
 Is there anything else I can help you with today?`;
-  }
-
-  /**
-   * Generate development-focused response
-   */
-  private async generateDevelopmentResponse(query: string, teamConfig: any): Promise<string> {
-    return `Here's a technical solution for your development question:
+      case 'development':
+        return `Here's a technical solution for your development question:
 
 **Solution:**
-${this.generateMockTechnicalAdvice(query)}
+For your technical question about "${userQuery.substring(0, 50)}...", here's a robust solution following industry best practices.
 
 **Implementation Steps:**
 1. Analyze requirements and design architecture
 2. Set up development environment
 3. Implement core functionality
-4. Write unit and integration tests
-5. Deploy and monitor
 
-**Best Practices:**
-- Follow clean code principles
-- Use version control (Git)
-- Implement CI/CD pipeline
-- Document your code
-
-Would you like me to provide code examples or dive deeper into any specific aspect?`;
-  }
-
-  /**
-   * Generate analysis-focused response
-   */
-  private async generateAnalysisResponse(query: string, teamConfig: any): Promise<string> {
-    return `Let me analyze this for you:
+Would you like me to provide code examples?`;
+      case 'analysis':
+        return `Let me analyze this for you:
 
 **Analysis:**
-${this.generateMockAnalysis(query)}
+After analyzing "${userQuery.substring(0, 50)}...", I've identified several key patterns and insights.
 
 **Key Insights:**
 1. Identify patterns and trends in the data
 2. Look for correlations and anomalies
-3. Consider external factors that may influence results
-4. Validate findings with statistical methods
+3. Validate findings with statistical methods
 
-**Recommendations:**
-- Collect more data if sample size is insufficient
-- Use visualization tools to better understand patterns
-- Cross-reference with industry benchmarks
-- Present findings with clear actionable insights
+Would you like me to perform a more detailed analysis?`;
+      default:
+        return `Thank you for your question. Here's my response:
 
-Would you like me to perform a more detailed analysis on any specific aspect?`;
-  }
-
-  /**
-   * Generate general response
-   */
-  private async generateGeneralResponse(query: string, teamConfig: any): Promise<string> {
-    return `Thank you for your question. Here's my response:
-
-${this.generateMockGeneralReply(query)}
-
-Our AI team has analyzed your query and provided this comprehensive answer. If you need more specific information or have follow-up questions, please feel free to ask.
+Regarding your question about "${userQuery.substring(0, 50)}...", I've compiled a comprehensive response based on best practices and industry standards.
 
 Is there anything else I can help you with?`;
-  }
-
-  // Mock helper functions (replace with actual AI calls in production)
-  private generateMockMarketingAdvice(query: string): string {
-    return `For "${query.substring(0, 50)}...", consider implementing a data-driven marketing strategy that focuses on customer engagement and conversion optimization.`;
-  }
-
-  private generateMockCustomerServiceReply(query: string): string {
-    return `I've reviewed your inquiry about "${query.substring(0, 50)}..." and I'm here to provide you with the best possible assistance.`;
-  }
-
-  private generateMockTechnicalAdvice(query: string): string {
-    return `For your technical question about "${query.substring(0, 50)}...", here's a robust solution following industry best practices.`;
-  }
-
-  private generateMockAnalysis(query: string): string {
-    return `After analyzing "${query.substring(0, 50)}...", I've identified several key patterns and insights that can inform your decision-making process.`;
-  }
-
-  private generateMockGeneralReply(query: string): string {
-    return `Regarding your question about "${query.substring(0, 50)}...", I've compiled a comprehensive response based on best practices and industry standards.`;
+    }
   }
 
   /**
-   * Estimate token count (simplified)
-   * In production, use a proper tokenizer like tiktoken
+   * Estimate token count (simplified, only used as fallback)
    */
   private estimateTokens(text: string): number {
     // Rough estimation: ~4 characters per token

@@ -118,6 +118,7 @@ export class AiTeamCreationController {
       const { id } = req.params;
       const sessionId = Array.isArray(id) ? id[0] : id;
       const { content } = req.body;
+      const userId = (req as any).user?.id || (req as any).admin?.id;
       
       if (!content) {
         return res.status(400).json({
@@ -153,7 +154,8 @@ export class AiTeamCreationController {
         currentPhase,
         {
           analysisResult: session.requirements
-        }
+        },
+        userId
       );
       
       // 保存 NvwaX 分析结果到会话
@@ -673,7 +675,8 @@ export class AiTeamCreationController {
           teamDesign,
           ceoConfig,
           teamName: ceoConfig.teamType + '团队'
-        }
+        },
+        userId
       );
 
       const documentPackage = nvwaxResponse.documentPackage;
@@ -768,7 +771,8 @@ export class AiTeamCreationController {
           teamDesign,
           ceoConfig,
           teamName: ceoConfig.teamType + '团队'
-        }
+        },
+        userId
       );
 
       const documentPackage = nvwaxResponse.documentPackage;
@@ -940,13 +944,15 @@ export class AiTeamCreationController {
       
       // 生成 NvwaX Aiteam架构师 配置（如果尚未生成）
       let ceoConfig = (session as any).ceo_config;
+      const triggerUserId = (req as any).user?.id || (req as any).admin?.id || (session as any).user_id;
       if (!ceoConfig) {
         console.log('🎯 Generating CEO config...');
         try {
           const nvwaxResponse = await nvwaxAgentService.processMessage(
             '生成CEO配置',
             'ceo_generation',
-            { teamDesign }
+            { teamDesign },
+            triggerUserId
           );
           
           if (nvwaxResponse.ceoConfig) {
@@ -1051,7 +1057,8 @@ export class AiTeamCreationController {
               teamDesign,
               ceoConfig,
               teamName: (session as any).company_name || `${ceoConfig.teamType}团队`
-            }
+            },
+            triggerUserId
           );
           
           if (nvwaxResponse.documentPackage) {
@@ -1080,7 +1087,7 @@ export class AiTeamCreationController {
       console.log('✅ NvwaX match completed');
       
       // 保存记忆（异步，不阻塞响应）
-      const userId = (session as any).user_id;
+      const userId = triggerUserId;
       if (ceoConfig && teamDesign && userId) {
         console.log('💾 Saving NvwaX memory...');
         nvwaxMemoryService.saveMemory(

@@ -59,7 +59,8 @@ class AiSearchController {
         return;
       }
 
-      const response = await aiSearchAgentService.chat(sessionId, message.trim());
+      const userId = (req as any).user?.id;
+      const response = await aiSearchAgentService.chat(sessionId, message.trim(), userId);
 
       res.json({
         success: true,

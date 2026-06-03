@@ -11,7 +11,7 @@ export const metadata: Metadata = {
       "创建和管理 AI 项目，聚合您的智能体和 AiTeam 资源。",
   },
   alternates: {
-    canonical: "https://nvwax.com/projects",
+    canonical: "https://nvwax.proclaw.cc/projects",
   },
 };
 

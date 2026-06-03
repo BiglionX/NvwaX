@@ -68,7 +68,7 @@
     "personalSpace": "个人空间",
     "platformTitle": "AI Agent 平台",
     "defaultUser": "用户",
-    "footerDescription": "开源的 AI Agent 搜索、发现和管理平台",
+    "footerDescription": "虚拟公司制造工厂 — 轻松创建个性化的 AI 虚拟公司",
     "footerProducts": "产品",
     "footerResources": "资源",
     "footerCommunity": "社区",
@@ -81,7 +81,7 @@
     "footerByCommunity": "开源社区"
   },
   "home": {
-    "title": "NvwaX - AI Agent & AiTeam 制造工厂",
+    "title": "NvwaX - 虚拟公司制造工厂",
     "subtitle": "搜索 · 发现 · 创建 · 发布 AI Agent 和 AiTeam",
     "description": "开源的智能体搜索与协作平台",
     "getStarted": "开始使用",
@@ -1075,8 +1075,8 @@
     "markdownAlert": "Markdown \u683c\u5f0f\u9700\u8981\u540e\u7aef\u652f\u6301 ZIP \u6253\u5305\uff0c\u5f53\u524d\u4f7f\u7528 JSON \u683c\u5f0f\u4e0b\u8f7d"
   },
   "homepage": {
-    "subtitle": "AI Agent & AiTeam 制造工厂",
-    "subtitle2": "搜索 · 发现 · 创建 · 发布",
+    "subtitle": "虚拟公司制造工厂 — 轻松创建个性化的虚拟公司",
+    "subtitle2": "搜索 · 管理 · 组装 AI 智能体，组建你的 AI 虚拟公司",
     "searchPlaceholder": "搜索 AI Agent、AiTeam...",
     "search": "搜索",
     "createAgent": "创建 Agent",

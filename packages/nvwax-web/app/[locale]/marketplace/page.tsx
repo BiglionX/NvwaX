@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: t("subtitle"),
     },
     alternates: {
-      canonical: "https://nvwax.com/marketplace",
+      canonical: "https://nvwax.proclaw.cc/marketplace",
     },
   };
 }

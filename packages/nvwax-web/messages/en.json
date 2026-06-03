@@ -68,7 +68,7 @@
     "personalSpace": "Personal Space",
     "platformTitle": "AI Agent Platform",
     "defaultUser": "User",
-    "footerDescription": "Open-source AI Agent search, discovery and management platform",
+    "footerDescription": "Virtual Company Factory — Easily Create Your AI Virtual Company",
     "footerProducts": "Products",
     "footerResources": "Resources",
     "footerCommunity": "Community",
@@ -81,8 +81,8 @@
     "footerByCommunity": "by Open Source Community"
   },
   "home": {
-    "title": "NvwaX - AI Agent & AiTeam Factory",
-    "subtitle": "Search · Discover · Create · Publish AI Agents and AiTeams",
+    "title": "NvwaX - Virtual Company Factory",
+    "subtitle": "Search \u00b7 Discover \u00b7 Create \u00b7 Publish AI Agents and AiTeams",
     "description": "Open-source agent search and collaboration platform",
     "getStarted": "Get Started",
     "learnMore": "Learn More",
@@ -715,8 +715,8 @@
     "markdownAlert": "Markdown format requires backend ZIP packaging support, currently downloading in JSON format"
   },
   "homepage": {
-    "subtitle": "AI Agent & AiTeam Factory",
-    "subtitle2": "Search \u00b7 Discover \u00b7 Create \u00b7 Publish",
+    "subtitle": "Virtual Company Factory — Easily Create Your AI Virtual Company",
+    "subtitle2": "Search \u00b7 Manage \u00b7 Assemble AI Agents to Build Your Virtual Company",
     "searchPlaceholder": "Search AI Agents, AiTeams...",
     "search": "Search",
     "createAgent": "Create Agent",

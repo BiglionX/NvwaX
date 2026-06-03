@@ -25,22 +25,24 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
 
-  const titleZh = "NvwaX - AI Agent & AiTeam 制造工厂";
-  const titleEn = "NvwaX - AI Agent & Virtual Company Factory";
-  const descZh = "NvwaX 是一个开源的 AI Agent 和 AiTeam 搜索、发现和管理平台。支持从 GitHub、HuggingFace 等多数据源搜索 AI Agent，创建 AiTeam（AI团队）和智能体。";
-  const descEn = "NvwaX is an open-source AI Agent and Virtual Company search, discovery, and management platform.";
+  const titleZh = "NvwaX - 虚拟公司制造工厂 | 轻松创建个性化的虚拟公司";
+  const titleEn = "NvwaX - Virtual Company Factory | Easily Create Your AI Virtual Company";
+  const descZh = "NvwaX 是一个虚拟公司制造工厂，帮你轻松创建个性化的 AI 虚拟公司。支持搜索和管理 AI Agent，组建 AiTeam，用 AI 智能体驱动你的业务。";
+  const descEn = "NvwaX is a Virtual Company Factory that helps you easily create personalized AI Virtual Companies. Search and manage AI Agents, build AiTeams, and power your business with AI agents.";
 
   const title = locale === 'en' ? titleEn : titleZh;
   const description = locale === 'en' ? descEn : descZh;
 
   return {
-    metadataBase: new URL("https://nvwax.com"),
+    metadataBase: new URL("https://nvwax.proclaw.cc"),
     title: {
       default: title,
       template: "%s | NvwaX",
     },
     description,
     keywords: [
+      "虚拟公司",
+      "Virtual Company",
       "AI Agent",
       "AI智能体",
       "AiTeam",
@@ -56,7 +58,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     openGraph: {
       title,
       description,
-      url: "https://nvwax.com",
+      url: "https://nvwax.proclaw.cc",
       siteName: "NvwaX",
       locale: locale === 'en' ? 'en_US' : 'zh_CN',
       type: "website",
@@ -94,13 +96,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       apple: [{ url: "/logo.png", type: "image/png" }],
     },
     verification: {
-      google: "YOUR_GOOGLE_VERIFICATION_CODE",
+      google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || "YOUR_GOOGLE_VERIFICATION_CODE",
     },
     alternates: {
-      canonical: `https://nvwax.com/${locale}`,
+      canonical: `https://nvwax.proclaw.cc/${locale}`,
       languages: {
-        'zh': 'https://nvwax.com/zh',
-        'en': 'https://nvwax.com/en',
+        'zh': 'https://nvwax.proclaw.cc/zh',
+        'en': 'https://nvwax.proclaw.cc/en',
       },
     },
   };
@@ -110,16 +112,16 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: "NvwaX",
-  alternateName: "NvwaX AI Agent & AiTeam Platform",
-  url: "https://nvwax.com",
+  alternateName: "NvwaX 虚拟公司制造工厂",
+  url: "https://nvwax.proclaw.cc",
   description:
-    "AI Agent & AiTeam 制造工厂 - 搜索、发现、创建、发布智能体和 AiTeam",
+    "虚拟公司制造工厂 - 轻松创建个性化的 AI 虚拟公司，搜索和管理 AI Agent，组建 AiTeam",
   inLanguage: "zh-CN",
   potentialAction: {
     "@type": "SearchAction",
     target: {
       "@type": "EntryPoint",
-      urlTemplate: "https://nvwax.com/search?q={search_term_string}",
+      urlTemplate: "https://nvwax.proclaw.cc/search?q={search_term_string}",
     },
     "query-input": "required name=search_term_string",
   },

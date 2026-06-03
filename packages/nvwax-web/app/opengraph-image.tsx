@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "NvwaX - AI Agent & AiTeam 制造工厂";
+export const alt = "NvwaX - 虚拟公司制造工厂 | 轻松创建个性化的虚拟公司";
 
 export default async function Image() {
   return new ImageResponse(
@@ -85,7 +85,7 @@ export default async function Image() {
             letterSpacing: "2px",
           }}
         >
-          AI Agent & AiTeam 制造工厂
+          虚拟公司制造工厂
         </div>
 
         {/* 底部标签行 */}
@@ -100,7 +100,7 @@ export default async function Image() {
             fontWeight: 500,
           }}
         >
-          <span>搜索 · 发现 · 创建 · 发布</span>
+          <span>轻松创建个性化的虚拟公司</span>
         </div>
       </div>
     ),

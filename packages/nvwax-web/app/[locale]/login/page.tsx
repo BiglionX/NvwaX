@@ -11,7 +11,7 @@ export const metadata: Metadata = {
       "登录 NvwaX 平台，开始管理您的 AI Agent 和 AiTeam。",
   },
   alternates: {
-    canonical: "https://nvwax.com/login",
+    canonical: "https://nvwax.proclaw.cc/login",
   },
 };
 
