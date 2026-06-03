@@ -51,7 +51,7 @@ export class PaymentService {
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (stripeKey) {
       this.stripe = new Stripe(stripeKey, {
-        apiVersion: '2025-02-24.acacia'
+        apiVersion: '2026-05-27.dahlia'
       });
       console.log('✅ Stripe configured');
     } else {
