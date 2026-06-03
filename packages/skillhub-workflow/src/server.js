@@ -410,46 +410,35 @@ async function relatedSkillsNode(params) {
   }
 }
 
-// LLM Node - Real OpenAI Integration
+// LLM Node - DeepSeek V4-Flash Integration
 async function llmNode(params) {
-  const { prompt, model = 'gpt-3.5-turbo', temperature = 0.7 } = params;
+  const { prompt, model: _model, temperature = 0.7 } = params;
+  
+  // 强制使用 deepseek-v4-flash 模型
+  const model = 'deepseek-v4-flash';
   
   console.log('🤖 Calling LLM with model:', model);
   
-  // Check for DeepSeek API key first
+  // Check for DeepSeek API key
   const hasDeepSeekKey = process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_API_KEY !== 'your_deepseek_api_key_here';
-  const hasOpenAIKey = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here';
   
-  if (!hasDeepSeekKey && !hasOpenAIKey) {
-    console.warn('⚠️ No API key configured, returning mock response');
+  if (!hasDeepSeekKey) {
+    console.warn('⚠️ DEEPSEEK_API_KEY not configured, returning mock response');
     return {
-      response: 'This is a mock LLM response. Please configure DEEPSEEK_API_KEY or OPENAI_API_KEY in .env file.',
+      response: 'This is a mock LLM response. Please configure DEEPSEEK_API_KEY in .env file.',
       model: model
     };
   }
   
   try {
-    let chatModel;
-    
-    // Use DeepSeek if available and model starts with 'deepseek'
-    if (hasDeepSeekKey && (model.startsWith('deepseek') || !hasOpenAIKey)) {
-      console.log('Using DeepSeek API');
-      chatModel = new ChatOpenAI({
-        modelName: model === 'deepseek-chat' ? 'deepseek-chat' : model,
-        temperature: temperature,
-        openAIApiKey: process.env.DEEPSEEK_API_KEY,
-        configuration: {
-          baseURL: 'https://api.deepseek.com/v1'
-        }
-      });
-    } else {
-      console.log('Using OpenAI API');
-      chatModel = new ChatOpenAI({
-        modelName: model,
-        temperature: temperature,
-        openAIApiKey: process.env.OPENAI_API_KEY
-      });
-    }
+    const chatModel = new ChatOpenAI({
+      modelName: model,
+      temperature: temperature,
+      openAIApiKey: process.env.DEEPSEEK_API_KEY,
+      configuration: {
+        baseURL: 'https://api.deepseek.com/v1'
+      }
+    });
     
     const response = await chatModel.invoke([new HumanMessage(prompt)]);
     
@@ -484,7 +473,7 @@ async function agentRouterNode(params) {
   `;
   
   try {
-    const llmResult = await llmNode({ prompt: routerPrompt, model: 'gpt-3.5-turbo' });
+    const llmResult = await llmNode({ prompt: routerPrompt });
     const selectedAgent = llmResult.response.trim().toLowerCase();
     
     return {
@@ -550,7 +539,7 @@ async function reviewerNode(params) {
   try {
     const llmResult = await llmNode({ 
       prompt, 
-      model: process.env.REVIEWER_MODEL || 'gpt-4', 
+      model: 'deepseek-v4-flash', 
       temperature: parseFloat(process.env.REVIEWER_TEMPERATURE) || 0.2  // 低温度保证审查一致性
     });
     

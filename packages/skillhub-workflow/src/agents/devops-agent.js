@@ -16,9 +16,12 @@ const { ChatOpenAI } = require('@langchain/openai');
 class DevOpsAgent {
   constructor() {
     this.llm = new ChatOpenAI({
-      modelName: process.env.OPENAI_API_KEY ? 'gpt-4' : 'gpt-3.5-turbo',
+      modelName: 'deepseek-v4-flash',
       temperature: 0.3,
-      openAIApiKey: process.env.OPENAI_API_KEY || 'mock-key'
+      openAIApiKey: process.env.DEEPSEEK_API_KEY || 'mock-key',
+      configuration: {
+        baseURL: 'https://api.deepseek.com/v1'
+      }
     });
     
     this.ciCdPlatforms = ['GitHub Actions', 'GitLab CI', 'Jenkins', 'CircleCI'];

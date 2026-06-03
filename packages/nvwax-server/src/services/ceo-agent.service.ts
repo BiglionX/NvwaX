@@ -103,7 +103,7 @@ export class CEOAgentService {
 
     try {
       const completion = await this.openai.chat.completions.create({
-        model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash', // DeepSeek 模型
+        model: 'deepseek-v4-flash',
         messages,
         temperature: 0.7,
         max_tokens: 1000

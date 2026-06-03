@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 import { databaseService } from './database.service.js';
 import { tokenQuotaService } from './token-quota.service.js';
+import Stripe from 'stripe';
 
 export interface PaymentConfig {
   id: string;
@@ -23,20 +24,39 @@ export interface TokenOrder {
   token_rate: number;
   payment_method: string;
   status: 'pending' | 'paid' | 'cancelled';
+  stripe_session_id: string | null;
   paid_at: Date | null;
   confirmed_by: string | null;
   created_at: Date;
   updated_at: Date;
 }
 
+export interface StripeSessionResult {
+  sessionId: string;
+  sessionUrl: string;
+  orderId: string;
+}
+
 export class PaymentService {
   private pool: Pool;
+  private stripe: Stripe | null = null;
 
   // 定价：¥10 = 1,000,000 tokens
   private readonly TOKEN_RATE = 100000; // 每元兑换token数
 
   constructor() {
     this.pool = databaseService.getPool();
+
+    // 初始化 Stripe（如果配置了密钥）
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (stripeKey) {
+      this.stripe = new Stripe(stripeKey, {
+        apiVersion: '2025-02-24.acacia'
+      });
+      console.log('✅ Stripe configured');
+    } else {
+      console.warn('⚠️ STRIPE_SECRET_KEY not configured');
+    }
   }
 
   /**
@@ -117,8 +137,145 @@ export class PaymentService {
   }
 
   /**
-   * 创建Token购买订单
+   * 检查 Stripe 是否可用
    */
+  isStripeAvailable(): boolean {
+    return this.stripe !== null;
+  }
+
+  /**
+   * 创建 Stripe Checkout Session
+   */
+  async createStripeCheckoutSession(
+    userId: string,
+    amount: number
+  ): Promise<StripeSessionResult> {
+    if (!this.stripe) {
+      throw new Error('Stripe is not configured');
+    }
+
+    // 计算 token 数量
+    const tokens = Math.floor(amount * this.TOKEN_RATE);
+
+    // 先创建本地订单
+    const order = await this.createOrder(userId, amount, 'stripe');
+
+    // Stripe 金额以美分计（amount 为 USD）
+    const unitAmountInCents = Math.round(amount * 100);
+
+    const baseUrl = process.env.STRIPE_WEBHOOK_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'NvwaX Token',
+              description: `${tokens.toLocaleString()} Tokens`
+            },
+            unit_amount: unitAmountInCents
+          },
+          quantity: 1
+        }
+      ],
+      mode: 'payment',
+      success_url: `${baseUrl}/token-purchase?success=true&order_id=${order.id}`,
+      cancel_url: `${baseUrl}/token-purchase?cancelled=true`,
+      metadata: {
+        order_id: order.id,
+        user_id: userId,
+        tokens: tokens.toString()
+      }
+    });
+
+    // 保存 stripe_session_id
+    await this.pool.query(
+      'UPDATE token_orders SET stripe_session_id = $1 WHERE id = $2',
+      [session.id, order.id]
+    );
+
+    return {
+      sessionId: session.id,
+      sessionUrl: session.url || '',
+      orderId: order.id
+    };
+  }
+
+  /**
+   * 处理 Stripe Webhook 事件
+   */
+  async handleStripeWebhook(body: string | Buffer, signature: string): Promise<{ received: boolean }> {
+    if (!this.stripe) {
+      throw new Error('Stripe is not configured');
+    }
+
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      throw new Error('STRIPE_WEBHOOK_SECRET not configured');
+    }
+
+    let event: Stripe.Event;
+    try {
+      event = this.stripe.webhooks.constructEvent(
+        body,
+        signature,
+        webhookSecret
+      );
+    } catch (err) {
+      const error = err as Error;
+      console.error('Stripe webhook signature verification failed:', error.message);
+      throw new Error(`Webhook signature verification failed: ${error.message}`);
+    }
+
+    // 处理 checkout.session.completed 事件
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      await this.processStripeCompletedSession(session);
+    }
+
+    return { received: true };
+  }
+
+  /**
+   * 处理 Stripe 支付成功会话
+   */
+  private async processStripeCompletedSession(session: Stripe.Checkout.Session): Promise<void> {
+    const orderId = session.metadata?.order_id;
+    const userId = session.metadata?.user_id;
+    const tokensStr = session.metadata?.tokens;
+
+    if (!orderId || !userId || !tokensStr) {
+      console.error('Stripe session missing metadata:', session.id);
+      return;
+    }
+
+    // 查询订单
+    const orderResult = await this.pool.query(
+      'SELECT * FROM token_orders WHERE id = $1 AND status = $2',
+      [orderId, 'pending']
+    );
+
+    if (orderResult.rows.length === 0) {
+      console.warn(`Stripe webhook: Order ${orderId} not found or already processed`);
+      return;
+    }
+
+    const tokens = parseInt(tokensStr);
+
+    // 更新订单状态为已支付
+    await this.pool.query(
+      `UPDATE token_orders SET status = 'paid', paid_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND status = 'pending'`,
+      [orderId]
+    );
+
+    // 为用户增加 token 配额
+    await tokenQuotaService.addPurchasedTokens(userId, tokens);
+
+    console.log(`[Stripe] Payment completed: order=${orderId}, user=${userId}, tokens=${tokens}`);
+  }
   async createOrder(userId: string, amount: number, paymentMethod: string): Promise<TokenOrder> {
     // 计算token数量：10元 = 100万token
     const tokens = Math.floor(amount * this.TOKEN_RATE);
@@ -285,6 +442,7 @@ export class PaymentService {
       token_rate: row.token_rate,
       payment_method: row.payment_method,
       status: row.status,
+      stripe_session_id: row.stripe_session_id || null,
       paid_at: row.paid_at ? new Date(row.paid_at) : null,
       confirmed_by: row.confirmed_by,
       created_at: new Date(row.created_at),

@@ -70,6 +70,12 @@ export const userApi = {
     return response.data.data;
   },
 
+  // 创建 Stripe Checkout Session
+  createStripeCheckoutSession: async (userId: string, amount: number) => {
+    const response = await api.post('/user/token/create-stripe-session', { userId, amount });
+    return response.data.data;
+  },
+
   // 获取可用的支付方式
   getPaymentConfigs: async () => {
     const response = await api.get('/user/token/payment-configs');

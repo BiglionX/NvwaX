@@ -76,6 +76,7 @@ router.get('/user/token/quota', userController.getTokenQuota);
 router.get('/user/token/transactions', userController.getTokenTransactions);
 router.get('/user/token/orders', userController.getTokenOrders);
 router.post('/user/token/create-order', userController.createTokenOrder);
+router.post('/user/token/create-stripe-session', userController.createStripeCheckoutSession);
 router.get('/user/token/payment-configs', userController.getPaymentConfigs);
 
 // User authentication routes

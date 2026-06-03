@@ -4,17 +4,21 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { config } from './config/index.js';
 import routes from './routes/index.js';
+import { stripeWebhookRouter } from './routes/stripe-webhook.routes.js';
 import { databaseService } from './services/database.service.js';
 import { crawlerSchedulerService } from './services/crawler-scheduler.service.js';
 
 const app = express();
 
+// Stripe webhook 需要 raw body，必须在 express.json() 之前
+app.use('/api/stripe/webhook', stripeWebhookRouter);
+
 // Middleware
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev')); // 添加请求日志
+app.use(morgan('dev'));
 
 // Routes
 app.use('/api', routes);

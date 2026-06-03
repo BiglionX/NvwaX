@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { userApi } from '@/lib/api/users';
 import { useAuth } from '@/hooks/useAuth';
-import { ShoppingCart, Coins, Smartphone, Wallet, CheckCircle, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Coins, Smartphone, Wallet, CheckCircle, Loader2, AlertCircle, ArrowLeft, CreditCard } from 'lucide-react';
 import LoadingState from '@/components/Layout/LoadingState';
 import { Card, Button } from '@/components/UI';
 
@@ -23,14 +23,34 @@ export default function TokenPurchasePage() {
     paymentConfig: Record<string, unknown> | null;
   } | null>(null);
 
+  // Stripe 重定向状态
+  const [stripeSuccess, setStripeSuccess] = useState(false);
+  const [stripeCancelled, setStripeCancelled] = useState(false);
+  const [stripeOrderId, setStripeOrderId] = useState<string | null>(null);
+
+  // 解析 Stripe 重定向回传参数
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'true') {
+      setStripeSuccess(true);
+      setStripeOrderId(params.get('order_id'));
+    } else if (params.get('cancelled') === 'true') {
+      setStripeCancelled(true);
+    }
+  }, []);
+
   // 获取可用的支付方式
-  const { data: paymentConfigs, isLoading: loadingPayments } = useQuery({
+  const { data: paymentData, isLoading: loadingPayments } = useQuery({
     queryKey: ['user-payment-configs'],
     queryFn: () => userApi.getPaymentConfigs(),
     retry: 1
   });
 
-  // 创建订单
+  const paymentConfigs: Array<{ provider: string; provider_label: string; qr_code_url?: string }> =
+    paymentData?.providers || [];
+  const stripeAvailable = paymentData?.stripeAvailable || false;
+
+  // 创建订单（微信/支付宝）
   const createOrderMutation = useMutation({
     mutationFn: ({ amount, paymentMethod }: { amount: number; paymentMethod: string }) =>
       userApi.createTokenOrder(userId!, amount, paymentMethod),
@@ -39,12 +59,26 @@ export default function TokenPurchasePage() {
     }
   });
 
+  // 创建 Stripe Checkout Session
+  const createStripeSessionMutation = useMutation({
+    mutationFn: (amount: number) => userApi.createStripeCheckoutSession(userId!, amount),
+    onSuccess: (data) => {
+      if (data?.sessionUrl) {
+        window.location.href = data.sessionUrl;
+      }
+    }
+  });
+
   // 默认选中第一个支付方式
   useEffect(() => {
-    if (paymentConfigs && paymentConfigs.length > 0 && !selectedPayment) {
-      setSelectedPayment(paymentConfigs[0].provider);
+    if (!selectedPayment) {
+      if (paymentConfigs.length > 0) {
+        setSelectedPayment(paymentConfigs[0].provider);
+      } else if (stripeAvailable) {
+        setSelectedPayment('stripe');
+      }
     }
-  }, [paymentConfigs, selectedPayment]);
+  }, [paymentConfigs, stripeAvailable, selectedPayment]);
 
   const getAmount = () => {
     if (selectedPackage === 'fixed') return PACKAGE_AMOUNT;
@@ -63,10 +97,15 @@ export default function TokenPurchasePage() {
 
   const handlePurchase = () => {
     if (!selectedPayment) return;
-    createOrderMutation.mutate({
-      amount: getAmount(),
-      paymentMethod: selectedPayment
-    });
+
+    if (selectedPayment === 'stripe') {
+      createStripeSessionMutation.mutate(getAmount());
+    } else {
+      createOrderMutation.mutate({
+        amount: getAmount(),
+        paymentMethod: selectedPayment
+      });
+    }
   };
 
   const handleReset = () => {
@@ -79,7 +118,79 @@ export default function TokenPurchasePage() {
     return <LoadingState />;
   }
 
-  // 订单已创建，显示支付信息
+  // Stripe 支付成功页面
+  if (stripeSuccess) {
+    return (
+      <div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">支付成功</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Stripe 支付已完成，Token 已自动到账</p>
+        </div>
+
+        <Card>
+          <div className="p-6 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+              <CheckCircle className="text-green-500" size={32} />
+            </div>
+
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">支付已完成</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              订单号: {(stripeOrderId || '').substring(0, 16)}...
+            </p>
+
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg mb-6 max-w-sm mx-auto">
+              <p className="text-sm text-green-700 dark:text-green-400">
+                ✅ Token 已自动充值到您的账户
+              </p>
+            </div>
+
+            <Button
+              variant="primary"
+              onClick={() => { window.location.href = '/token-purchase'; }}
+              className="w-full max-w-sm mx-auto"
+            >
+              继续购买
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Stripe 取消页面
+  if (stripeCancelled) {
+    return (
+      <div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">支付已取消</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">您已取消 Stripe 支付</p>
+        </div>
+
+        <Card>
+          <div className="p-6 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+              <AlertCircle className="text-yellow-500" size={32} />
+            </div>
+
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">支付未完成</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              如果您仍想购买 Token，请重新下单
+            </p>
+
+            <Button
+              variant="primary"
+              onClick={() => { window.location.href = '/token-purchase'; }}
+              className="w-full max-w-sm mx-auto"
+            >
+              重新购买
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // 订单已创建，显示支付信息（微信/支付宝）
   if (orderResult) {
     const paymentInfo = orderResult.paymentConfig as Record<string, unknown> | null;
     const order = orderResult.order as Record<string, unknown>;
@@ -267,7 +378,7 @@ export default function TokenPurchasePage() {
         <div className="p-6">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">选择支付方式</h2>
 
-          {paymentConfigs && paymentConfigs.length > 0 ? (
+          {paymentConfigs.length > 0 || stripeAvailable ? (
             <div className="grid grid-cols-2 gap-4">
               {paymentConfigs.map((config: { provider: string; provider_label: string; qr_code_url?: string }) => (
                 <div
@@ -292,6 +403,25 @@ export default function TokenPurchasePage() {
                   )}
                 </div>
               ))}
+              {stripeAvailable && (
+                <div
+                  onClick={() => setSelectedPayment('stripe')}
+                  className={`p-4 border-2 rounded-xl cursor-pointer transition-all text-center ${
+                    selectedPayment === 'stripe'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="flex justify-center mb-2">
+                    <CreditCard className="text-purple-500" size={36} />
+                  </div>
+                  <p className="font-semibold text-gray-900 dark:text-white">Stripe（信用卡）</p>
+                  <p className="text-xs text-gray-400 mt-1">海外用户适用</p>
+                  {selectedPayment === 'stripe' && (
+                    <CheckCircle className="mx-auto mt-2 text-blue-500" size={20} />
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-6 text-gray-500">
@@ -318,22 +448,24 @@ export default function TokenPurchasePage() {
           <Button
             variant="primary"
             onClick={handlePurchase}
-            disabled={!selectedPayment || createOrderMutation.isPending}
+            disabled={!selectedPayment || createOrderMutation.isPending || createStripeSessionMutation.isPending}
             fullWidth
             size="lg"
           >
             {createOrderMutation.isPending ? (
               <><Loader2 className="animate-spin" size={18} /> 创建订单中...</>
+            ) : createStripeSessionMutation.isPending ? (
+              <><Loader2 className="animate-spin" size={18} /> 跳转到 Stripe...</>
             ) : (
               <><ShoppingCart size={18} /> 立即购买</>
             )}
           </Button>
 
-          {createOrderMutation.isError && (
+          {(createOrderMutation.isError || createStripeSessionMutation.isError) && (
             <div className="flex items-center gap-2 mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
               <AlertCircle className="text-red-500 shrink-0" size={18} />
               <span className="text-sm text-red-700 dark:text-red-400">
-                {(createOrderMutation.error as Error).message || '创建订单失败，请重试'}
+                {(createOrderMutation.error as Error)?.message || (createStripeSessionMutation.error as Error)?.message || '创建订单失败，请重试'}
               </span>
             </div>
           )}

@@ -313,7 +313,7 @@ class AiSearchAgentService {
     try {
       if (this.openai) {
         const completion = await this.openai.chat.completions.create({
-          model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
+          model: 'deepseek-v4-flash',
           messages: [
             { role: 'system', content: systemPrompt },
             ...historyMessages.slice(0, -1),
@@ -583,7 +583,7 @@ ${conversationContext}` : ''}
     if (this.openai && (totalCount > 0 || hasAiteams)) {
       try {
         const completion = await this.openai.chat.completions.create({
-          model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash',
+          model: 'deepseek-v4-flash',
           messages: [
             { role: 'system', content: systemPrompt }
           ],

@@ -16,9 +16,12 @@ const { ChatOpenAI } = require('@langchain/openai');
 class UIDesignerAgent {
   constructor() {
     this.llm = new ChatOpenAI({
-      modelName: process.env.OPENAI_API_KEY ? 'gpt-4' : 'gpt-3.5-turbo',
-      temperature: 0.7, // 较高温度以激发创造力
-      openAIApiKey: process.env.OPENAI_API_KEY || 'mock-key'
+      modelName: 'deepseek-v4-flash',
+      temperature: 0.7,
+      openAIApiKey: process.env.DEEPSEEK_API_KEY || 'mock-key',
+      configuration: {
+        baseURL: 'https://api.deepseek.com/v1'
+      }
     });
     
     this.designSystems = ['Material Design', 'Ant Design', 'Bootstrap', 'Tailwind UI'];

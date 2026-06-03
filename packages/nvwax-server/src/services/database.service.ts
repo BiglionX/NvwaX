@@ -355,6 +355,7 @@ class DatabaseService {
           token_rate INTEGER NOT NULL DEFAULT 100000,
           payment_method TEXT NOT NULL,
           status TEXT NOT NULL DEFAULT 'pending',
+          stripe_session_id TEXT,
           paid_at TIMESTAMP,
           confirmed_by TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

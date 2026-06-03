@@ -200,19 +200,50 @@ export class UserController {
   }
 
   /**
+   * 创建 Stripe Checkout Session
+   */
+  async createStripeCheckoutSession(req: Request, res: Response) {
+    try {
+      const { userId, amount } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+      }
+
+      if (!amount || amount < 1) {
+        return res.status(400).json({ error: 'amount must be at least 1' });
+      }
+
+      if (!paymentService.isStripeAvailable()) {
+        return res.status(503).json({ error: 'Stripe is not configured' });
+      }
+
+      const result = await paymentService.createStripeCheckoutSession(userId, amount);
+
+      res.json({ data: result });
+    } catch (error) {
+      console.error('Error creating Stripe checkout session:', error);
+      res.status(500).json({ error: 'Failed to create Stripe checkout session' });
+    }
+  }
+
+  /**
    * 获取可用的支付方式
    */
   async getPaymentConfigs(req: Request, res: Response) {
     try {
       const configs = await paymentService.getEnabledPaymentConfigs();
       res.json({
-        data: configs.map(c => ({
-          provider: c.provider,
-          provider_label: c.provider_label,
-          qr_code_url: c.qr_code_url,
-          account_name: c.account_name,
-          account_info: c.account_info
-        }))
+        data: {
+          providers: configs.map(c => ({
+            provider: c.provider,
+            provider_label: c.provider_label,
+            qr_code_url: c.qr_code_url,
+            account_name: c.account_name,
+            account_info: c.account_info
+          })),
+          stripeAvailable: paymentService.isStripeAvailable()
+        }
       });
     } catch (error) {
       console.error('Error fetching payment configs:', error);
