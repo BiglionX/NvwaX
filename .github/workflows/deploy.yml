@@ -38,16 +38,21 @@ jobs:
             echo "📥 Pulling latest code..."
             git pull origin main
             echo "🔐 Setting up environment secrets..."
-            grep -q '^GOOGLE_CLIENT_ID=' /opt/nvwax/.env 2>/dev/null || \
-              echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> /opt/nvwax/.env
-            grep -q '^NEXT_PUBLIC_GOOGLE_CLIENT_ID=' /opt/nvwax/.env 2>/dev/null || \
-              echo "NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}" >> /opt/nvwax/.env
-            grep -q '^DEEPSEEK_API_KEY=' /opt/nvwax/.env 2>/dev/null || \
-              echo "DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}" >> /opt/nvwax/.env
-            grep -q '^JWT_SECRET=' /opt/nvwax/.env 2>/dev/null || \
-              echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> /opt/nvwax/.env
-            grep -q '^STRIPE_SECRET_KEY=' /opt/nvwax/.env 2>/dev/null || \
-              echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" >> /opt/nvwax/.env
+            # 使用 sed 替换已有值或追加新值，确保每次部署都更新
+            for key in GOOGLE_CLIENT_ID NEXT_PUBLIC_GOOGLE_CLIENT_ID DEEPSEEK_API_KEY JWT_SECRET STRIPE_SECRET_KEY; do
+              case "$key" in
+                GOOGLE_CLIENT_ID) val="${{ secrets.GOOGLE_CLIENT_ID }}" ;;
+                NEXT_PUBLIC_GOOGLE_CLIENT_ID) val="${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}" ;;
+                DEEPSEEK_API_KEY) val="${{ secrets.DEEPSEEK_API_KEY }}" ;;
+                JWT_SECRET) val="${{ secrets.JWT_SECRET }}" ;;
+                STRIPE_SECRET_KEY) val="${{ secrets.STRIPE_SECRET_KEY }}" ;;
+              esac
+              if grep -q "^${key}=" /opt/nvwax/.env 2>/dev/null; then
+                sed -i "s|^${key}=.*|${key}=${val}|" /opt/nvwax/.env
+              else
+                echo "${key}=${val}" >> /opt/nvwax/.env
+              fi
+            done
             echo " Stopping old containers..."
             docker-compose down
             echo " Building and starting containers..."
