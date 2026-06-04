@@ -24,6 +24,9 @@ import notificationRouter from './notification.routes.js';
 import downloadRouter from './download.routes.js';
 import aiSearchRouter from './ai-search.routes.js';
 import microbizRouter from './microbiz.routes.js';
+import capabilitiesRouter from './capabilities.routes.js';
+import actionRouter from './action.routes.js';
+import recommendationRouter from './recommendation.routes.js';
 
 const router = Router();
 
@@ -154,6 +157,15 @@ router.use('/downloads', downloadRouter);
 
 // MicroBiz AI Team Suite routes
 router.use('/microbiz', microbizRouter);
+
+// V2 Capabilities routes (行业插件能力注册)
+router.use('/v2/capabilities', capabilitiesRouter);
+
+// V2 Agent Action routes (Agent Action 验证)
+router.use('/v2/agents', actionRouter);
+
+// V2 Agent Recommendation routes (Agent/Skill 推荐)
+router.use('/v2/agents', recommendationRouter);
 
 // V1 API routes (OpenAI-compatible)
 router.use('/v1', v1Router);

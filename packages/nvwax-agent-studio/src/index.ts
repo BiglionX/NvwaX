@@ -7,6 +7,8 @@ export interface AgentStudioConfig {
   initialTemplate?: string;
   readOnly?: boolean;
   theme?: 'light' | 'dark';
+  pluginCapabilities?: string; // JSON string of PluginCapability[]
+  pluginIds?: string[]; // Associated plugin IDs
 }
 
 /**
@@ -104,6 +106,12 @@ export class NvwaXAgentStudio extends LitElement {
   @property({ type: String, attribute: 'theme' })
   theme: 'light' | 'dark' = 'light';
 
+  @property({ type: String, attribute: 'plugin-capabilities' })
+  pluginCapabilities: string = '';
+
+  @property({ type: Array, attribute: 'plugin-ids' })
+  pluginIds: string[] = [];
+
   @property({ type: Boolean })
   loading: boolean = true;
 
@@ -143,6 +151,9 @@ export class NvwaXAgentStudio extends LitElement {
         case 'AGENT_PUBLISHED':
           this.handleAgentPublished(data);
           break;
+        case 'PLUGIN_CONFIG_SYNCED':
+          this.handlePluginConfigSynced(data);
+          break;
         case 'ERROR':
           this.handleError(data);
           break;
@@ -170,7 +181,9 @@ export class NvwaXAgentStudio extends LitElement {
         tenantId: this.tenantId,
         template: this.initialTemplate,
         readOnly: this.readOnly,
-        theme: this.theme
+        theme: this.theme,
+        pluginCapabilities: this.pluginCapabilities,
+        pluginIds: this.pluginIds
       }
     });
   }
@@ -187,6 +200,15 @@ export class NvwaXAgentStudio extends LitElement {
   private handleAgentPublished(data: any) {
     console.log('Agent published:', data);
     this.dispatchEvent(new CustomEvent('agent-published', {
+      detail: data,
+      bubbles: true,
+      composed: true
+    }));
+  }
+
+  private handlePluginConfigSynced(data: any) {
+    console.log('Plugin config synced:', data);
+    this.dispatchEvent(new CustomEvent('plugin-config-synced', {
       detail: data,
       bubbles: true,
       composed: true
@@ -247,6 +269,45 @@ export class NvwaXAgentStudio extends LitElement {
       
       window.addEventListener('message', handler);
       this.sendMessageToIframe({ type: 'GET_AGENT_CONFIG' });
+    });
+  }
+
+  /**
+   * Public API: Set plugin capabilities for the agent
+   */
+  setPluginCapabilities(capabilitiesJson: string) {
+    this.pluginCapabilities = capabilitiesJson;
+    this.sendMessageToIframe({
+      type: 'SET_PLUGIN_CAPABILITIES',
+      data: { capabilities: capabilitiesJson }
+    });
+  }
+
+  /**
+   * Public API: Associate agent with specific plugins
+   */
+  associatePlugins(pluginIds: string[]) {
+    this.pluginIds = pluginIds;
+    this.sendMessageToIframe({
+      type: 'ASSOCIATE_PLUGINS',
+      data: { pluginIds }
+    });
+  }
+
+  /**
+   * Public API: Get associated plugin configuration
+   */
+  getPluginConfig(): Promise<any> {
+    return new Promise((resolve) => {
+      const handler = (event: MessageEvent) => {
+        if (event.data.type === 'PLUGIN_CONFIG') {
+          window.removeEventListener('message', handler);
+          resolve(event.data.data);
+        }
+      };
+      
+      window.addEventListener('message', handler);
+      this.sendMessageToIframe({ type: 'GET_PLUGIN_CONFIG' });
     });
   }
 

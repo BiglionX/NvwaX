@@ -7,7 +7,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=for-the-badge&logo=typescript)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue?style=for-the-badge&logo=postgresql)
-![Version](https://img.shields.io/badge/Version-v2.0.0-orange?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v2.1.0-orange?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen?style=for-the-badge)
 ![Deployment](https://img.shields.io/badge/Deployment-Vercel%20%2B%20Railway-blue?style=for-the-badge)
 
@@ -26,59 +26,63 @@ NvwaX 是一个现代化的 AI Agent 平台，提供全网 Agent 和技能的搜
 ### ✨ 核心亮点
 
 - 🔍 **智能搜索**: 支持全文搜索、搜索建议、历史记录、热门搜索
-- 🤖 **Nvwa 智能体工厂**: 对话式创建智能体，7步引导流程，可视化进度追踪（NEW! v2.0）
--  **虚拟公司打包**: CEO Agent 动态生成 + 团队经营配置文档生成（NEW! v2.0）
+- 🤖 **Nvwa 智能体工厂**: 对话式创建智能体，7步引导流程，可视化进度追踪
+- 💼 **行业插件增强**: Action 类型扩展 + 能力注册 API + 插件上下文注入 + 推荐引擎（NEW! v2.1）
+- 🏢 **虚拟公司打包**: CEO Agent 动态生成 + 团队经营配置文档生成
 - 🎁 **悬赏系统**: 发布、领取、提交、验证完整的悬赏流程
-- 🏢 **虚拟公司打包**: Team Skill 异步打包，多平台支持（NEW!）
-- 👑 **Admin 后台升级**: Agent管理、虚拟公司监控、通知中心、审计日志（NEW! v1.5.0）
-- 🌐 **多数据源**: GitHub、Gitee（码云）、ModelScope（魔搭）、百度、阿里、腾讯等（NEW! v2.0）
+- 👑 **Admin 后台升级**: Agent管理、虚拟公司监控、通知中心、审计日志
+- 🌐 **多数据源**: GitHub、Gitee（码云）、ModelScope（魔搭）、百度、阿里、腾讯等
 - 👥 **团队管理**: 创建和管理 AiTeam 和 Agent Teams
 - 🚀 **工作流引擎**: 基于 LangChain.js 的工作流编排
-- 📦 **Web Component SDK**: Lit-based 可嵌入组件（NEW!）
+- 📦 **Web Component SDK**: Lit-based 可嵌入组件
 - 🎨 **现代 UI**: 响应式设计，支持深色模式，左右分栏布局
 - 🔒 **权限控制**: 完整的用户认证和路由保护
 - ✅ **生产就绪**: 代码质量 100%，零错误零警告
 
 ---
 
-## 🆕 最新更新 (v2.0.0)
+## 🆕 最新更新 (v2.1.0)
 
-**更新日期**: 2026-05-20
+**更新日期**: 2026-06-04
 
-### ✨ Nvwa Agent 工作流重构（重大升级）
+### 🧩 行业插件增强（Phase 5 完成）
 
-- ** 可视化进度追踪** - 左侧面板实时显示 7 步骤进度（0-100%）
-- **⚡ 自动化流程** - Step 4-6 完全自动化（模板搜索 → 技能分析 → 配置审查）
-- **🇳 国内源支持** - 新增 Gitee（码云）和 ModelScope（魔搭）并行搜索
-- ** 性能优化** - 跳过 HuggingFace，搜索时间 < 5s
-- **🎯 智能匹配** - 基于名称、描述、标签的综合评分算法
-- **🎨 UI/UX 优化** - 实时需求信息面板、标签式展示、Markdown 渲染
+#### 📝 插件能力注册与查询
 
->  详细文档: [PHASE2-NVWA-AGENT-WORKFLOW-REFACTOR.md](./docs/PHASE2-NVWA-AGENT-WORKFLOW-REFACTOR.md) | [DOMESTIC-SOURCES-SEARCH-IMPLEMENTATION.md](./docs/DOMESTIC-SOURCES-SEARCH-IMPLEMENTATION.md) | [FRONTEND-INTEGRATION-TEST-REPORT.md](./docs/FRONTEND-INTEGRATION-TEST-REPORT.md)
+- ** 能力注册 API** - `POST /api/v2/capabilities/register` 注册/更新插件能力（UPSERT）
+- ** 能力查询** - `GET /api/v2/capabilities/:plugin_id` 查询单个插件能力
+- ** 行业标签搜索** - `GET /api/v2/capabilities` 支持按行业标签筛选
+- ** 能力注销** - `DELETE /api/v2/capabilities/:plugin_id` 注销插件能力
+- ** 数据库支持** - PostgreSQL JSONB 存储 actions/data_queries/skill_ids
 
-###  虚拟公司 CEO Agent 动态生成（Phase 2 完成）
+#### 🔧 Agent Action 输出扩展
 
-- **👔 CEO 模板库** - 4 种管理风格的 CEO 模板
-- **🧠 智能推断** - 根据团队类型自动生成 CEO 配置
-- **💼 Skills 配置** - 每个 CEO 自动配置 3 个默认技能
-- **✨ System Prompt 生成** - AI 驱动的个性化提示词
-- **👁️ 实时预览** - 前端组件展示 CEO 配置详情
+- ** 输出类型系统** - 5 种输出类型：text / action / data_query / card / mixed
+- ** 智能解析引擎** - 从 LLM 回复中提取 JSON 块并识别输出类型
+- ** 参数验证** - 根据插件定义验证 action 参数完整性，返回缺失参数+建议
+- ** 预设提示词** - 根据 Agent + 插件 IDs 生成完整预设提示词
 
->  详细文档: [PHASE2-FINAL-SUMMARY.md](./docs/PHASE2-FINAL-SUMMARY.md)
+#### 📡 插件上下文注入
 
-### 📄 团队经营配置文档生成（Phase 3 完成）
+- ** 上下文中间件** - 解析 `X-Plugin-Capabilities` Header 并注入请求
+- ** 系统提示词生成** - 将插件能力列表转为详细的 Agent System Prompt
+- ** Function Calling 支持** - 自动生成 OpenAI/DeepSeek 兼容的 tools 定义
+- ** Plugin-Aware Chat 端点** - `POST /api/v2/nvwa-agent/plugin-aware-chat`
 
-- **📦 文档包生成** - 4 种文档类型（团队章程、运营指南、决策流程、绩效指标）
-- **📥 多格式导出** - 支持 JSON 和 Markdown 格式下载
-- **👁️ 内容预览** - 前端组件实时预览文档内容
-- **💾 本地保存** - 一键下载完整文档包
+#### 🎯 推荐引擎
 
-> 📖 详细文档: [PHASE3-FINAL-SUMMARY.md](./docs/PHASE3-FINAL-SUMMARY.md)
+- ** 3 级匹配算法** - 精确匹配 (50%) > 行业匹配 (30%) > 热榜 (15%)
+- ** 双源推荐** - 同时推荐 Agent 和 SkillHub 技能
+- ** 去重合并排序** - 相同分数按热度二次排序
+- ** API 端点** - `POST /api/v2/agents/recommend` 和 `GET /api/v2/agents/recommend-skills`
 
-### 🐛 重要修复
+####  测试覆盖
 
-- **✅ React 渲染错误修复** - 修复 "Objects are not valid as a React child" 错误
-- **✅ Railway 部署兼容** - 优化类型安全，确保生产环境稳定运行
+- ** 14 个集成测试** - 覆盖注册、查询、解析、验证、推荐全部流程
+- ** 测试通过率 100%**
+- ** 测试脚本** - `pnpm --filter nvwax-server run test:plugin-capabilities`
+
+>  详细文档: [Nvwax_Agent平台行业插件增强需求_PRD_v2.0.md](./docs/Nvwax_Agent平台行业插件增强需求_PRD_v2.0.md) | [NVWAX-IMPLEMENTATION-PLAN.md](./docs/NVWAX-IMPLEMENTATION-PLAN.md)
 
 ---
 
@@ -191,6 +195,31 @@ docker-compose exec backend npm run db:migrate
 ---
 
 ## 📦 功能特性
+
+### 🧩 插件能力注册（NEW! v2.1）
+
+- ✅ ** 能力注册 API** - 注册/更新/查询/注销插件能力
+- ✅ **JSONB 数据存储** - 灵活存储 action 定义和 data_query 模式
+- ✅ **行业标签匹配** - 按 skill_ids 筛选插件能力
+- ✅ **Action 输出验证** - 验证 action_name 和参数完整性
+- ✅ **Action 输出解析** - 从 LLM 回复中智能提取 JSON 块
+- ✅ **5 种输出类型** - text / action / data_query / card / mixed
+- ✅ **Function Calling 工具生成** - 自动适配 OpenAI/DeepSeek
+
+### 📡 插件上下文系统（NEW! v2.1）
+
+- ✅ **X-Plugin-Capabilities Header** - HTTP 插件上下文注入
+- ✅ **插件感知聊天端点** - `POST /api/v2/nvwa-agent/plugin-aware-chat`
+- ✅ **动态 System Prompt 生成** - 插件能力列表转 Agent 提示词
+- ✅ **预设提示词生成** - `GET /api/v2/agents/:id/presets`
+- ✅ **Action 参数验证 API** - `POST /api/v2/agents/:id/validate_action`
+
+### 🎯 推荐引擎（NEW! v2.1）
+
+- ✅ **3 级匹配算法** - 精确匹配 > 行业匹配 > 热榜
+- ✅ **双源推荐** - Agent + SkillHub 技能同步推荐
+- ✅ **去重合并排序** - 智能去重 + 热度二次排序
+- ✅ **推荐 API** - `POST /api/v2/agents/recommend`
 
 ### 🔎 Agent 搜索与发现
 
@@ -320,24 +349,32 @@ docker-compose exec backend npm run db:migrate
 ```
 NvwaX/
 ├── packages/
-│   ├── nvwax-web/          # Next.js 前端应用
-│   │   ├── app/            # App Router 页面
-│   │   ├── components/     # React 组件
-│   │   ├── hooks/          # 自定义 Hooks
-│   │   └── lib/            # 工具函数
+│   ├── nvwax-web/              # Next.js 前端应用
+│   │   ├── app/                # App Router 页面
+│   │   ├── components/         # React 组件
+│   │   ├── hooks/              # 自定义 Hooks
+│   │   └── lib/                # 工具函数
 │   │
-│   ├── nvwax-server/       # Express 后端服务
+│   ├── nvwax-server/           # Express 后端服务
 │   │   ├── src/
-│   │   │   ├── routes/     # API 路由
-│   │   │   ├── services/   # 业务逻辑
-│   │   │   └── middleware/ # 中间件
-│   │   └── migrations/     # 数据库迁移
+│   │   │   ├── routes/         # API 路由（20+ 路由文件）
+│   │   │   ├── controllers/    # 控制器（25+ 控制器）
+│   │   │   ├── services/       # 业务逻辑（35+ 服务模块）
+│   │   │   ├── middleware/     # 中间件（5+）
+│   │   │   ├── prompts/        # LLM 提示词
+│   │   │   ├── types/          # TypeScript 类型定义
+│   │   │   └── tests/          # 集成测试
+│   │   └── migrations/         # 数据库迁移
 │   │
-│   ├── skillhub-workflow/  # 工作流引擎
-│   └── workflow-editor/    # 工作流编辑器
+│   ├── nvwax-agent-marketplace # Lit Web Component - 市场组件
+│   ├── nvwax-agent-studio      # Lit Web Component - 智能体工作室
+│   ├── nvwax-sdk               # 客户端 SDK
+│   ├── skillhub-workflow/      # 工作流引擎
+│   └── workflow-editor/        # 工作流编辑器
 │
-├── docs/                   # 文档
-├── .github/                # GitHub 配置
+├── docs/                       # 文档
+├── examples/                   # 使用示例
+├── exports/                    # 截图导出
 └── README.md
 ```
 
@@ -412,11 +449,12 @@ git push origin feature/your-feature
 
 ## 📊 数据统计
 
-- **18,000+** 代码行数
-- **5,000+** 文档行数
-- **30+** API 端点
-- **95%** 功能完成度
-- **3** 个完整阶段交付
+- **25,000+** 代码行数
+- **6,000+** 文档行数
+- **50+** API 端点
+- **96%** 功能完成度
+- **5** 个完整阶段交付
+- **14** 个集成测试（100% 通过）
 
 ---
 
@@ -432,13 +470,22 @@ git push origin feature/your-feature
 - ✅ 自动化工作流（Step 4-6）
 - ✅ 智能匹配评分算法
 
-### v2.1 (计划中 📋)
+### v2.1 (已完成 ✅)
 
--  评价系统（星级评分）
+- ✅ 插件能力注册 API（CRUD + 行业标签匹配）
+- ✅ Agent Action 输出扩展（5 种输出类型 + 智能解析）
+- ✅ 插件上下文注入（Header + System Prompt + Function Calling）
+- ✅ 推荐引擎（3 级匹配算法 + 双源推荐）
+- ✅ Action 参数验证 + 预设提示词生成
+- ✅ 14 个集成测试（100% 通过率）
+
+### v2.2 (计划中 📋)
+
+- 📋 前端插件测试面板（PluginTestPanel）页面集成
+- 📋 ProClaw Action 解析与执行集成
+- 📋 评价系统（星级评分）
 - 📋 数据统计图表
 - 📋 批量操作
-- 📋 动态技能列表
-- 📋 智能推荐
 
 ### v3.0 (远期规划 🎯)
 

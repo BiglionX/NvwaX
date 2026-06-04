@@ -496,6 +496,20 @@ class DatabaseService {
         CREATE INDEX IF NOT EXISTS idx_microbiz_agents_team ON microbiz_agents(team_id);
         CREATE INDEX IF NOT EXISTS idx_microbiz_installations_user ON microbiz_installations(user_id);
         CREATE INDEX IF NOT EXISTS idx_microbiz_installations_status ON microbiz_installations(status);
+
+        -- 行业插件能力注册表
+        CREATE TABLE IF NOT EXISTS plugin_capabilities (
+          id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+          plugin_id TEXT UNIQUE NOT NULL,
+          plugin_name TEXT NOT NULL,
+          actions JSONB DEFAULT '[]'::jsonb,
+          data_queries JSONB DEFAULT '[]'::jsonb,
+          skill_ids JSONB DEFAULT '[]'::jsonb,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_plugin_capabilities_plugin_id ON plugin_capabilities(plugin_id);
       `);
 
       console.log('✓ Database schema initialized successfully');

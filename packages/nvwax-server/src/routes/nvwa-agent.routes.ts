@@ -6,8 +6,100 @@
 
 import { Router } from 'express';
 import { nvwaAgentService } from '../services/nvwa-agent.service.js';
+import { pluginContextMiddleware } from '../middleware/plugin-context.middleware.js';
+import { pluginContextService } from '../services/plugin-context.service.js';
+import { pluginActionService } from '../services/plugin-action.service.js';
 
 const router = Router();
+
+/**
+ * POST /api/nvwa-agent/plugin-aware-chat
+ * 插件感知的对话处理
+ * 接收 X-Plugin-Capabilities header，将插件上下文注入到 Agent 处理中
+ */
+router.post('/plugin-aware-chat', pluginContextMiddleware, async (req, res) => {
+  try {
+    const { message } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        error: 'message is required'
+      });
+    }
+    
+    const capabilities = req.pluginContext?.capabilities || [];
+    
+    console.log(`📥 Plugin-aware chat request with ${capabilities.length} plugin(s):`, 
+      capabilities.map(c => c.plugin_name).join(', '));
+    
+    // 生成插件上下文的系统提示词
+    const pluginPrompt = capabilities.length > 0 
+      ? pluginContextService.generateSystemPrompt(capabilities)
+      : '';
+    
+    // 生成 function calling 工具
+    const functionTools = capabilities.length > 0
+      ? pluginContextService.generateActionList(capabilities)
+      : [];
+    
+    res.json({
+      success: true,
+      data: {
+        message: `Received message: ${message}`,
+        plugin_context: {
+          active: capabilities.length > 0,
+          plugin_count: capabilities.length,
+          plugin_names: capabilities.map(c => c.plugin_name),
+          system_prompt: pluginPrompt,
+          function_tools: functionTools
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Plugin-aware chat error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to process plugin-aware chat'
+    });
+  }
+});
+
+/**
+ * POST /api/nvwa-agent/parse-action-output
+ * 解析 LLM 回复中的 Action 输出
+ */
+router.post('/parse-action-output', async (req, res) => {
+  try {
+    const { llm_response } = req.body;
+    
+    if (!llm_response) {
+      return res.status(400).json({
+        success: false,
+        error: 'llm_response is required'
+      });
+    }
+    
+    console.log('📥 Parsing action output from LLM response');
+    
+    const result = pluginActionService.parseActionOutput(llm_response);
+    
+    res.json({
+      success: true,
+      data: {
+        text: result.text,
+        outputs: result.outputs,
+        output_count: result.outputs.length
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Action output parsing error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to parse action output'
+    });
+  }
+});
 
 /**
  * POST /api/nvwa-agent/review-config

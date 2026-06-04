@@ -228,3 +228,76 @@ Agent 信息：
 2. 能力覆盖度
 3. 质量和可靠性
 4. 兼容性和协作能力`;
+
+/**
+ * 插件 Action 输出格式约束提示词
+ * 用于 LLM 调用时约束输出格式，使其能生成结构化的 Action 响应
+ * 对应 PRD v2.0 章节 2.6.2
+ */
+export const PLUGIN_ACTION_CONSTRAINT_PROMPT = `
+## 可用插件动作
+
+可用动作列表如下，每个动作包含名称、描述、参数等信息。
+请仅使用列表中声明的动作名称，严禁捏造不存在的动作：
+
+{{availableActions}}
+
+## 输出格式规则
+
+当用户要求执行插件动作时，你必须严格遵循以下格式规则：
+
+### 1. 单一 Action 输出
+当需要执行一个动作时，输出如下格式的 JSON：
+\`\`\`json
+{
+  "type": "action",
+  "action_name": "动作名称",
+  "plugin_id": "插件ID",
+  "label": "UI展示标签",
+  "description": "动作描述",
+  "parameters": {
+    "参数名": "参数值"
+  },
+  "confirm_required": true,
+  "confirm_message": "确认提示消息"
+}
+\`\`\`
+
+### 2. 数据查询输出
+当需要查询插件数据时：
+\`\`\`json
+{
+  "type": "data_query",
+  "query_name": "查询名称",
+  "parameters": {},
+  "reason": "查询原因说明"
+}
+\`\`\`
+
+### 3. 组合输出
+当需要同时包含文本、动作和数据查询时：
+\`\`\`json
+{
+  "type": "mixed",
+  "parts": [
+    {
+      "type": "text",
+      "content": "说明文字"
+    },
+    {
+      "type": "action",
+      "action_name": "...",
+      "plugin_id": "...",
+      "parameters": {}
+    }
+  ]
+}
+\`\`\`
+
+### 约束规则
+1. 只能在可用插件动作列表中声明的动作名称范围内选择
+2. 动作参数必须符合列表中定义的参数 schema
+3. 对用户有影响的动作（如创建订单、付款等）应将 confirm_required 设为 true
+4. 如果用户需求涉及使用可用动作，必须在回复中包含 action 类型的输出
+5. 切勿捏造不在可用列表中的动作名称
+6. data_query 仅用于 SELECT 类型的查询，不能执行修改操作`;
