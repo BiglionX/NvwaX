@@ -47,11 +47,17 @@ jobs:
             echo " Building and starting containers..."
             docker-compose up -d --build
             echo " Waiting for services to start..."
-            sleep 10
+            sleep 30
             echo "✅ Checking service status..."
             docker-compose ps
+            echo "📋 Backend container logs..."
+            docker logs nvwax-backend --tail 100 2>&1 || true
             echo "🏥 Checking health..."
-            curl -f http://localhost:3001/health || echo "Backend health check failed"
+            for i in 1 2 3; do
+              echo "Attempt $i: backend health check..."
+              curl -f http://localhost:3001/health && break
+              sleep 10
+            done || echo "Backend health check failed"
             curl -f http://localhost:3000/api/health || echo "Frontend health check failed"
             echo "🎉 Deployment completed successfully!"
 
