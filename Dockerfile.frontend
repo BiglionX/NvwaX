@@ -25,6 +25,8 @@ COPY packages/nvwax-sdk/ ./packages/nvwax-sdk/
 WORKDIR /app/packages/nvwax-web
 ARG NEXT_PUBLIC_API_URL=https://nvwax.proclaw.cc/api
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
 RUN pnpm build
 
 # Production stage for frontend

@@ -37,6 +37,11 @@ jobs:
             docker builder prune -a -f 2>/dev/null || true
             echo "📥 Pulling latest code..."
             git pull origin main
+            echo "🔐 Setting up environment secrets..."
+            grep -q '^GOOGLE_CLIENT_ID=' /opt/nvwax/.env 2>/dev/null || \
+              echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> /opt/nvwax/.env
+            grep -q '^NEXT_PUBLIC_GOOGLE_CLIENT_ID=' /opt/nvwax/.env 2>/dev/null || \
+              echo "NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}" >> /opt/nvwax/.env
             echo " Stopping old containers..."
             docker-compose down
             echo " Building and starting containers..."
