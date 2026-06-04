@@ -43,15 +43,20 @@ export interface ChatCompletionResponse {
 
 export class MarketingAgentService {
   private pool: Pool;
-  private openai: OpenAI;
+  private openai: OpenAI | null;
 
   constructor() {
     this.pool = databaseService.getPool();
     const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || '';
-    this.openai = new OpenAI({
-      apiKey,
-      baseURL: 'https://api.deepseek.com/v1'
-    });
+    if (apiKey) {
+      this.openai = new OpenAI({
+        apiKey,
+        baseURL: 'https://api.deepseek.com/v1'
+      });
+    } else {
+      this.openai = null;
+      console.log('⚠️ No DeepSeek/OpenAI API key configured. Marketing agent will use mock responses.');
+    }
   }
 
   /**
@@ -332,6 +337,9 @@ Provide:
     ];
 
     try {
+      if (!this.openai) {
+        throw new Error('OpenAI client not configured - no API key available');
+      }
       const completion = await this.openai.chat.completions.create({
         model: request.model || 'deepseek-v4-flash',
         messages,
