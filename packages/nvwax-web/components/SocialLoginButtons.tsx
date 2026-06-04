@@ -7,12 +7,12 @@
  * 支持 Facebook 登录和微信登录（预留）
  */
 
-import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSocialAuth } from '@/hooks/useSocialAuth';
 import { useAuth } from '@/hooks/useAuth';
 import type { User } from '@/lib/api/auth';
-import { Button, Divider } from '@/components/UI';
+import { Divider } from '@/components/UI';
 
 // Facebook 图标（SVG内联）
 function FacebookIcon({ size = 20 }: { size?: number }) {
@@ -49,10 +49,15 @@ function WeChatIcon({ size = 20 }: { size?: number }) {
 
 export default function SocialLoginButtons() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login: setAuthState } = useAuth();
   const { facebookStatus, googleStatus, isLoggingIn, loginError, loginWithFacebook, loginWithGoogle } = useSocialAuth();
-  const [wechatClicked, setWechatClicked] = useState(false);
 
+  // 获取重定向地址
+  const getRedirectUrl = useCallback(() => {
+    const redirect = searchParams.get('redirect');
+    return redirect || '/profile';
+  }, [searchParams]);
   /**
    * Facebook 登录处理
    */
@@ -61,12 +66,12 @@ export default function SocialLoginButtons() {
       const result = await loginWithFacebook();
       if (result.success && result.data) {
         setAuthState(result.data.token, result.data.user as User & { [key: string]: unknown });
-        router.push('/profile');
+        router.push(getRedirectUrl());
       }
     } catch {
       // 错误已经由 useSocialAuth 处理并设置 loginError
     }
-  }, [loginWithFacebook, setAuthState, router]);
+  }, [loginWithFacebook, setAuthState, router, getRedirectUrl]);
 
   /**
    * Google 登录处理
@@ -76,19 +81,18 @@ export default function SocialLoginButtons() {
       const result = await loginWithGoogle();
       if (result.success && result.data) {
         setAuthState(result.data.token, result.data.user as User & { [key: string]: unknown });
-        router.push('/profile');
+        router.push(getRedirectUrl());
       }
     } catch {
       // 错误已经由 useSocialAuth 处理并设置 loginError
     }
-  }, [loginWithGoogle, setAuthState, router]);
+  }, [loginWithGoogle, setAuthState, router, getRedirectUrl]);
 
   /**
    * 微信登录处理（预留）
    */
   const handleWechatLogin = useCallback(() => {
-    setWechatClicked(true);
-    setTimeout(() => setWechatClicked(false), 2000);
+    // 预留 - 微信登录尚未实现
   }, []);
 
   const isFacebookDisabled = facebookStatus !== 'ready' || isLoggingIn;
@@ -96,62 +100,66 @@ export default function SocialLoginButtons() {
 
   return (
     <div className="mt-6">
-      <Divider className="mb-6">
+      <Divider className="mb-5">
         <span className="text-sm text-gray-400 dark:text-gray-500 px-3">
           其他登录方式
         </span>
       </Divider>
 
-      <div className="flex flex-col gap-3">
-        {/* Facebook 登录按钮 */}
-        <Button
+      <div className="flex flex-row gap-4 justify-center items-center">
+        {/* Facebook 登录按钮 - 图标 */}
+        <button
           type="button"
-          variant="outline"
-          size="lg"
-          fullWidth
           disabled={isFacebookDisabled || !!loginError}
-          loading={isLoggingIn}
           onClick={handleFacebookLogin}
-          className="!border-gray-300 dark:!border-gray-600 hover:!bg-blue-50 dark:hover:!bg-blue-900/20 hover:!border-blue-400 dark:hover:!border-blue-500 !text-gray-700 dark:!text-gray-300"
+          aria-label="Facebook 登录"
+          className={`
+            w-12 h-12 rounded-full flex items-center justify-center
+            border-2 transition-all duration-200
+            ${isFacebookDisabled || !!loginError
+              ? 'border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-60'
+              : 'border-gray-300 dark:border-gray-600 text-[#1877F2] hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-400 dark:hover:border-blue-500 cursor-pointer'
+            }
+            ${isLoggingIn ? 'animate-pulse' : ''}
+          `}
         >
-          <FacebookIcon size={20} />
-          <span className="ml-2">
-            {isLoggingIn ? '登录中...' : 'Facebook 登录'}
-          </span>
-        </Button>
+          <FacebookIcon size={22} />
+        </button>
 
-        {/* Google 登录按钮 */}
-        <Button
+        {/* Google 登录按钮 - 图标 */}
+        <button
           type="button"
-          variant="outline"
-          size="lg"
-          fullWidth
           disabled={isGoogleDisabled || !!loginError}
-          loading={isLoggingIn}
           onClick={handleGoogleLogin}
-          className="!border-gray-300 dark:!border-gray-600 hover:!bg-red-50 dark:hover:!bg-red-900/20 hover:!border-red-400 dark:hover:!border-red-500 !text-gray-700 dark:!text-gray-300"
+          aria-label="Google 登录"
+          className={`
+            w-12 h-12 rounded-full flex items-center justify-center
+            border-2 transition-all duration-200
+            ${isGoogleDisabled || !!loginError
+              ? 'border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-60'
+              : 'border-gray-300 dark:border-gray-600 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-500 cursor-pointer'
+            }
+            ${isLoggingIn ? 'animate-pulse' : ''}
+          `}
         >
-          <GoogleIcon size={20} />
-          <span className="ml-2">
-            {isLoggingIn ? '登录中...' : 'Google 登录'}
-          </span>
-        </Button>
+          <GoogleIcon size={22} />
+        </button>
 
-        {/* 微信登录按钮（预留） */}
-        <Button
+        {/* 微信登录按钮（预留）- 图标 */}
+        <button
           type="button"
-          variant="outline"
-          size="lg"
-          fullWidth
           disabled
           onClick={handleWechatLogin}
-          className="!border-gray-200 dark:!border-gray-700 !text-gray-400 dark:!text-gray-500 !cursor-not-allowed !opacity-60"
+          aria-label="微信登录"
+          className="
+            w-12 h-12 rounded-full flex items-center justify-center
+            border-2 border-gray-200 dark:border-gray-700
+            text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-60
+            transition-all duration-200
+          "
         >
-          <WeChatIcon size={20} />
-          <span className="ml-2">
-            {wechatClicked ? '即将上线，敬请期待' : '微信登录'}
-          </span>
-        </Button>
+          <WeChatIcon size={22} />
+        </button>
       </div>
 
       {/* 错误提示 */}

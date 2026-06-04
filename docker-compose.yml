@@ -34,6 +34,8 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-nvwax}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-nvwax}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:-change-this-to-a-secure-random-string}
       REDIS_URL: redis://redis:6379
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
     ports:
       - "${BACKEND_PORT:-3001}:3001"
     depends_on:

@@ -79,7 +79,8 @@ function LoginForm() {
         });
         setJustLoggedIn(true);
         requestAnimationFrame(() => {
-          router.push('/profile');
+          const redirect = searchParams.get('redirect') || '/profile';
+          router.push(redirect);
           setTimeout(() => setJustLoggedIn(false), 500);
         });
       }
