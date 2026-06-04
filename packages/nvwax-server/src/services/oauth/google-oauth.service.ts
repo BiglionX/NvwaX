@@ -96,7 +96,10 @@ export class GoogleOAuthService extends BaseOAuthService {
     }
 
     // 验证 audience（必须匹配我们的 Client ID）
-    if (payload.aud !== this.clientId) {
+    // 如果没有配置 GOOGLE_CLIENT_ID，跳过 audience 验证（警告即可）
+    if (!this.clientId) {
+      console.warn('[GoogleOAuth] GOOGLE_CLIENT_ID not configured, skipping audience validation');
+    } else if (payload.aud !== this.clientId) {
       throw new Error('Token audience does not match client ID');
     }
 
