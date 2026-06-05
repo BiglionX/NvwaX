@@ -107,8 +107,11 @@ class SocialAuthController {
         });
       }
 
+      console.log('[SocialAuth] Google login: GOOGLE_CLIENT_ID has value:', !!process.env.GOOGLE_CLIENT_ID);
+
       // 1. 验证 credential (Google ID Token) 并获取用户信息
       const userInfo = await googleOAuthService.verifyAndGetUserInfo(credential);
+      console.log('[SocialAuth] Google user verified:', userInfo.email);
 
       // 2. 查找是否已有账号绑定
       const existing = await userService.findUserBySocialAccount('google', userInfo.providerUserId);

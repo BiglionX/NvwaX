@@ -39,6 +39,8 @@ export class GoogleOAuthService extends BaseOAuthService {
 
     if (!this.clientId) {
       console.warn('[GoogleOAuth] GOOGLE_CLIENT_ID not configured');
+    } else {
+      console.log('[GoogleOAuth] GOOGLE_CLIENT_ID configured, clientId length:', this.clientId.length);
     }
   }
 

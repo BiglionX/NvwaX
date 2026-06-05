@@ -92,9 +92,9 @@ router.get('/auth/profile', userAuthController.getProfile);
 router.post('/auth/facebook/login', socialAuthController.facebookLogin.bind(socialAuthController));
 router.post('/auth/google/login', socialAuthController.googleLogin.bind(socialAuthController));
 router.post('/auth/wechat/login', socialAuthController.wechatLogin.bind(socialAuthController));
-router.get('/auth/social/accounts', socialAuthController.getSocialAccounts.bind(socialAuthController));
-router.post('/auth/social/bind', socialAuthController.bindSocialAccount.bind(socialAuthController));
-router.post('/auth/social/unbind', socialAuthController.unbindSocialAccount.bind(socialAuthController));
+router.get('/auth/social/accounts', userAuthMiddleware, socialAuthController.getSocialAccounts.bind(socialAuthController));
+router.post('/auth/social/bind', userAuthMiddleware, socialAuthController.bindSocialAccount.bind(socialAuthController));
+router.post('/auth/social/unbind', userAuthMiddleware, socialAuthController.unbindSocialAccount.bind(socialAuthController));
 
 // Bounty routes
 router.post('/bounties', userAuthMiddleware, bountyController.createBounty);
