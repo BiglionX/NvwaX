@@ -7,12 +7,13 @@ import { crawlerSchedulerService } from '../services/crawler-scheduler.service.j
 export class SearchController {
   async searchAgents(req: Request, res: Response) {
     try {
-      const { q, page, limit } = req.query;
+      const { q, page, limit, locale } = req.query;
       const query = q as string || '';
       const pageNum = parseInt(page as string) || 1;
       const limitNum = parseInt(limit as string) || 20;
+      const localeStr = locale as string || '';
 
-      const result = await agentSearchService.searchAgents(query, pageNum, limitNum);
+      const result = await agentSearchService.searchAgents(query, pageNum, limitNum, localeStr);
       
       res.json(result);
     } catch (error) {

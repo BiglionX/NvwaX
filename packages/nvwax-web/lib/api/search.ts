@@ -46,10 +46,12 @@ export interface SkillRecommendation {
 }
 
 export const searchApi = {
-  searchAgents: async (query: string, page = 1, limit = 20) => {
-    const response = await apiClient.get('/search/agents', {
-      params: { q: query, page, limit }
-    });
+  searchAgents: async (query: string, page = 1, limit = 20, locale?: string) => {
+    const params: Record<string, string | number> = { q: query, page, limit };
+    if (locale) {
+      params.locale = locale;
+    }
+    const response = await apiClient.get('/search/agents', { params });
     return response.data;
   },
 

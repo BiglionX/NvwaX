@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { searchApi, Agent, SkillRecommendation } from '@/lib/api/search';
@@ -15,6 +15,7 @@ type Category = 'all' | 'agents' | 'aiteams' | 'virtual-company' | 'website_oper
 
 export default function MarketplaceClient() {
   const t = useTranslations('marketplace');
+  const locale = useLocale();
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -46,12 +47,12 @@ export default function MarketplaceClient() {
 
   // 查询 Agents（单个智能体）
   const { data: agentsData, isLoading: loadingAgents } = useQuery({
-    queryKey: ['agents', debouncedSearch, 1],
+    queryKey: ['agents', debouncedSearch, 1, locale],
     queryFn: () => {
       if (debouncedSearch) {
-        return searchApi.searchAgents(debouncedSearch, 1, 30);
+        return searchApi.searchAgents(debouncedSearch, 1, 30, locale);
       }
-      return searchApi.searchAgents('ai agent', 1, 30);
+      return searchApi.searchAgents('ai agent', 1, 30, locale);
     },
     enabled: selectedCategory === 'all' || selectedCategory === 'agents'
   });

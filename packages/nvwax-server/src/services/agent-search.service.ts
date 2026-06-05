@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { agentCrawlerService } from './agent-crawler.service.js';
+import { agentTranslationService } from './agent-translation.service.js';
 
 export interface Agent {
   id: string;
@@ -23,7 +24,7 @@ export class AgentSearchService {
   /**
    * 混合搜索：优先搜索本地数据库，无结果则全网搜索
    */
-  async searchAgents(query: string, page: number = 1, limit: number = 20): Promise<{ 
+  async searchAgents(query: string, page: number = 1, limit: number = 20, locale?: string): Promise<{ 
     data: Agent[]; 
     total: number;
     fromLocal: boolean;
@@ -33,60 +34,72 @@ export class AgentSearchService {
       console.log(`Searching local database for: ${query}`);
       const localResult = await agentCrawlerService.searchLocalAgents(query, page, limit);
       
-      // 如果本地有结果，直接返回
+      let resultData: Agent[];
+      let resultTotal: number;
+      let isFromLocal: boolean;
+
+      // 如果本地有结果，直接使用
       if (localResult.total > 0) {
         console.log(`Found ${localResult.total} agents in local database`);
-        return {
-          data: localResult.data,
-          total: localResult.total,
-          fromLocal: true
-        };
+        resultData = localResult.data;
+        resultTotal = localResult.total;
+        isFromLocal = true;
+      } else {
+        // 第二步：本地无结果，进行全网搜索（并行搜索多个源）
+        console.log(`No local results, searching online for: ${query}`);
+        
+        // 并行搜索 GitHub、Gitee 和 ModelScope
+        const [githubResult, giteeResult, modelscopeResult] = await Promise.allSettled([
+          this.searchGitHub(query),
+          this.searchGitee(query),
+          this.searchModelScope(query)
+        ]);
+        
+        const agents: Agent[] = [];
+        
+        if (githubResult.status === 'fulfilled') {
+          agents.push(...githubResult.value);
+          console.log(`✅ GitHub search: ${githubResult.value.length} results`);
+        } else {
+          console.warn('⚠️ GitHub search failed:', githubResult.reason);
+        }
+        
+        if (giteeResult.status === 'fulfilled') {
+          agents.push(...giteeResult.value);
+          console.log(`✅ Gitee search: ${giteeResult.value.length} results`);
+        } else {
+          console.warn('⚠️ Gitee search failed:', giteeResult.reason);
+        }
+        
+        if (modelscopeResult.status === 'fulfilled') {
+          agents.push(...modelscopeResult.value);
+          console.log(`✅ ModelScope search: ${modelscopeResult.value.length} results`);
+        } else {
+          console.warn('⚠️ ModelScope search failed:', modelscopeResult.reason);
+        }
+
+        // 分页处理
+        const start = (page - 1) * limit;
+        const end = start + limit;
+        resultData = agents.slice(start, end);
+        resultTotal = agents.length;
+        isFromLocal = false;
+
+        console.log(`Found ${agents.length} agents from online search`);
       }
 
-      // 第二步：本地无结果，进行全网搜索（并行搜索多个源）
-      console.log(`No local results, searching online for: ${query}`);
-      
-      // 并行搜索 GitHub、Gitee 和 ModelScope
-      const [githubResult, giteeResult, modelscopeResult] = await Promise.allSettled([
-        this.searchGitHub(query),
-        this.searchGitee(query),
-        this.searchModelScope(query)
-      ]);
-      
-      const agents: Agent[] = [];
-      
-      if (githubResult.status === 'fulfilled') {
-        agents.push(...githubResult.value);
-        console.log(`✅ GitHub search: ${githubResult.value.length} results`);
-      } else {
-        console.warn('⚠️ GitHub search failed:', githubResult.reason);
+      // 如果用户使用中文模式，自动翻译英文内容（本地和线上结果都翻译）
+      if (locale === 'zh' && resultData.length > 0) {
+        console.log(`🌐 Translating ${resultData.length} agents to Chinese...`);
+        const translateStart = Date.now();
+        await agentTranslationService.translateAgents(resultData, locale);
+        console.log(`✅ Translation completed in ${Date.now() - translateStart}ms`);
       }
-      
-      if (giteeResult.status === 'fulfilled') {
-        agents.push(...giteeResult.value);
-        console.log(`✅ Gitee search: ${giteeResult.value.length} results`);
-      } else {
-        console.warn('⚠️ Gitee search failed:', giteeResult.reason);
-      }
-      
-      if (modelscopeResult.status === 'fulfilled') {
-        agents.push(...modelscopeResult.value);
-        console.log(`✅ ModelScope search: ${modelscopeResult.value.length} results`);
-      } else {
-        console.warn('⚠️ ModelScope search failed:', modelscopeResult.reason);
-      }
-
-      // 分页处理
-      const start = (page - 1) * limit;
-      const end = start + limit;
-      const paginatedData = agents.slice(start, end);
-
-      console.log(`Found ${agents.length} agents from online search`);
 
       return {
-        data: paginatedData,
-        total: agents.length,
-        fromLocal: false
+        data: resultData,
+        total: resultTotal,
+        fromLocal: isFromLocal
       };
     } catch (error) {
       console.error('Error searching agents:', error);
