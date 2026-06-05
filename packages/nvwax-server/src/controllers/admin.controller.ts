@@ -1078,6 +1078,28 @@ export class AdminController {
     }
   }
 
+  /**
+   * 获取开发者列表（有API Key的用户）
+   */
+  async getDeveloperList(req: Request, res: Response) {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const search = req.query.search as string | undefined;
+
+      const result = await tokenQuotaService.getDevelopers(page, limit, search);
+      res.json({
+        data: result.data,
+        total: result.total,
+        page,
+        limit
+      });
+    } catch (error) {
+      console.error('Error fetching developer list:', error);
+      res.status(500).json({ error: 'Failed to fetch developer list' });
+    }
+  }
+
   // ========== 支付配置管理 ==========
 
   /**

@@ -1,6 +1,31 @@
 import { Pool } from 'pg';
 import { databaseService } from './database.service.js';
 
+export interface DeveloperInfo {
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  api_key_count: number;
+  api_keys: {
+    id: string;
+    key_prefix: string;
+    name: string;
+    permissions: string[];
+    is_active: boolean;
+    last_used_at: Date | null;
+    created_at: Date;
+    rate_limit: number;
+  }[];
+  monthly_limit: number;
+  used_this_month: number;
+  remaining: number;
+  usage_percent: number;
+  overage_tokens: number;
+  overage_cost: number;
+  total_used: number;
+  is_internal_team: boolean;
+}
+
 export interface UserTokenQuota {
   id: string;
   user_id: string;
@@ -523,6 +548,102 @@ export class TokenQuotaService {
       totalOverageTokens: parseInt(row.total_overage_tokens),
       totalOverageCost: parseFloat(row.total_overage_cost),
       averageUsagePercent: Math.round(parseFloat(row.avg_usage_percent))
+    };
+  }
+
+  /**
+   * 获取有API Key的开发者列表（管理后台）
+   */
+  async getDevelopers(
+    page: number = 1,
+    limit: number = 20,
+    search?: string
+  ): Promise<{ data: DeveloperInfo[]; total: number }> {
+    let whereClause = '';
+    const params: any[] = [];
+
+    if (search) {
+      whereClause = `AND (u.email ILIKE $1 OR u.name ILIKE $1)`;
+      params.push(`%${search}%`);
+    }
+
+    const paramOffset = params.length;
+    params.push(limit, (page - 1) * limit);
+
+    const query = `
+      SELECT
+        u.id as user_id,
+        u.email as user_email,
+        u.name as user_name,
+        COALESCE(q.monthly_limit, 1000000) as monthly_limit,
+        COALESCE(q.used_this_month, 0) as used_this_month,
+        COALESCE(q.total_used, 0) as total_used,
+        COALESCE(q.overage_tokens, 0) as overage_tokens,
+        COALESCE(q.overage_cost, 0) as overage_cost,
+        COALESCE(q.is_internal_team, false) as is_internal_team,
+        COALESCE(ak.api_key_data, '[]'::jsonb) as api_keys,
+        COALESCE(ak.key_count, 0) as api_key_count
+      FROM users u
+      LEFT JOIN user_token_quotas q ON u.id = q.user_id
+      LEFT JOIN (
+        SELECT
+          user_id,
+          COUNT(*) as key_count,
+          jsonb_agg(
+            jsonb_build_object(
+              'id', id,
+              'key_prefix', key_prefix,
+              'name', name,
+              'permissions', permissions,
+              'is_active', is_active,
+              'last_used_at', last_used_at,
+              'created_at', created_at,
+              'rate_limit', rate_limit
+            ) ORDER BY created_at DESC
+          ) as api_key_data
+        FROM api_keys
+        GROUP BY user_id
+      ) ak ON u.id = ak.user_id
+      WHERE ak.user_id IS NOT NULL ${whereClause}
+      ORDER BY COALESCE(q.used_this_month, 0) DESC
+      LIMIT $${paramOffset + 1} OFFSET $${paramOffset + 2}
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) FROM (
+        SELECT u.id
+        FROM users u
+        INNER JOIN api_keys ak ON u.id = ak.user_id
+        ${whereClause ? `WHERE (u.email ILIKE $1 OR u.name ILIKE $1)` : ''}
+        GROUP BY u.id
+      ) dev
+    `;
+
+    const searchParams = search ? [params[0]] : [];
+    const [dataResult, countResult] = await Promise.all([
+      this.pool.query(query, params),
+      this.pool.query(countQuery, searchParams)
+    ]);
+
+    const data = dataResult.rows.map(row => ({
+      user_id: row.user_id,
+      user_name: row.user_name || row.user_email,
+      user_email: row.user_email,
+      api_key_count: parseInt(row.api_key_count),
+      api_keys: row.api_keys || [],
+      monthly_limit: parseInt(row.monthly_limit),
+      used_this_month: parseInt(row.used_this_month),
+      remaining: Math.max(0, parseInt(row.monthly_limit) - parseInt(row.used_this_month)),
+      usage_percent: Math.min(100, Math.round((parseInt(row.used_this_month) / parseInt(row.monthly_limit)) * 100)),
+      overage_tokens: parseInt(row.overage_tokens),
+      overage_cost: parseFloat(row.overage_cost),
+      total_used: parseInt(row.total_used),
+      is_internal_team: row.is_internal_team
+    }));
+
+    return {
+      data,
+      total: parseInt(countResult.rows[0].count)
     };
   }
 

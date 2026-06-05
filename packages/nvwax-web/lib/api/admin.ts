@@ -333,6 +333,14 @@ export const adminApi = {
 
   // ========== 支付配置管理 ==========
 
+  // 获取开发者列表（有API Key的用户）
+  getDeveloperList: async (page: number = 1, limit: number = 20, search?: string) => {
+    const params: Record<string, string | number> = { page, limit };
+    if (search) params.search = search;
+    const response = await api.get('/admin/developers', { params });
+    return response.data;
+  },
+
   // 获取支付配置列表
   getPaymentConfigs: async () => {
     const response = await api.get('/admin/payment-configs');

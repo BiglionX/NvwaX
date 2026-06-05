@@ -58,6 +58,9 @@ router.get('/virtual-companies/builds', adminController.getAiTeamBuilds);
 // 通知管理
 router.post('/notifications/announce', adminController.sendSystemAnnouncement);
 
+// 开发者管理
+router.get('/developers', adminController.getDeveloperList);
+
 // Token 配额管理
 router.get('/tokens/overview', adminController.getTokenOverview);
 router.get('/tokens/users', adminController.getTokenUsersList);
