@@ -4,24 +4,24 @@
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                   ProClaw.cc                     │
-│                                                   │
+│                   ProClaw.cc                    │
+│                                                 │
 │  ProClaw 用户 ──→ ProClaw 后端 ──→ NvwaX API     │
-│       ↑                  │                        │
-│       │                  ▼                        │
-│       └── ProClaw 自己收费 ── NvwaX 记录消耗       │
-│                                                   │
-│  两级计费：                                        │
+│       ↑                  │                      │
+│       │                  ▼                      │
+│       └── ProClaw 自己收费 ── NvwaX 记录消耗      │
+│                                                 │
+│  两级计费：                                      │
 │  - NvwaX 侧：放行，不计费，仅记录原始 Token 消耗    │
-│  - ProClaw 侧：根据消耗记录向 ProClaw 用户收费      │
+│  - ProClaw 侧：根据消耗记录向 ProClaw 用户收费     │
 └─────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────┐
-│                  NvwaX 服务                       │
-│                                                   │
-│  /api/v1/*  ←── API Key 认证                      │
-│  user_token_quotas.is_internal_team = true       │
-│  → 跳过配额扣减 → 仅记录消费明细                  │
+│                  NvwaX 服务                     │
+│                                                 │
+│  /api/v1/*  ←── API Key 认证                    │
+│  user_token_quotas.is_internal_team = true      │
+│  → 跳过配额扣减 → 仅记录消费明细                   │
 │  → 返回 remaining: Infinity                      │
 └─────────────────────────────────────────────────┘
 ```
