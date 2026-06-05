@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Link } from '@/src/i18n/navigation';
 import { useRouter } from '@/src/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { Home, User, LogIn, LogOut, Menu, X, Award, ClipboardList, Sparkles, Store } from 'lucide-react';
+import { Home, User, LogIn, LogOut, Menu, X, Award, ClipboardList, Sparkles, Store, Code } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAiSearch } from '@/contexts/AiSearchContext';
 import { useState } from 'react';
@@ -14,6 +14,7 @@ import LocaleSwitcher from '../LocaleSwitcher';
 
 const getNavItems = (t: (key: string) => string) => [
   { label: t('nav.home'), icon: Home, path: '/' },
+  { label: t('nav.developer'), icon: Code, path: '/developer' },
   { label: t('nav.nvwa'), icon: Sparkles, path: '/nvwa' },
   { label: t('nav.marketplace'), icon: Store, path: '/marketplace' },
   { label: t('nav.bounties'), icon: Award, path: '/bounties' },

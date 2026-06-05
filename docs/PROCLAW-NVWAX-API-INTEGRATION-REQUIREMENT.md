@@ -22,7 +22,7 @@
 │  /api/v1/*  ←── API Key 认证                    │
 │  user_token_quotas.is_internal_team = true      │
 │  → 跳过配额扣减 → 仅记录消费明细                   │
-│  → 返回 remaining: Infinity                      │
+│  → 返回 remaining: Infinity                     │
 └─────────────────────────────────────────────────┘
 ```
 
