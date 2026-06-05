@@ -55,6 +55,15 @@ export default function AdminTokensPage() {
     }
   });
 
+  // 切换内部团队状态
+  const toggleInternalMutation = useMutation({
+    mutationFn: (userId: string) => adminApi.toggleInternalTeam(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-token-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-token-overview'] });
+    }
+  });
+
   const handleSearch = (value: string) => {
     setSearch(value);
     setPage(1);
@@ -268,12 +277,13 @@ export default function AdminTokensPage() {
                 <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">使用率</th>
                 <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">超额Token</th>
                 <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">超额费用</th>
+                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">内部团队</th>
                 <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">操作</th>
               </tr>
             </thead>
             <tbody>
               {usersData?.data?.length > 0 ? (
-                usersData.data.map((user: { user_id: string; user_name: string; user_email: string; monthly_limit: number; used_this_month: number; remaining: number; usage_percent: number; overage_tokens: number; overage_cost: number; total_used: number }) => (
+                usersData.data.map((user: { user_id: string; user_name: string; user_email: string; monthly_limit: number; used_this_month: number; remaining: number; usage_percent: number; overage_tokens: number; overage_cost: number; total_used: number; is_internal_team: boolean }) => (
                   <tr key={user.user_id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
                     <td className="py-3 px-4">
                       <div>
@@ -316,6 +326,24 @@ export default function AdminTokensPage() {
                       <span className={`text-sm ${user.overage_cost > 0 ? 'text-red-500 font-medium' : 'text-gray-500'}`}>
                         {user.overage_cost > 0 ? formatCost(user.overage_cost) : '-'}
                       </span>
+                    </td>
+                    <td className="text-center py-3 px-4">
+                      <button
+                        onClick={() => toggleInternalMutation.mutate(user.user_id)}
+                        disabled={toggleInternalMutation.isPending}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                          user.is_internal_team ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            user.is_internal_team ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                      {user.is_internal_team && (
+                        <span className="block text-xs text-green-500 mt-1">无限Token</span>
+                      )}
                     </td>
                     <td className="text-right py-3 px-4">
                       <button

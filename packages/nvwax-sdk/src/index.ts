@@ -1,4 +1,9 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { MarketplaceModule } from './v1/marketplace.js';
+import { AgentsModule } from './v1/agents.js';
+import { AiTeamsModule } from './v1/aiteams.js';
+import { SearchModule } from './v1/search.js';
+import { ExportModule } from './v1/export.js';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -79,6 +84,14 @@ export class NvwaXClient {
   private client: AxiosInstance;
   private apiKey: string;
 
+  // V1 API modules
+  public marketplace: MarketplaceModule;
+  public agents: AgentsModule;
+  public aiteams: AiTeamsModule;
+  public search: SearchModule;
+  public exportModule: ExportModule;
+
+
   constructor(options: NvwaXClientOptions) {
     this.apiKey = options.apiKey;
     
@@ -128,6 +141,13 @@ export class NvwaXClient {
         }
       }
     );
+
+    // Initialize V1 API modules
+    this.marketplace = new MarketplaceModule(this);
+    this.agents = new AgentsModule(this);
+    this.aiteams = new AiTeamsModule(this);
+    this.search = new SearchModule(this);
+    this.exportModule = new ExportModule(this);
   }
 
   /**
@@ -249,6 +269,38 @@ export class NvwaXClient {
     return response.data.data.hasPermission;
   }
 
+  /**
+   * HTTP GET request
+   */
+  async get(url: string, config?: AxiosRequestConfig): Promise<any> {
+    const response = await this.client.get(url, config);
+    return response.data;
+  }
+  
+  /**
+   * HTTP POST request
+   */
+  async post(url: string, data?: any, config?: AxiosRequestConfig): Promise<any> {
+    const response = await this.client.post(url, data, config);
+    return response.data;
+  }
+  
+  /**
+   * HTTP PUT request
+   */
+  async put(url: string, data?: any, config?: AxiosRequestConfig): Promise<any> {
+    const response = await this.client.put(url, data, config);
+    return response.data;
+  }
+  
+  /**
+   * HTTP DELETE request
+   */
+  async delete(url: string, config?: AxiosRequestConfig): Promise<any> {
+    const response = await this.client.delete(url, config);
+    return response.data;
+  }
+  
   /**
    * Set custom headers for future requests
    * 

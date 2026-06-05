@@ -85,7 +85,7 @@ console.log(response);`}</code>
   temperature: 0.7
 });`}</code>
           </pre>
-          <Link href="/docs/api/chat-completions" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">{t('products.chatApiDocs')} →</Link>
+          <Link href="/developer/api-reference" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">{t('products.chatApiDocs')} →</Link>
         </div>
 
         <div className="mb-8">
@@ -97,7 +97,7 @@ console.log(response);`}</code>
   base-url="https://api.nvwax.com">
 </nvwax-agent-marketplace>`}</code>
           </pre>
-          <Link href="/docs/components/agent-marketplace" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">{t('products.marketplaceDocs')} →</Link>
+          <Link href="/developer/api-reference" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">{t('products.marketplaceDocs')} →</Link>
         </div>
 
         <div className="mb-8">
@@ -109,7 +109,7 @@ console.log(response);`}</code>
   base-url="https://studio.nvwax.com">
 </nvwax-agent-studio>`}</code>
           </pre>
-          <Link href="/docs/components/agent-studio" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">{t('products.studioDocs')} →</Link>
+          <Link href="/developer/api-reference" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">{t('products.studioDocs')} →</Link>
         </div>
       </section>
 
@@ -126,7 +126,7 @@ console.log(response);`}</code>
             <li><strong>{t('jsSdkEnv')}</strong>: Node.js 14+, Modern Browsers</li>
             <li><strong>{t('jsSdkFeatures')}</strong>: Chat API, API Key Management, Usage Stats</li>
           </ul>
-          <Link href="/docs/sdk/javascript" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">{t('jsSdkInstall')} →</Link>
+          <Link href="/developer/api-reference" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">{t('jsSdkInstall')} →</Link>
         </div>
 
         <div className="mb-6">
@@ -136,7 +136,7 @@ console.log(response);`}</code>
             <li><strong>{t('webComponentsAgentStudio')}</strong>: <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm">@nvwax/agent-studio</code></li>
             <li><strong>{t('webComponentsFramework')}</strong>: React, Vue, Angular, Vanilla JS</li>
           </ul>
-          <Link href="/docs/components" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">{t('webComponentsDocs')} →</Link>
+          <Link href="/developer/api-reference" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">{t('webComponentsDocs')} →</Link>
         </div>
 
         <div className="mb-6">
@@ -211,7 +211,7 @@ console.log(response);`}</code>
               </tbody>
             </table>
           </div>
-          <Link href="/docs/api-reference" className="text-blue-600 dark:text-blue-400 hover:underline text-sm mt-4 inline-block">{t('fullApiRef')} →</Link>
+          <Link href="/developer/api-reference" className="text-blue-600 dark:text-blue-400 hover:underline text-sm mt-4 inline-block">{t('fullApiRef')} →</Link>
         </div>
       </section>
 
@@ -244,9 +244,9 @@ console.log(response);`}</code>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">🔧 {t('devTools')}</h2>
         <div className="grid md:grid-cols-3 gap-4">
           {[
-            { titleKey: 'toolPlayground', descKey: 'toolPlaygroundDesc', href: "/playground" },
-            { titleKey: 'toolWebhook', descKey: 'toolWebhookDesc', href: "/webhook-debugger" },
-            { titleKey: 'toolSdkGenerator', descKey: 'toolSdkGeneratorDesc', href: "/sdk-generator" },
+            { titleKey: 'toolPlayground', descKey: 'toolPlaygroundDesc', href: "/developer/api-reference" },
+            { titleKey: 'toolWebhook', descKey: 'toolWebhookDesc', href: "/developer/api-reference" },
+            { titleKey: 'toolSdkGenerator', descKey: 'toolSdkGeneratorDesc', href: "/developer/api-reference" },
           ].map((item) => (
             <Link key={item.titleKey} href={item.href} className="p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-md transition-shadow">
               <h4 className="font-semibold text-gray-900 dark:text-white mb-1">{t(item.titleKey)}</h4>

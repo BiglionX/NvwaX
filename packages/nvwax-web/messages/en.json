@@ -148,6 +148,7 @@
     "searching": "Searching...",
     "searchNoResults": "No results found",
     "loadingData": "Marketplace data is loading",
+    "noData": "No data available",
     "noResultsFor": "No results found for \"{query}\"",
     "recommending": "Recommending related content...",
     "recommendTeams": "Recommended AI Teams",

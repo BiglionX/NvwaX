@@ -11,6 +11,7 @@ export interface UserTokenQuota {
   overage_cost: number;
   last_reset_at: Date;
   reset_day: number;
+  is_internal_team: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -49,6 +50,7 @@ export interface UserTokenStats {
   overage_cost: number;
   total_used: number;
   last_reset_at: Date;
+  is_internal_team: boolean;
 }
 
 export class TokenQuotaService {
@@ -103,6 +105,28 @@ export class TokenQuotaService {
   }> {
     if (tokens <= 0) {
       return { allowed: true, remaining: 0, isOverage: false, overageTokens: 0, overageCost: 0 };
+    }
+
+    // 检查用户是否为内部团队，内部团队不受计数和计费限制
+    const internalCheck = await this.pool.query(
+      'SELECT is_internal_team FROM user_token_quotas WHERE user_id = $1',
+      [userId]
+    );
+    if (internalCheck.rows.length > 0 && internalCheck.rows[0].is_internal_team) {
+      // 内部团队：仅记录消费明细，不扣减配额
+      const quota = await this.getUserQuota(userId);
+      await this.recordTransaction(userId, {
+        quotaId: quota?.id,
+        tokensConsumed: 0,
+        isOverage: false,
+        overageCost: 0,
+        endpoint: options?.endpoint,
+        sourceType: options?.sourceType || 'api_call',
+        description: options?.description ? `[内部团队] ${options.description}` : '[内部团队]',
+        model: options?.model,
+        metadata: options?.metadata || {}
+      });
+      return { allowed: true, remaining: Infinity, isOverage: false, overageTokens: 0, overageCost: 0 };
     }
 
     // 获取或创建配额记录
@@ -384,7 +408,8 @@ export class TokenQuotaService {
         COALESCE(q.total_used, 0) as total_used,
         COALESCE(q.overage_tokens, 0) as overage_tokens,
         COALESCE(q.overage_cost, 0) as overage_cost,
-        COALESCE(q.last_reset_at, u.created_at) as last_reset_at
+        COALESCE(q.last_reset_at, u.created_at) as last_reset_at,
+        COALESCE(q.is_internal_team, false) as is_internal_team
       FROM users u
       LEFT JOIN user_token_quotas q ON u.id = q.user_id
       ${whereClause}
@@ -415,7 +440,8 @@ export class TokenQuotaService {
       overage_tokens: parseInt(row.overage_tokens),
       overage_cost: parseFloat(row.overage_cost),
       total_used: parseInt(row.total_used),
-      last_reset_at: new Date(row.last_reset_at)
+      last_reset_at: new Date(row.last_reset_at),
+      is_internal_team: row.is_internal_team
     }));
 
     return {
@@ -522,6 +548,31 @@ export class TokenQuotaService {
   }
 
   /**
+   * 切换用户内部团队状态
+   * 内部团队用户不受Token计费限制
+   */
+  async toggleInternalTeam(userId: string): Promise<{ is_internal_team: boolean }> {
+    // 确保用户有配额记录
+    let quota = await this.getUserQuota(userId);
+    if (!quota) {
+      quota = await this.createUserQuota(userId);
+    }
+
+    const result = await this.pool.query(
+      `UPDATE user_token_quotas SET 
+        is_internal_team = NOT is_internal_team,
+        updated_at = CURRENT_TIMESTAMP
+       WHERE user_id = $1
+       RETURNING is_internal_team`,
+      [userId]
+    );
+
+    const isInternalTeam = result.rows[0]?.is_internal_team || false;
+    console.log(`[TokenQuota] User ${userId} internal team status toggled to: ${isInternalTeam}`);
+    return { is_internal_team: isInternalTeam };
+  }
+
+  /**
    * 格式化配额记录
    */
   private formatQuota(row: any): UserTokenQuota {
@@ -535,6 +586,7 @@ export class TokenQuotaService {
       overage_cost: parseFloat(row.overage_cost),
       last_reset_at: new Date(row.last_reset_at),
       reset_day: row.reset_day,
+      is_internal_team: row.is_internal_team || false,
       created_at: new Date(row.created_at),
       updated_at: new Date(row.updated_at)
     };

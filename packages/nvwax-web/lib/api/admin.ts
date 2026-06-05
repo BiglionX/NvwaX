@@ -325,6 +325,12 @@ export const adminApi = {
     return response.data;
   },
 
+  // 切换用户内部团队状态
+  toggleInternalTeam: async (userId: string) => {
+    const response = await api.put(`/admin/tokens/internal-team/${userId}`);
+    return response.data;
+  },
+
   // ========== 支付配置管理 ==========
 
   // 获取支付配置列表

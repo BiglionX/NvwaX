@@ -533,7 +533,7 @@ function SocialAccounts() {
                 const fbAccount = accounts.find(a => a.provider === 'facebook');
                 if (fbAccount) handleUnbind(fbAccount);
               }}
-              className="!text-red-500 !border-red-200 hover:!bg-red-50 dark:hover:!bg-red-900/20"
+              className="text-red-500! border-red-200! hover:bg-red-50! dark:hover:bg-red-900/20!"
             >
               <Unlink size={14} className="mr-1" />
               解绑
@@ -578,7 +578,7 @@ function SocialAccounts() {
                 const googleAccount = accounts.find(a => a.provider === 'google');
                 if (googleAccount) handleUnbind(googleAccount);
               }}
-              className="!text-red-500 !border-red-200 hover:!bg-red-50 dark:hover:!bg-red-900/20"
+              className="text-red-500! border-red-200! hover:bg-red-50! dark:hover:bg-red-900/20!"
             >
               <Unlink size={14} className="mr-1" />
               解绑

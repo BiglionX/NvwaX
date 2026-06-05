@@ -64,6 +64,7 @@ router.get('/tokens/users', adminController.getTokenUsersList);
 router.get('/tokens/users/:userId', adminController.getTokenUserDetail);
 router.get('/tokens/consumption-breakdown', adminController.getTokenConsumptionBreakdown);
 router.post('/tokens/reset-monthly', adminController.resetMonthlyQuotas);
+router.put('/tokens/internal-team/:userId', adminController.toggleInternalTeam);
 
 // 支付配置管理
 router.get('/payment-configs', adminController.getPaymentConfigs);

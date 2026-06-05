@@ -15,6 +15,7 @@ import teamExecutionRouter from './team-execution.routes.js';
 import adminRouter from './admin.routes.js';
 import sdkRouter from './sdk.routes.js';
 import rbacRouter from './rbac.routes.js';
+import { apiKeyManagerController } from '../controllers/api-key-manager.controller.js';
 import v1Router from './v1.routes.js';
 import webhookRouter from './webhook.routes.js';
 import billingRouter from './billing.routes.js';
@@ -166,6 +167,13 @@ router.use('/v2/agents', actionRouter);
 
 // V2 Agent Recommendation routes (Agent/Skill 推荐)
 router.use('/v2/agents', recommendationRouter);
+
+// API Key Manager routes (JWT protected, for user center)
+router.post('/user/api-keys', userAuthMiddleware, apiKeyManagerController.createApiKey.bind(apiKeyManagerController));
+router.get('/user/api-keys', userAuthMiddleware, apiKeyManagerController.listApiKeys.bind(apiKeyManagerController));
+router.put('/user/api-keys/:id', userAuthMiddleware, apiKeyManagerController.updateApiKey.bind(apiKeyManagerController));
+router.delete('/user/api-keys/:id', userAuthMiddleware, apiKeyManagerController.deleteApiKey.bind(apiKeyManagerController));
+router.get('/user/api-keys/usage', userAuthMiddleware, apiKeyManagerController.getUsageStats.bind(apiKeyManagerController));
 
 // V1 API routes (OpenAI-compatible)
 router.use('/v1', v1Router);

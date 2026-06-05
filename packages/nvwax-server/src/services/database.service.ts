@@ -328,6 +328,9 @@ class DatabaseService {
         )
       `);
 
+      // 内部团队字段：标记用户为项目团队成员，不受Token计费限制
+      await client.query(`ALTER TABLE user_token_quotas ADD COLUMN IF NOT EXISTS is_internal_team BOOLEAN DEFAULT FALSE`);
+
       // 创建支付配置表
       await client.query(`
         CREATE TABLE IF NOT EXISTS payment_configs (

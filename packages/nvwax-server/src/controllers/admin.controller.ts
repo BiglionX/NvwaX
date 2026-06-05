@@ -1051,6 +1051,33 @@ export class AdminController {
     }
   }
 
+  /**
+   * 切换用户内部团队状态
+   */
+  async toggleInternalTeam(req: Request, res: Response) {
+    try {
+      const adminId = req.admin.id;
+      const userId = req.params.userId as string;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+      }
+
+      const result = await tokenQuotaService.toggleInternalTeam(userId);
+      
+      await adminService.logAction('info', 'TOGGLE_INTERNAL_TEAM', adminId,
+        `Toggled user ${userId} internal team status to ${result.is_internal_team}`, req.ip);
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error toggling internal team:', error);
+      res.status(500).json({ error: 'Failed to toggle internal team status' });
+    }
+  }
+
   // ========== 支付配置管理 ==========
 
   /**
