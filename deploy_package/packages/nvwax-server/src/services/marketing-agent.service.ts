@@ -58,6 +58,7 @@ export class MarketingAgentService {
     userAgent?: string
   ): Promise<ChatCompletionResponse> {
     const startTime = Date.now();
+    const actualModel = process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';
     
     try {
       // Step 1: Extract user's query from messages
@@ -68,7 +69,7 @@ export class MarketingAgentService {
       }
 
       console.log(`🤖 Processing chat completion for tenant ${tenantId}`);
-      console.log(`   Model: ${request.model}`);
+      console.log(`   Model: ${actualModel}`);
       console.log(`   Query: ${userMessage.substring(0, 100)}...`);
 
       // Step 2: Select team based on the query
@@ -108,7 +109,7 @@ export class MarketingAgentService {
         ipAddress,
         userAgent,
         metadata: {
-          model: request.model,
+          model: actualModel,
           team_name: teamConfig.name,
           team_category: teamConfig.category
         }
@@ -119,7 +120,7 @@ export class MarketingAgentService {
         id: `chatcmpl-${Date.now()}-${Math.random().toString(36).substring(7)}`,
         object: 'chat.completion',
         created: Math.floor(Date.now() / 1000),
-        model: request.model,
+        model: actualModel,
         choices: [
           {
             index: 0,
@@ -155,7 +156,7 @@ export class MarketingAgentService {
         ipAddress,
         userAgent,
         metadata: {
-          model: request.model,
+          model: actualModel,
           error: error instanceof Error ? error.message : 'Unknown error'
         }
       });

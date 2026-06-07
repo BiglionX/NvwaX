@@ -138,11 +138,11 @@ export class TokenQuotaService {
       [userId]
     );
     if (internalCheck.rows.length > 0 && internalCheck.rows[0].is_internal_team) {
-      // 内部团队：仅记录消费明细，不扣减配额
+      // 内部团队：记录真实消耗明细用于监控，但不扣减配额
       const quota = await this.getUserQuota(userId);
       await this.recordTransaction(userId, {
         quotaId: quota?.id,
-        tokensConsumed: 0,
+        tokensConsumed: tokens,
         isOverage: false,
         overageCost: 0,
         endpoint: options?.endpoint,
