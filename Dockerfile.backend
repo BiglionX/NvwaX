@@ -58,14 +58,37 @@ RUN mkdir -p /app/packages/nvwax-server/exports && \
 COPY <<'EOF' /app/start.sh
 #!/bin/sh
 set -e
+
+# 简单的环境变量检查
 echo "=== NvwaX Backend Starting ==="
 echo "Working directory: $(pwd)"
 echo "Files in current directory:"
 ls -la
+
+echo ""
+echo "Checking required environment variables..."
+
+# 检查必需变量
+MISSING=""
+if [ -z "$JWT_SECRET" ]; then
+    MISSING="$MISSING JWT_SECRET"
+fi
+if [ -z "$DATABASE_URL" ]; then
+    MISSING="$MISSING DATABASE_URL"
+fi
+if [ -z "$CROSS_AUTH_SECRET" ]; then
+    MISSING="$MISSING CROSS_AUTH_SECRET"
+fi
+
+if [ -n "$MISSING" ]; then
+    echo "ERROR: Missing required environment variables:$MISSING"
+    exit 1
+fi
+
+echo "✅ All required environment variables are set"
 echo "Files in dist directory:"
 ls -la dist/ || echo "dist directory not found!"
-echo "Environment variables:"
-env | grep -E '(PORT|NODE_ENV|DATABASE_URL|JWT_SECRET)' || true
+echo ""
 echo "Starting Node.js application..."
 exec node dist/app.js
 EOF

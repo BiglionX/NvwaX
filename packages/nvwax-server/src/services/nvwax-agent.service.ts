@@ -429,8 +429,10 @@ export class NvwaXAgentService {
 
   /**
    * 为团队角色匹配 Agent
+   * @param teamDesign 团队设计
+   * @param userId 用户ID（用于Token监控）
    */
-  async matchAgentsForTeam(teamDesign: TeamDesign): Promise<Record<string, AgentMatch[]>> {
+  async matchAgentsForTeam(teamDesign: TeamDesign, userId?: string): Promise<Record<string, AgentMatch[]>> {
     const results: Record<string, AgentMatch[]> = {};
 
     for (const role of teamDesign.roles) {
@@ -441,7 +443,8 @@ export class NvwaXAgentService {
         try {
           const workflowResult = await this.executeReviewerWorkflow(
             'agent-matching-validation',
-            { roleName: role.roleName }
+            { roleName: role.roleName },
+            userId
           );
           
           // 提取审查后的最佳匹配
@@ -682,7 +685,8 @@ export class NvwaXAgentService {
           try {
             const reviewResult = await this.executeReviewerWorkflow(
               'team-design-review',
-              { teamDesign: design, industry: context?.analysisResult?.industry }
+              { teamDesign: design, industry: context?.analysisResult?.industry },
+              userId
             );
             
             if (!reviewResult.reviewPassed) {
@@ -759,7 +763,7 @@ export class NvwaXAgentService {
 
         default:
           // 默认从需求分析开始
-          const defaultAnalysis = await this.analyzeRequirements(userInput);
+          const defaultAnalysis = await this.analyzeRequirements(userInput, userId);
           response = {
             message: this.generateRequirementsResponse(defaultAnalysis),
             phase: 'team_design',
@@ -932,13 +936,17 @@ ${docPackage.documents.map(doc => `- ${doc.title}`).join('\n')}
 
   /**
    * 执行审查器工作流
+   * 注意：此方法调用外部工作流API，可能涉及LLM消耗，记录元数据用于追踪
    */
-  private async executeReviewerWorkflow(workflowTemplateId: string, inputData: any): Promise<any> {
+  private async executeReviewerWorkflow(workflowTemplateId: string, inputData: any, userId?: string): Promise<any> {
     const workflowApiUrl = process.env.WORKFLOW_API_URL || 'http://localhost:3002/api';
+    const startTime = Date.now();
     
     try {
       // 1. 获取工作流模板
-      const templateResponse = await fetch(`${workflowApiUrl}/workflows/templates/${workflowTemplateId}`);
+      const templateResponse = await fetch(`${workflowApiUrl}/workflows/templates/${workflowTemplateId}`, {
+        signal: AbortSignal.timeout(10000) // 10秒超时
+      });
       const templateData: any = await templateResponse.json();
       
       if (!templateData.success) {
@@ -959,24 +967,62 @@ ${docPackage.documents.map(doc => `- ${doc.title}`).join('\n')}
       
       const workflow: any = await createResponse.json();
       
-      // 3. 执行工作流
+      // 3. 执行工作流（传递userId以便工作流服务记录Token）
       const executeResponse = await fetch(
         `${workflowApiUrl}/workflows/${workflow.data.id}/execute`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input: inputData })
+          body: JSON.stringify({ 
+            input: inputData,
+            userId // 传递userId以便工作流服务记录Token
+          })
         }
       );
       
       const result: any = await executeResponse.json();
       
-      // 4. 清理临时工作流（可选）
+      // 4. 记录工作流执行元数据到token_transactions（即使不知道具体Token数）
+      const executionTime = Date.now() - startTime;
+      if (userId) {
+        // 预估Token消耗（工作流执行时间与Token消耗成正比，这里用时间作为粗略指标）
+        const estimatedTokens = Math.round(executionTime / 10); // 粗略估算：1秒约100tokens
+        tokenQuotaService.checkAndDeductTokens(userId, estimatedTokens, {
+          endpoint: `/workflows/execute/${workflowTemplateId}`,
+          sourceType: 'workflow_execution',
+          description: `工作流执行: ${workflowTemplateId}`,
+          model: 'workflow-engine',
+          metadata: {
+            workflowId: workflow.data?.id,
+            workflowTemplateId,
+            executionTimeMs: executionTime,
+            hasResult: !!result?.results,
+            estimatedTokens // 预估Token数（外部工作流可能实际消耗更多）
+          }
+        }).catch(err => console.error('[TokenQuota] Failed to record workflow tokens:', err));
+      }
+      
+      // 5. 清理临时工作流（可选）
       // await fetch(`${workflowApiUrl}/workflows/${workflow.data.id}`, { method: 'DELETE' });
       
       return result.results;
     } catch (error) {
       console.error('Reviewer workflow execution failed:', error);
+      // 记录失败的工作流执行
+      if (userId) {
+        const executionTime = Date.now() - startTime;
+        tokenQuotaService.checkAndDeductTokens(userId, 100, {
+          endpoint: `/workflows/execute/${workflowTemplateId}`,
+          sourceType: 'workflow_execution',
+          description: `工作流执行失败: ${workflowTemplateId}`,
+          model: 'workflow-engine',
+          metadata: {
+            workflowTemplateId,
+            executionTimeMs: executionTime,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          }
+        }).catch(err => console.error('[TokenQuota] Failed to record failed workflow:', err));
+      }
       throw error;
     }
   }

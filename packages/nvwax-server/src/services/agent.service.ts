@@ -6,6 +6,7 @@
 
 import { Pool } from 'pg';
 import { v4 as uuidv4 } from 'uuid';
+import { normalizePagination, MAX_PAGE_SIZE } from '../utils/pagination.js';
 
 export interface Agent {
   id: string;
@@ -132,6 +133,9 @@ export class AgentService {
   }): Promise<{ agents: Agent[]; total: number }> {
     const { status, page = 1, limit = 20 } = options || {};
     
+    // 验证并规范化分页参数
+    const { page: validatedPage, limit: validatedLimit, offset } = normalizePagination(page, limit);
+    
     const conditions: string[] = ['user_id = $1'];
     const params: any[] = [userId];
     let paramIndex = 2;
@@ -150,11 +154,10 @@ export class AgentService {
     );
     const total = parseInt(countResult.rows[0].count);
 
-    // 查询数据
-    const offset = (page - 1) * limit;
+    // 查询数据（使用验证后的分页参数）
     const dataResult = await this.pool.query(
       `SELECT * FROM agents WHERE ${whereClause} ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
-      [...params, limit, offset]
+      [...params, validatedLimit, offset]
     );
 
     const agents = dataResult.rows.map(row => this.mapRowToAgent(row));

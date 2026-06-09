@@ -356,6 +356,7 @@ export class PaymentService {
 
   /**
    * Admin确认付款 - 为用户增加token配额
+   * 注意：整个操作在同一事务中完成，确保原子性
    */
   async confirmOrder(orderId: string, adminId: string): Promise<TokenOrder | null> {
     // 开始事务
@@ -387,8 +388,32 @@ export class PaymentService {
         [adminId, orderId]
       );
 
-      // 为用户增加token配额（添加到剩余可用额度）
-      await tokenQuotaService.addPurchasedTokens(order.user_id, order.tokens);
+      // 为用户增加token配额（在同一事务中执行）
+      // 确保用户有配额记录
+      const quotaResult = await client.query(
+        'SELECT * FROM user_token_quotas WHERE user_id = $1',
+        [order.user_id]
+      );
+
+      if (quotaResult.rows.length === 0) {
+        // 创建配额记录
+        await client.query(
+          `INSERT INTO user_token_quotas (user_id, monthly_limit, used_this_month, total_used, is_internal_team)
+           VALUES ($1, $2, 0, 0, false)`,
+          [order.user_id, order.tokens]
+        );
+      } else {
+        // 增加配额
+        await client.query(
+          `UPDATE user_token_quotas SET 
+            monthly_limit = monthly_limit + $1,
+            updated_at = CURRENT_TIMESTAMP
+           WHERE user_id = $2`,
+          [order.tokens, order.user_id]
+        );
+      }
+
+      console.log(`[PaymentService] Added ${order.tokens} tokens to user ${order.user_id} for order ${orderId}`);
 
       await client.query('COMMIT');
       return this.formatOrder(updateResult.rows[0]);

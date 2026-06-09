@@ -1,14 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService } from '../services/user.service.js';
-
-// 扩展 Express Request 类型以包含 user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
-    }
-  }
-}
+import '../types/express.d.js';
 
 export function userAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   let token: string | undefined;

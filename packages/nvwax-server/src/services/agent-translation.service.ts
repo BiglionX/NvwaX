@@ -1,5 +1,9 @@
 import OpenAI from 'openai';
 import type { Agent } from './agent-search.service.js';
+import { tokenQuotaService } from './token-quota.service.js';
+
+// 用户ID常量 - 翻译服务作为系统级操作，使用内部服务账户
+const SYSTEM_USER_ID_FOR_TRANSLATION = 'system-translation-service';
 
 /**
  * Agent 翻译服务
@@ -205,6 +209,23 @@ class AgentTranslationService {
         temperature: 0.3,
         max_tokens: 2000
       });
+
+      // 记录Token消耗
+      const totalTokens = response.usage?.total_tokens || 0;
+      if (totalTokens > 0) {
+        tokenQuotaService.checkAndDeductTokens(SYSTEM_USER_ID_FOR_TRANSLATION, totalTokens, {
+          endpoint: '/api/agent-translation/batch',
+          sourceType: 'agent_translation',
+          description: `Agent翻译 - ${fieldType}字段批量翻译`,
+          model: 'deepseek-v4-flash',
+          metadata: {
+            batchSize: pairs.length,
+            fieldType,
+            prompt_tokens: response.usage?.prompt_tokens || 0,
+            completion_tokens: response.usage?.completion_tokens || 0
+          }
+        }).catch(err => console.error('[TokenQuota] Failed to record translation tokens:', err));
+      }
 
       const content = response.choices[0]?.message?.content;
       if (!content) return pairs.map(() => null);

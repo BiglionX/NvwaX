@@ -1,5 +1,10 @@
 import { Pool } from 'pg';
 import { v4 as uuidv4 } from 'uuid';
+import OpenAI from 'openai';
+import { tokenQuotaService } from './token-quota.service.js';
+
+// 系统级用户ID用于LLM生成成本
+const SYSTEM_USER_ID_FOR_LLM = 'system-nvwa-leader';
 
 /**
  * Nvwa Leader Service
@@ -9,9 +14,24 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export class NvwaLeaderService {
   private pool: Pool;
+  private openai: OpenAI | null = null;
 
   constructor(pool: Pool) {
     this.pool = pool;
+    this.initOpenAI();
+  }
+
+  /**
+   * 初始化 OpenAI 客户端
+   */
+  private initOpenAI() {
+    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
+    if (apiKey) {
+      this.openai = new OpenAI({
+        apiKey: apiKey,
+        baseURL: process.env.OPENAI_BASE_URL || 'https://api.deepseek.com'
+      });
+    }
   }
 
   /**
@@ -29,15 +49,10 @@ export class NvwaLeaderService {
   }, isAiTeam: boolean = false) {
     console.log(`🤖 Generating ${isAiTeam ? 'AiTeam' : 'team'} configuration from Nvwa data...`);
     
-    // TODO: 接入真实的 LLM API
-    // 当环境变量配置了 LLM API Key 时，使用 LLM 生成配置
-    // 否则使用 mock 数据作为降级方案
-    const useLLM = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY;
-    
-    if (useLLM && isAiTeam) {
-      // TODO: 实现真实的 LLM 调用
-      // return await this.generateWithLLM(nvwaData);
-      console.log('⚠️ LLM API not configured, using mock data');
+    // 使用 LLM 生成配置
+    if (this.openai) {
+      console.log('🤖 Using LLM to generate team configuration...');
+      return await this.generateWithLLM(nvwaData, isAiTeam);
     }
     
     // 使用 mock 数据作为降级方案
@@ -45,6 +60,146 @@ export class NvwaLeaderService {
       return this.generateMockAiTeam(nvwaData);
     } else {
       return this.generateMockTeam(nvwaData);
+    }
+  }
+
+  /**
+   * 使用 LLM 生成团队配置
+   * @param nvwaData Nvwa 需求数据
+   * @param isAiTeam 是否为 AiTeam 模式
+   * @returns 生成的团队配置
+   */
+  private async generateWithLLM(nvwaData: {
+    description: string;
+    dataSources: string[];
+    outputs: string[];
+    implementation: string;
+    skills: string[];
+  }, isAiTeam: boolean): Promise<any> {
+    const prompt = this.buildTeamGenerationPrompt(nvwaData, isAiTeam);
+    
+    try {
+      const completion = await this.openai!.chat.completions.create({
+        model: 'deepseek-v4-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `你是一个专业的虚拟团队配置生成专家。根据用户需求，生成最优的团队配置方案。
+            
+要求：
+1. 生成的配置必须符合 JSON 格式
+2. 团队角色应根据实际需求合理配置（通常 3-5 个核心角色）
+3. 工作流程应清晰明确，每一步都有明确的输出
+4. 通信协议和冲突解决机制必须合理可行
+5. 考虑团队协作效率，避免角色职责重叠`
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const response = completion.choices[0]?.message?.content || '';
+      const totalTokens = completion.usage?.total_tokens || 0;
+
+      // 记录 Token 消耗
+      if (totalTokens > 0) {
+        tokenQuotaService.checkAndDeductTokens(SYSTEM_USER_ID_FOR_LLM, totalTokens, {
+          endpoint: '/v1/chat/completions',
+          sourceType: 'nvwa_team_generation',
+          model: 'deepseek-v4-flash',
+          metadata: { isAiTeam }
+        }).catch(err => console.error('[TokenQuota] Failed to deduct tokens:', err));
+      }
+
+      // 尝试解析 JSON 响应
+      try {
+        // 移除可能的 markdown 代码块标记
+        let jsonStr = response;
+        if (jsonStr.includes('```json')) {
+          jsonStr = jsonStr.split('```json')[1].split('```')[0];
+        } else if (jsonStr.includes('```')) {
+          jsonStr = jsonStr.split('```')[1].split('```')[0];
+        }
+        
+        return JSON.parse(jsonStr.trim());
+      } catch (parseError) {
+        console.error('[NvwaLeader] Failed to parse LLM response, using mock data:', parseError);
+        console.log('[NvwaLeader] Raw response:', response.substring(0, 500));
+        // 降级使用 mock 数据
+        return isAiTeam ? this.generateMockAiTeam(nvwaData) : this.generateMockTeam(nvwaData);
+      }
+    } catch (error: any) {
+      console.error('[NvwaLeader] LLM call failed:', error.message);
+      // LLM 调用失败时降级使用 mock 数据
+      return isAiTeam ? this.generateMockAiTeam(nvwaData) : this.generateMockTeam(nvwaData);
+    }
+  }
+
+  /**
+   * 构建团队生成的 Prompt
+   */
+  private buildTeamGenerationPrompt(nvwaData: {
+    description: string;
+    dataSources: string[];
+    outputs: string[];
+    implementation: string;
+    skills: string[];
+  }, isAiTeam: boolean): string {
+    if (isAiTeam) {
+      return `请根据以下需求生成一个完整的 AiTeam 团队配置：
+
+需求描述：${nvwaData.description}
+
+数据源：${nvwaData.dataSources.join(', ')}
+
+期望输出：${nvwaData.outputs.join(', ')}
+
+实施方式：${nvwaData.implementation}
+
+所需技能：${nvwaData.skills.join(', ')}
+
+请生成包含以下结构的 JSON 配置：
+{
+  "name": "团队名称",
+  "description": "团队描述",
+  "category": "virtual-company",
+  "leaderConfig": {
+    "name": "领导者名称",
+    "responsibilities": ["职责1", "职责2"]
+  },
+  "roles": [
+    {
+      "role": "角色名称",
+      "specialty": "专业领域",
+      "responsibilities": ["职责1", "职责2"],
+      "agent_type": "backend-agent"
+    }
+  ],
+  "workflow": {
+    "steps": [
+      {"step": 1, "action": "动作描述", "performed_by": "执行角色", "output": "输出物"}
+    ]
+  },
+  "bindingRules": {
+    "communication_protocol": "通信协议",
+    "conflict_resolution": "冲突解决机制",
+    "quality_standards": "质量标准"
+  }
+}`;
+    } else {
+      return `请根据以下需求生成一个单团队配置：
+
+需求描述：${nvwaData.description}
+
+期望输出：${nvwaData.outputs.join(', ')}
+
+所需技能：${nvwaData.skills.join(', ')}
+
+请生成包含 leaderConfig、roles、workflow 的简化 JSON 配置。`;
     }
   }
 

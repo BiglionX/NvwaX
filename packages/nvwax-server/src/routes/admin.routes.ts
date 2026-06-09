@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { adminController } from '../controllers/admin.controller.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
+import { loginRateLimiter } from '../middleware/login-rate-limiter.middleware.js';
 
 const router = Router();
 
-// 公开路由（不需要认证）
-router.post('/login', adminController.login);
+// 公开路由（不需要认证，但有速率限制）
+router.post('/login', loginRateLimiter, adminController.login);
 
 // 需要认证的路由
 router.use(authMiddleware);

@@ -6,8 +6,13 @@
  */
 
 import { Pool } from 'pg';
+import OpenAI from 'openai';
 import { databaseService } from './database.service.js';
 import { microbizApiAdapter, PlatformCredentials, PublishContent } from './microbiz-api-adapter.service.js';
+import { tokenQuotaService } from './token-quota.service.js';
+
+// 系统级用户ID
+const SYSTEM_USER_ID_FOR_MICROBIZ = 'system-microbiz-agent';
 
 // ==========================================
 // Agent 执行上下文
@@ -36,9 +41,24 @@ export interface AgentExecutionResult {
 
 export class MicroBizAgentRuntime {
   private pool: Pool;
+  private openai: OpenAI | null = null;
 
   constructor(pool?: Pool) {
     this.pool = pool || databaseService.getPool();
+    this.initOpenAI();
+  }
+
+  /**
+   * 初始化 OpenAI 客户端
+   */
+  private initOpenAI() {
+    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
+    if (apiKey) {
+      this.openai = new OpenAI({
+        apiKey: apiKey,
+        baseURL: process.env.OPENAI_BASE_URL || 'https://api.deepseek.com'
+      });
+    }
   }
 
   /**
@@ -100,8 +120,61 @@ export class MicroBizAgentRuntime {
   private async executeContentCreation(ctx: AgentExecutionContext): Promise<AgentExecutionResult> {
     const { product_info, industry_keywords, target_platform } = ctx.input;
 
-    // 模拟 DeepSeek 模型调用生成内容
-    const content = this.generateMockContent(product_info, industry_keywords, target_platform);
+    let content: { text: string; suggestions: string[]; platformFormat: string };
+    let tokensUsed = 0;
+
+    // 使用 LLM 生成内容
+    if (this.openai) {
+      try {
+        const completion = await this.openai.chat.completions.create({
+          model: 'deepseek-v4-flash',
+          messages: [
+            {
+              role: 'system',
+              content: `你是一个专业的新媒体营销内容创作专家。根据商品信息生成符合平台风格的营销文案。
+              
+要求：
+1. 文案要吸引人，突出产品卖点
+2. 适合目标平台的风格（抖音要短平快，小红书要种草感）
+3. 包含合适的 hashtags 和 emoji
+4. 输出 JSON 格式：{"text": "文案内容", "suggestions": ["建议1", "建议2"], "platformFormat": "平台格式说明"}`
+            },
+            {
+              role: 'user',
+              content: `商品信息：${JSON.stringify(product_info)}\n行业关键词：${industry_keywords?.join(', ')}\n目标平台：${target_platform}`
+            }
+          ],
+          temperature: 0.8,
+          max_tokens: 1500
+        });
+
+        const response = completion.choices[0]?.message?.content || '';
+        tokensUsed = completion.usage?.total_tokens || 0;
+
+        // 解析 JSON 响应
+        try {
+          content = JSON.parse(response);
+        } catch {
+          // 降级使用 mock
+          content = this.generateMockContent(product_info, industry_keywords, target_platform);
+        }
+      } catch (error: any) {
+        console.error('[MicroBiz] Content creation LLM failed:', error.message);
+        content = this.generateMockContent(product_info, industry_keywords, target_platform);
+      }
+    } else {
+      content = this.generateMockContent(product_info, industry_keywords, target_platform);
+    }
+
+    // 记录 Token 消耗
+    if (tokensUsed > 0) {
+      tokenQuotaService.checkAndDeductTokens(SYSTEM_USER_ID_FOR_MICROBIZ, tokensUsed, {
+        endpoint: '/v1/chat/completions',
+        sourceType: 'content_creation',
+        model: 'deepseek-v4-flash',
+        metadata: { agentId: ctx.agentId, platform: target_platform }
+      }).catch(err => console.error('[TokenQuota] Failed to deduct tokens:', err));
+    }
 
     return {
       success: true,
@@ -109,7 +182,8 @@ export class MicroBizAgentRuntime {
         content: content.text,
         editingSuggestions: content.suggestions,
         platformFormat: content.platformFormat,
-        estimatedTime: '约30分钟'
+        estimatedTime: '约30分钟',
+        tokensUsed
       },
       executionTimeMs: 0
     };
@@ -171,13 +245,59 @@ export class MicroBizAgentRuntime {
   private async executeCustomerInteraction(ctx: AgentExecutionContext): Promise<AgentExecutionResult> {
     const { message_type, content, user_info, faq_database } = ctx.input;
 
-    // 模拟 LLM 回复生成
     const autoReplyEnabled = ctx.preferences?.auto_reply_enabled !== false;
     const manualReviewRequired = ctx.preferences?.manual_review_required || false;
+    
+    let reply: string | null = null;
+    let tokensUsed = 0;
 
-    const reply = autoReplyEnabled
-      ? `感谢您的留言！关于"${content?.substring(0, 20)}..."的问题，我们已经收到。我们的客服团队会尽快为您解答。`
-      : null;
+    if (autoReplyEnabled) {
+      // 使用 LLM 生成回复
+      if (this.openai) {
+        try {
+          const completion = await this.openai.chat.completions.create({
+            model: 'deepseek-v4-flash',
+            messages: [
+              {
+                role: 'system',
+                content: `你是一个专业的客服助手，根据客户的消息生成合适的回复。
+                
+要求：
+1. 回复要友好、专业、有耐心
+2. 对于投诉类消息要表示歉意并承诺解决
+3. 对于咨询类消息要提供有用信息
+4. 如果不确定，回复要中性并引导客户联系人工客服
+5. FAQ 数据库：${faq_database ? JSON.stringify(faq_database) : '无可用FAQ'}`
+              },
+              {
+                role: 'user',
+                content: `用户信息：${JSON.stringify(user_info)}\n消息类型：${message_type}\n用户消息：${content}`
+              }
+            ],
+            temperature: 0.6,
+            max_tokens: 500
+          });
+
+          reply = completion.choices[0]?.message?.content || null;
+          tokensUsed = completion.usage?.total_tokens || 0;
+        } catch (error: any) {
+          console.error('[MicroBiz] Customer interaction LLM failed:', error.message);
+          reply = `感谢您的留言！关于"${content?.substring(0, 20)}..."的问题，我们已经收到。我们的客服团队会尽快为您解答。`;
+        }
+      } else {
+        reply = `感谢您的留言！关于"${content?.substring(0, 20)}..."的问题，我们已经收到。我们的客服团队会尽快为您解答。`;
+      }
+    }
+
+    // 记录 Token 消耗
+    if (tokensUsed > 0) {
+      tokenQuotaService.checkAndDeductTokens(SYSTEM_USER_ID_FOR_MICROBIZ, tokensUsed, {
+        endpoint: '/v1/chat/completions',
+        sourceType: 'customer_interaction',
+        model: 'deepseek-v4-flash',
+        metadata: { agentId: ctx.agentId, messageType: message_type }
+      }).catch(err => console.error('[TokenQuota] Failed to deduct tokens:', err));
+    }
 
     return {
       success: true,
@@ -185,7 +305,8 @@ export class MicroBizAgentRuntime {
         reply,
         needHumanReview: manualReviewRequired || message_type === 'complaint',
         category: this.categorizeMessage(content || ''),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        tokensUsed
       },
       executionTimeMs: 0
     };

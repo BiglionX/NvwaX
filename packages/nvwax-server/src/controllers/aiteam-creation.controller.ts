@@ -977,7 +977,7 @@ export class AiTeamCreationController {
       
       // 执行 Agent 匹配
       console.log('🔍 Starting agent matching...');
-      const agentMatches = await nvwaxAgentService.matchAgentsForTeam(teamDesign);
+      const agentMatches = await nvwaxAgentService.matchAgentsForTeam(teamDesign, triggerUserId);
       
       // 保存 Agent 匹配结果
       await aiteamCreationService.updateProgress(sessionId, {

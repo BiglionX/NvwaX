@@ -1,18 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService } from '../services/user.service.js';
 import { adminService } from '../services/admin.service.js';
+import '../types/express.d.js';
 
-// 扩展 Express Request 类型以包含 user 和 admin
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
-      admin?: any;
-      currentUser?: any; // 统一的用户对象，可以是普通用户或管理员
-    }
-  }
-}
-
+/**
+ * 通用认证中间件
+ * 支持用户 JWT token 和管理员 JWT token
+ */
 export function universalAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   let token: string | undefined;
 
@@ -41,32 +35,28 @@ export function universalAuthMiddleware(req: Request, res: Response, next: NextF
       id: decodedUser.userId,
       email: decodedUser.email
     };
-    req.currentUser = req.user;
-    req.currentUser.type = 'user';
+    req.currentUser = {
+      id: decodedUser.userId,
+      type: 'user'
+    };
     return next();
   }
 
-  // 尝试作为管理员 token 验证 (格式: admin_{id}_{timestamp})
-  if (token.startsWith('admin_')) {
-    const parts = token.split('_');
-    if (parts.length >= 2) {
-      const adminId = parts[1];
-      const admin = adminService.getAdminById(adminId);
-      
-      // 由于 getAdminById 是异步的，我们需要使用 async/await
-      // 但为了保持中间件同步，我们暂时跳过这个验证
-      // 在实际应用中，应该使用异步中间件或者缓存管理员信息
-      
-      // 简单验证：只要格式正确就认为是管理员
-      // 更严格的验证应该在具体的控制器中进行
-      req.admin = {
-        id: adminId,
-        type: 'admin'
-      };
-      req.currentUser = req.admin;
-      req.currentUser.type = 'admin';
-      return next();
-    }
+  // 尝试作为管理员 JWT token 验证
+  const decodedAdmin = adminService.verifyToken(token);
+  
+  if (decodedAdmin) {
+    // 是管理员
+    req.admin = {
+      id: decodedAdmin.adminId,
+      username: decodedAdmin.username,
+      role: decodedAdmin.role
+    };
+    req.currentUser = {
+      id: decodedAdmin.adminId,
+      type: 'admin'
+    };
+    return next();
   }
 
   // 如果都不是，返回未授权

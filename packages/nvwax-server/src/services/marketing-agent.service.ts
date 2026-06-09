@@ -71,7 +71,8 @@ export class MarketingAgentService {
     userAgent?: string
   ): Promise<ChatCompletionResponse> {
     const startTime = Date.now();
-    const actualModel = process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';
+    // 强制使用 deepseek-v4-flash 模型，禁止切换
+    const actualModel = 'deepseek-v4-flash';
     
     try {
       // Step 1: Extract user's query from messages
@@ -100,7 +101,7 @@ export class MarketingAgentService {
         userMessage,
         request
       );
-      const { response, promptTokens, completionTokens, totalTokens } = result;
+      const { response, promptTokens, completionTokens, totalTokens, isEstimated } = result;
 
       // Step 5: Record API usage
       const responseTime = Date.now() - startTime;
@@ -118,7 +119,8 @@ export class MarketingAgentService {
         metadata: {
           model: actualModel,
           team_name: teamConfig.name,
-          team_category: teamConfig.category
+          team_category: teamConfig.category,
+          isTokenEstimated: isEstimated // 标记Token是否为估算值
         }
       });
 
@@ -137,7 +139,8 @@ export class MarketingAgentService {
             model: actualModel,
             metadata: {
               team_name: teamConfig.name,
-              team_category: teamConfig.category
+              team_category: teamConfig.category,
+              isTokenEstimated: isEstimated // 标记Token是否为估算值
             }
           });
         }
@@ -278,7 +281,7 @@ export class MarketingAgentService {
     teamConfig: any,
     userQuery: string,
     request: ChatCompletionRequest
-  ): Promise<{ response: string; promptTokens: number; completionTokens: number; totalTokens: number }> {
+  ): Promise<{ response: string; promptTokens: number; completionTokens: number; totalTokens: number; isEstimated?: boolean }> {
     console.log(`🔄 Executing workflow for team: ${teamConfig.name}`);
 
     // For now, we'll use a mock response based on the team type
@@ -341,9 +344,9 @@ Provide:
       if (!this.openai) {
         throw new Error('OpenAI client not configured - no API key available');
       }
-      const actualModel = process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';
+      // 强制使用 deepseek-v4-flash 模型，禁止切换
       const completion = await this.openai.chat.completions.create({
-        model: actualModel,
+        model: 'deepseek-v4-flash',
         messages,
         temperature: request.temperature ?? 0.7,
         max_tokens: request.max_tokens ?? 2000
@@ -359,11 +362,18 @@ Provide:
       console.error(`[MarketingAgent] DeepSeek call failed for category ${category}:`, error);
       // 降级：返回 mock 响应，使用估算 token
       const fallbackResponse = this.getFallbackResponse(category, userQuery);
+      
+      // 降级场景使用更准确的估算：中文约2字符/token，英文约4字符/token
+      // 这里假设混合文本，平均约3字符/token
+      const estimatedPromptTokens = Math.ceil(userQuery.length / 3);
+      const estimatedCompletionTokens = Math.ceil(fallbackResponse.length / 3);
+      
       return { 
         response: fallbackResponse, 
-        promptTokens: Math.ceil(userQuery.length / 4),
-        completionTokens: Math.ceil(fallbackResponse.length / 4),
-        totalTokens: Math.ceil((userQuery.length + fallbackResponse.length) / 4)
+        promptTokens: estimatedPromptTokens,
+        completionTokens: estimatedCompletionTokens,
+        totalTokens: estimatedPromptTokens + estimatedCompletionTokens,
+        isEstimated: true // 标记这是估算值
       };
     }
   }

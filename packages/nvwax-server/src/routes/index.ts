@@ -7,6 +7,7 @@ import { socialAuthController } from '../controllers/social-auth.controller.js';
 import { bountyController } from '../controllers/bounty.controller.js';
 import { teamSkillController } from '../controllers/team-skill.controller.js';
 import { userAuthMiddleware } from '../middleware/user-auth.middleware.js';
+import { loginRateLimiter } from '../middleware/login-rate-limiter.middleware.js';
 import teamSkillRouter from './team-skill.routes.js';
 import nvwaLeaderRouter from './nvwa-leader.routes.js';
 import nvwaAgentRouter from './nvwa-agent.routes.js';
@@ -83,16 +84,16 @@ router.post('/user/token/create-order', userController.createTokenOrder);
 router.post('/user/token/create-stripe-session', userController.createStripeCheckoutSession);
 router.get('/user/token/payment-configs', userController.getPaymentConfigs);
 
-// User authentication routes
-router.post('/auth/register', userAuthController.register);
-router.post('/auth/login', userAuthController.login);
+// User authentication routes (with rate limiting)
+router.post('/auth/register', loginRateLimiter, userAuthController.register);
+router.post('/auth/login', loginRateLimiter, userAuthController.login);
 router.post('/auth/proclaw-cross-auth', userAuthController.proclawCrossAuth);
 router.get('/auth/profile', userAuthController.getProfile);
 
-// Social login routes
-router.post('/auth/facebook/login', socialAuthController.facebookLogin.bind(socialAuthController));
-router.post('/auth/google/login', socialAuthController.googleLogin.bind(socialAuthController));
-router.post('/auth/wechat/login', socialAuthController.wechatLogin.bind(socialAuthController));
+// Social login routes (with rate limiting)
+router.post('/auth/facebook/login', loginRateLimiter, socialAuthController.facebookLogin.bind(socialAuthController));
+router.post('/auth/google/login', loginRateLimiter, socialAuthController.googleLogin.bind(socialAuthController));
+router.post('/auth/wechat/login', loginRateLimiter, socialAuthController.wechatLogin.bind(socialAuthController));
 router.get('/auth/social/accounts', userAuthMiddleware, socialAuthController.getSocialAccounts.bind(socialAuthController));
 router.post('/auth/social/bind', userAuthMiddleware, socialAuthController.bindSocialAccount.bind(socialAuthController));
 router.post('/auth/social/unbind', userAuthMiddleware, socialAuthController.unbindSocialAccount.bind(socialAuthController));

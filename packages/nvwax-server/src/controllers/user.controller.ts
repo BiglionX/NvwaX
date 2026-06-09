@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { userService } from '../services/user.service.js';
 import { tokenQuotaService } from '../services/token-quota.service.js';
 import { paymentService } from '../services/payment.service.js';
+import { successResponse, paginatedResponse, errorResponse } from '../utils/api-response.js';
 
 export class UserController {
   // 获取当前用户信息
@@ -10,19 +11,19 @@ export class UserController {
       const { userId } = req.query;
 
       if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
+        return errorResponse(res, 400, 'INVALID_REQUEST', 'userId is required');
       }
 
       const user = await userService.getUserById(userId as string);
 
       if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+        return errorResponse(res, 404, 'NOT_FOUND', 'User not found');
       }
 
-      res.json(user);
+      return successResponse(res, user);
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      res.status(500).json({ error: 'Failed to fetch user profile' });
+      return errorResponse(res, 500, 'INTERNAL_ERROR', 'Failed to fetch user profile');
     }
   }
 
@@ -33,19 +34,19 @@ export class UserController {
       const { name, avatar, bio } = req.body;
 
       if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
+        return errorResponse(res, 400, 'INVALID_REQUEST', 'userId is required');
       }
 
       const user = await userService.updateUser(userId as string, { name, avatar, bio });
 
       if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+        return errorResponse(res, 404, 'NOT_FOUND', 'User not found');
       }
 
-      res.json(user);
+      return successResponse(res, user);
     } catch (error) {
       console.error('Error updating user profile:', error);
-      res.status(500).json({ error: 'Failed to update user profile' });
+      return errorResponse(res, 500, 'INTERNAL_ERROR', 'Failed to update user profile');
     }
   }
 
@@ -55,14 +56,14 @@ export class UserController {
       const { userId } = req.query;
 
       if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
+        return errorResponse(res, 400, 'INVALID_REQUEST', 'userId is required');
       }
 
       const stats = await userService.getUserStats(userId as string);
-      res.json(stats);
+      return successResponse(res, stats);
     } catch (error) {
       console.error('Error fetching user stats:', error);
-      res.status(500).json({ error: 'Failed to fetch user stats' });
+      return errorResponse(res, 500, 'INTERNAL_ERROR', 'Failed to fetch user stats');
     }
   }
 
@@ -75,32 +76,27 @@ export class UserController {
     try {
       const userId = req.query.userId as string;
       if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
+        return errorResponse(res, 400, 'INVALID_REQUEST', 'userId is required');
       }
 
       const quota = await tokenQuotaService.getUserQuota(userId);
       if (!quota) {
-        return res.json({
-          data: null,
-          message: 'No quota record yet'
-        });
+        return successResponse(res, null);
       }
 
-      res.json({
-        data: {
-          monthlyLimit: quota.monthly_limit,
-          usedThisMonth: quota.used_this_month,
-          remaining: Math.max(0, quota.monthly_limit - quota.used_this_month),
-          usagePercent: Math.min(100, Math.round((quota.used_this_month / quota.monthly_limit) * 100)),
-          overageTokens: quota.overage_tokens,
-          overageCost: quota.overage_cost,
-          totalUsed: quota.total_used,
-          lastResetAt: quota.last_reset_at
-        }
+      return successResponse(res, {
+        monthlyLimit: quota.monthly_limit,
+        usedThisMonth: quota.used_this_month,
+        remaining: Math.max(0, quota.monthly_limit - quota.used_this_month),
+        usagePercent: Math.min(100, Math.round((quota.used_this_month / quota.monthly_limit) * 100)),
+        overageTokens: quota.overage_tokens,
+        overageCost: quota.overage_cost,
+        totalUsed: quota.total_used,
+        lastResetAt: quota.last_reset_at
       });
     } catch (error) {
       console.error('Error fetching token quota:', error);
-      res.status(500).json({ error: 'Failed to fetch token quota' });
+      return errorResponse(res, 500, 'INTERNAL_ERROR', 'Failed to fetch token quota');
     }
   }
 
@@ -111,22 +107,17 @@ export class UserController {
     try {
       const userId = req.query.userId as string;
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
 
       if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
+        return errorResponse(res, 400, 'INVALID_REQUEST', 'userId is required');
       }
 
       const result = await tokenQuotaService.getUserConsumptionDetail(userId, page, limit);
-      res.json({
-        data: result.data,
-        total: result.total,
-        page,
-        limit
-      });
+      return paginatedResponse(res, result.data, result.total, page, limit);
     } catch (error) {
       console.error('Error fetching token transactions:', error);
-      res.status(500).json({ error: 'Failed to fetch token transactions' });
+      return errorResponse(res, 500, 'INTERNAL_ERROR', 'Failed to fetch token transactions');
     }
   }
 
@@ -137,22 +128,17 @@ export class UserController {
     try {
       const userId = req.query.userId as string;
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
 
       if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
+        return errorResponse(res, 400, 'INVALID_REQUEST', 'userId is required');
       }
 
       const result = await paymentService.getUserOrders(userId, page, limit);
-      res.json({
-        data: result.data,
-        total: result.total,
-        page,
-        limit
-      });
+      return paginatedResponse(res, result.data, result.total, page, limit);
     } catch (error) {
       console.error('Error fetching token orders:', error);
-      res.status(500).json({ error: 'Failed to fetch token orders' });
+      return errorResponse(res, 500, 'INTERNAL_ERROR', 'Failed to fetch token orders');
     }
   }
 
@@ -165,15 +151,15 @@ export class UserController {
       const { amount, paymentMethod } = req.body;
 
       if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
+        return errorResponse(res, 400, 'INVALID_REQUEST', 'userId is required');
       }
 
       if (!amount || amount < 1) {
-        return res.status(400).json({ error: 'amount must be at least 1' });
+        return errorResponse(res, 400, 'INVALID_AMOUNT', 'amount must be at least 1');
       }
 
       if (!paymentMethod || !['wechat', 'alipay'].includes(paymentMethod)) {
-        return res.status(400).json({ error: 'paymentMethod must be wechat or alipay' });
+        return errorResponse(res, 400, 'INVALID_PAYMENT_METHOD', 'paymentMethod must be wechat or alipay');
       }
 
       const order = await paymentService.createOrder(userId, amount, paymentMethod);
@@ -181,21 +167,19 @@ export class UserController {
       // 获取对应的支付配置
       const paymentConfig = await paymentService.getPaymentConfig(paymentMethod);
 
-      res.status(201).json({
-        data: {
-          order,
-          paymentConfig: paymentConfig ? {
-            provider: paymentConfig.provider,
-            provider_label: paymentConfig.provider_label,
-            qr_code_url: paymentConfig.qr_code_url,
-            account_name: paymentConfig.account_name,
-            account_info: paymentConfig.account_info
-          } : null
-        }
-      });
+      return successResponse(res, {
+        order,
+        paymentConfig: paymentConfig ? {
+          provider: paymentConfig.provider,
+          provider_label: paymentConfig.provider_label,
+          qr_code_url: paymentConfig.qr_code_url,
+          account_name: paymentConfig.account_name,
+          account_info: paymentConfig.account_info
+        } : null
+      }, 201);
     } catch (error) {
       console.error('Error creating token order:', error);
-      res.status(500).json({ error: 'Failed to create token order' });
+      return errorResponse(res, 500, 'INTERNAL_ERROR', 'Failed to create token order');
     }
   }
 
@@ -207,23 +191,23 @@ export class UserController {
       const { userId, amount } = req.body;
 
       if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
+        return errorResponse(res, 400, 'INVALID_REQUEST', 'userId is required');
       }
 
       if (!amount || amount < 1) {
-        return res.status(400).json({ error: 'amount must be at least 1' });
+        return errorResponse(res, 400, 'INVALID_AMOUNT', 'amount must be at least 1');
       }
 
       if (!paymentService.isStripeAvailable()) {
-        return res.status(503).json({ error: 'Stripe is not configured' });
+        return errorResponse(res, 503, 'SERVICE_UNAVAILABLE', 'Stripe is not configured');
       }
 
       const result = await paymentService.createStripeCheckoutSession(userId, amount);
 
-      res.json({ data: result });
+      return successResponse(res, result);
     } catch (error) {
       console.error('Error creating Stripe checkout session:', error);
-      res.status(500).json({ error: 'Failed to create Stripe checkout session' });
+      return errorResponse(res, 500, 'INTERNAL_ERROR', 'Failed to create Stripe checkout session');
     }
   }
 
@@ -233,21 +217,19 @@ export class UserController {
   async getPaymentConfigs(req: Request, res: Response) {
     try {
       const configs = await paymentService.getEnabledPaymentConfigs();
-      res.json({
-        data: {
-          providers: configs.map(c => ({
-            provider: c.provider,
-            provider_label: c.provider_label,
-            qr_code_url: c.qr_code_url,
-            account_name: c.account_name,
-            account_info: c.account_info
-          })),
-          stripeAvailable: paymentService.isStripeAvailable()
-        }
+      return successResponse(res, {
+        providers: configs.map(c => ({
+          provider: c.provider,
+          provider_label: c.provider_label,
+          qr_code_url: c.qr_code_url,
+          account_name: c.account_name,
+          account_info: c.account_info
+        })),
+        stripeAvailable: paymentService.isStripeAvailable()
       });
     } catch (error) {
       console.error('Error fetching payment configs:', error);
-      res.status(500).json({ error: 'Failed to fetch payment configs' });
+      return errorResponse(res, 500, 'INTERNAL_ERROR', 'Failed to fetch payment configs');
     }
   }
 }

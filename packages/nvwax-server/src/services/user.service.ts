@@ -2,6 +2,7 @@ import { databaseService } from './database.service.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 import { tokenQuotaService } from './token-quota.service.js';
 import { SocialAccount, OAuthProvider } from '../types/oauth.types.js';
 
@@ -31,11 +32,31 @@ export interface LoginResult {
 
 export class UserService {
   private pool = databaseService.getPool();
-  private readonly JWT_SECRET = process.env.JWT_SECRET || 'nvwax-secret-key-change-in-production';
+  
+  // JWT密钥：生产环境必须设置，否则拒绝启动
+  private readonly JWT_SECRET: string;
   private readonly JWT_EXPIRES_IN = '7d'; // Token expires in 7 days
   private readonly SALT_ROUNDS = 10;
-  private readonly CROSS_AUTH_SECRET = 'proclaw-nvwax-bridge-2026'; // 与 ProClaw 共享
+  
+  // 跨服务认证密钥：从环境变量读取
+  private readonly CROSS_AUTH_SECRET: string;
   private readonly CROSS_AUTH_MAX_AGE = 5 * 60; // 5 分钟有效期
+
+  constructor() {
+    // 验证JWT_SECRET必须设置
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error('FATAL: JWT_SECRET environment variable is required. Server cannot start without it.');
+    }
+    this.JWT_SECRET = jwtSecret;
+    
+    // 跨服务认证密钥也必须设置
+    const crossAuthSecret = process.env.CROSS_AUTH_SECRET;
+    if (!crossAuthSecret) {
+      throw new Error('FATAL: CROSS_AUTH_SECRET environment variable is required for ProClaw integration.');
+    }
+    this.CROSS_AUTH_SECRET = crossAuthSecret;
+  }
 
   // ───────── 社交账号 OAuth 相关方法 ─────────
 
@@ -88,11 +109,13 @@ export class UserService {
     avatarUrl?: string;
     rawData: Record<string, any>;
   }): Promise<LoginResult> {
-    const email = info.email || `${info.providerUserId}@${info.provider}.oauth`;
+    // 生成安全的邮箱：如果providerUserId包含@符号，需要替换
+    const safeUserId = info.providerUserId.replace(/@/g, '_at_').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const email = info.email || `${safeUserId}@${info.provider}.oauth`;
     const name = info.name || info.providerUserId;
 
     // 创建用户
-    const id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `user_${uuidv4()}`;
     await this.pool.query(
       'INSERT INTO users (id, email, name, avatar) VALUES ($1, $2, $3, $4)',
       [id, email, name, info.avatarUrl || null]
@@ -103,7 +126,7 @@ export class UserService {
       INSERT INTO social_accounts (id, user_id, provider, provider_user_id, provider_email, display_name, avatar_url, raw_data)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [
-      `sa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      `sa_${uuidv4()}`,
       id,
       info.provider,
       info.providerUserId,
@@ -113,11 +136,14 @@ export class UserService {
       JSON.stringify(info.rawData)
     ]);
 
-    // 初始化Token配额
+    // 初始化Token配额（关键操作，失败应抛出错误）
     try {
       await tokenQuotaService.createUserQuota(id);
     } catch (err) {
-      console.error('Failed to create token quota for user:', id, err);
+      // 配额创建失败，回滚用户创建
+      console.error('FATAL: Failed to create token quota for user, rolling back:', id, err);
+      await this.pool.query('DELETE FROM users WHERE id = $1', [id]);
+      throw new Error('USER_CREATION_FAILED: Failed to initialize user quota');
     }
 
     const user = await this.getUserById(id);
@@ -186,7 +212,7 @@ export class UserService {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `, [
-      `sa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      `sa_${uuidv4()}`,
       userId,
       info.provider,
       info.providerUserId,
@@ -266,7 +292,7 @@ export class UserService {
     // 哈希密码
     const hashedPassword = await bcrypt.hash(password, this.SALT_ROUNDS);
     
-    const id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `user_${uuidv4()}`;
     await this.pool.query(
       'INSERT INTO users (id, email, password, name) VALUES ($1, $2, $3, $4)',
       [id, email, hashedPassword, name || null]
@@ -282,11 +308,14 @@ export class UserService {
 
     const { password: _, ...userWithoutPassword } = user;
 
-    // 初始化Token配额（100万免费额度）
+    // 初始化Token配额（100万免费额度，关键操作）
     try {
       await tokenQuotaService.createUserQuota(id);
     } catch (err) {
-      console.error('Failed to create token quota for user:', id, err);
+      // 配额创建失败，回滚用户创建
+      console.error('FATAL: Failed to create token quota for user, rolling back:', id, err);
+      await this.pool.query('DELETE FROM users WHERE id = $1', [id]);
+      throw new Error('USER_CREATION_FAILED: Failed to initialize user quota');
     }
 
     return {
@@ -297,7 +326,7 @@ export class UserService {
 
   // 创建用户（用于 OAuth 等无需密码的场景）
   async createUser(email: string, name?: string): Promise<User> {
-    const id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `user_${uuidv4()}`;
     await this.pool.query(
       'INSERT INTO users (id, email, name) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING',
       [id, email, name || null]
@@ -308,11 +337,14 @@ export class UserService {
       throw new Error('Failed to create user');
     }
 
-    // 初始化Token配额（100万免费额度）
+    // 初始化Token配额（100万免费额度，关键操作）
     try {
       await tokenQuotaService.createUserQuota(id);
     } catch (err) {
-      console.error('Failed to create token quota for user:', id, err);
+      // 配额创建失败，回滚用户创建
+      console.error('FATAL: Failed to create token quota for user, rolling back:', id, err);
+      await this.pool.query('DELETE FROM users WHERE id = $1', [id]);
+      throw new Error('USER_CREATION_FAILED: Failed to initialize user quota');
     }
 
     return user;

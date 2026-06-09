@@ -110,6 +110,8 @@ export class TokenQuotaService {
   /**
    * 检查用户是否有足够的Token额度，如果有则扣减
    * 返回扣减结果
+   * 
+   * 注意：此方法使用事务和行锁确保并发安全
    */
   async checkAndDeductTokens(
     userId: string,
@@ -132,76 +134,92 @@ export class TokenQuotaService {
       return { allowed: true, remaining: 0, isOverage: false, overageTokens: 0, overageCost: 0 };
     }
 
-    // 检查用户是否为内部团队，内部团队不受计数和计费限制
-    const internalCheck = await this.pool.query(
-      'SELECT is_internal_team FROM user_token_quotas WHERE user_id = $1',
-      [userId]
-    );
-    if (internalCheck.rows.length > 0 && internalCheck.rows[0].is_internal_team) {
-      // 内部团队：记录真实消耗明细用于监控，但不扣减配额
-      const quota = await this.getUserQuota(userId);
-      await this.recordTransaction(userId, {
-        quotaId: quota?.id,
-        tokensConsumed: tokens,
-        isOverage: false,
-        overageCost: 0,
-        endpoint: options?.endpoint,
-        sourceType: options?.sourceType || 'api_call',
-        description: options?.description ? `[内部团队] ${options.description}` : '[内部团队]',
-        model: options?.model,
-        metadata: options?.metadata || {}
-      });
-      return { allowed: true, remaining: Infinity, isOverage: false, overageTokens: 0, overageCost: 0 };
-    }
-
-    // 获取或创建配额记录
-    let quota = await this.getUserQuota(userId);
-    if (!quota) {
-      quota = await this.createUserQuota(userId);
-    }
-
-    // 自动检查是否跨月需要重置
-    await this.autoResetMonthlyQuota(userId);
-    quota = await this.getUserQuota(userId);
-    if (!quota) {
-      quota = await this.createUserQuota(userId);
-    }
-
-    const remaining = Math.max(0, quota.monthly_limit - quota.used_this_month);
-    let isOverage = false;
-    let overageTokens = 0;
-    let overageCost = 0;
-
-    if (tokens <= remaining) {
-      // 在免费额度内
-      await this.pool.query(
-        'UPDATE user_token_quotas SET used_this_month = used_this_month + $1, total_used = total_used + $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2',
-        [tokens, userId]
+    // 获取数据库客户端
+    const client = await this.pool.connect();
+    
+    try {
+      // 开始事务
+      await client.query('BEGIN');
+      
+      // 检查用户是否为内部团队
+      const internalCheck = await client.query(
+        'SELECT is_internal_team FROM user_token_quotas WHERE user_id = $1',
+        [userId]
       );
-    } else {
-      // 超额消费
-      isOverage = true;
-      if (remaining > 0) {
-        // 先消耗剩余的免费额度
+      if (internalCheck.rows.length > 0 && internalCheck.rows[0].is_internal_team) {
+        // 内部团队：记录真实消耗明细用于监控，但不扣减配额
+        const quotaResult = await client.query(
+          'SELECT * FROM user_token_quotas WHERE user_id = $1',
+          [userId]
+        );
+        const quota = quotaResult.rows.length > 0 ? this.formatQuota(quotaResult.rows[0]) : null;
+        
+        await this.recordTransactionInternal(client, userId, {
+          quotaId: quota?.id,
+          tokensConsumed: tokens,
+          isOverage: false,
+          overageCost: 0,
+          endpoint: options?.endpoint,
+          sourceType: options?.sourceType || 'api_call',
+          description: options?.description ? `[内部团队] ${options.description}` : '[内部团队]',
+          model: options?.model,
+          metadata: options?.metadata || {}
+        });
+        
+        await client.query('COMMIT');
+        return { allowed: true, remaining: Infinity, isOverage: false, overageTokens: 0, overageCost: 0 };
+      }
+
+      // 使用 FOR UPDATE 锁锁定配额记录（整个事务期间保持锁）
+      const lockResult = await client.query(
+        'SELECT * FROM user_token_quotas WHERE user_id = $1 FOR UPDATE',
+        [userId]
+      );
+      
+      let quota: UserTokenQuota;
+      
+      if (lockResult.rows.length === 0) {
+        // 并发场景下配额可能被删除，重新创建
+        const createResult = await client.query(
+          `INSERT INTO user_token_quotas (user_id, monthly_limit, reset_day)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (user_id) DO UPDATE SET user_id = EXCLUDED.user_id
+           RETURNING *`,
+          [userId, 1000000, 1]
+        );
+        quota = this.formatQuota(createResult.rows[0]);
+      } else {
+        quota = this.formatQuota(lockResult.rows[0]);
+      }
+
+      // 自动检查是否跨月需要重置（在锁内检查）
+      await this.autoResetMonthlyQuotaInternal(client, userId);
+      
+      // 重新获取最新配额（锁内）
+      const latestQuotaResult = await client.query(
+        'SELECT * FROM user_token_quotas WHERE user_id = $1',
+        [userId]
+      );
+      quota = this.formatQuota(latestQuotaResult.rows[0]);
+
+      const remaining = Math.max(0, quota.monthly_limit - quota.used_this_month);
+      let isOverage = false;
+      let overageTokens = 0;
+      let overageCost = 0;
+
+      if (tokens <= remaining) {
+        // 在免费额度内
+        await client.query(
+          'UPDATE user_token_quotas SET used_this_month = used_this_month + $1, total_used = total_used + $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2',
+          [tokens, userId]
+        );
+      } else {
+        // 超额消费
+        isOverage = true;
         overageTokens = tokens - remaining;
         overageCost = overageTokens * this.OVERAGE_RATE;
 
-        await this.pool.query(
-          `UPDATE user_token_quotas SET 
-            used_this_month = used_this_month + $1, 
-            total_used = total_used + $1,
-            overage_tokens = overage_tokens + $2,
-            overage_cost = overage_cost + $3,
-            updated_at = CURRENT_TIMESTAMP 
-           WHERE user_id = $4`,
-          [tokens, overageTokens, overageCost, userId]
-        );
-      } else {
-        // 已经没有免费额度了，全部超额
-        overageTokens = tokens;
-        overageCost = overageTokens * this.OVERAGE_RATE;
-
-        await this.pool.query(
+        await client.query(
           `UPDATE user_token_quotas SET 
             used_this_month = used_this_month + $1, 
             total_used = total_used + $1,
@@ -212,30 +230,110 @@ export class TokenQuotaService {
           [tokens, overageTokens, overageCost, userId]
         );
       }
+
+      // 记录消费明细
+      await this.recordTransactionInternal(client, userId, {
+        quotaId: quota.id,
+        tokensConsumed: tokens,
+        isOverage,
+        overageCost,
+        endpoint: options?.endpoint,
+        sourceType: options?.sourceType || 'api_call',
+        description: options?.description,
+        model: options?.model,
+        metadata: options?.metadata || {}
+      });
+
+      await client.query('COMMIT');
+
+      const newRemaining = Math.max(0, quota.monthly_limit - quota.used_this_month - tokens);
+
+      return {
+        allowed: true, // 总是允许（超额收费模式）
+        remaining: Math.max(0, newRemaining),
+        isOverage,
+        overageTokens,
+        overageCost: Math.round(overageCost * 100) / 100
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * 内部方法：在事务中使用 client 记录消费明细
+   */
+  private async recordTransactionInternal(
+    client: any,
+    userId: string,
+    data: {
+      quotaId?: string;
+      tokensConsumed: number;
+      isOverage: boolean;
+      overageCost: number;
+      endpoint?: string;
+      sourceType?: string;
+      description?: string;
+      model?: string;
+      metadata?: Record<string, any>;
+    }
+  ): Promise<TokenTransaction> {
+    const result = await client.query(
+      `INSERT INTO token_transactions 
+       (user_id, quota_id, tokens_consumed, is_overage, overage_cost, endpoint, source_type, description, model, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [
+        userId,
+        data.quotaId || null,
+        data.tokensConsumed,
+        data.isOverage,
+        data.overageCost,
+        data.endpoint || null,
+        data.sourceType || 'api_call',
+        data.description || null,
+        data.model || null,
+        JSON.stringify(data.metadata || {})
+      ]
+    );
+    return this.formatTransaction(result.rows[0]);
+  }
+
+  /**
+   * 内部方法：在事务中自动重置月度配额
+   */
+  private async autoResetMonthlyQuotaInternal(client: any, userId: string): Promise<boolean> {
+    const quota = await client.query(
+      'SELECT * FROM user_token_quotas WHERE user_id = $1',
+      [userId]
+    );
+
+    if (quota.rows.length === 0) {
+      return false;
     }
 
-    // 记录消费明细
-    await this.recordTransaction(userId, {
-      quotaId: quota.id,
-      tokensConsumed: tokens,
-      isOverage,
-      overageCost,
-      endpoint: options?.endpoint,
-      sourceType: options?.sourceType || 'api_call',
-      description: options?.description,
-      model: options?.model,
-      metadata: options?.metadata || {}
-    });
+    const q = quota.rows[0];
+    const now = new Date();
+    const lastReset = new Date(q.last_reset_at);
 
-    const newRemaining = Math.max(0, quota.monthly_limit - quota.used_this_month - tokens);
+    // 跨月即需要重置
+    if (lastReset.getFullYear() < now.getFullYear() || 
+        (lastReset.getFullYear() === now.getFullYear() && lastReset.getMonth() < now.getMonth())) {
+      await client.query(
+        `UPDATE user_token_quotas SET 
+          used_this_month = 0,
+          last_reset_at = CURRENT_TIMESTAMP,
+          updated_at = CURRENT_TIMESTAMP
+         WHERE user_id = $1`,
+        [userId]
+      );
+      return true;
+    }
 
-    return {
-      allowed: true, // 总是允许（超额收费模式）
-      remaining: Math.max(0, newRemaining),
-      isOverage,
-      overageTokens,
-      overageCost: Math.round(overageCost * 100) / 100
-    };
+    return false;
   }
 
   /**

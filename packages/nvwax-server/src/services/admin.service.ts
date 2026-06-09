@@ -1,6 +1,7 @@
 import { databaseService } from './database.service.js';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 export interface Admin {
   id: string;
@@ -23,6 +24,18 @@ export interface LoginResult {
 
 export class AdminService {
   private pool = databaseService.getPool();
+  
+  // Admin JWT配置：必须从环境变量读取
+  private readonly JWT_SECRET: string;
+  private readonly JWT_EXPIRES_IN = '8h'; // Admin token 8小时过期
+
+  constructor() {
+    const secret = process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('FATAL: ADMIN_JWT_SECRET or JWT_SECRET environment variable is required for admin authentication.');
+    }
+    this.JWT_SECRET = secret;
+  }
 
   // 创建管理员
   async createAdmin(username: string, password: string, email: string, name?: string, role: string = 'admin'): Promise<Admin> {
@@ -59,14 +72,12 @@ export class AdminService {
 
   // 管理员登录
   async login(username: string, password: string): Promise<LoginResult | null> {
-    console.log('[AdminService] Login attempt:', { username, passwordLength: password.length });
+    console.log('[AdminService] Login attempt:', { username, hasPassword: !!password });
     
     const admin = await this.getAdminByUsername(username);
     
     console.log('[AdminService] Admin found:', !!admin);
     if (admin) {
-      console.log('[AdminService] Stored password hash:', admin.password.substring(0, 20) + '...');
-      
       // 使用 bcrypt 验证密码
       const passwordMatch = await bcrypt.compare(password, admin.password);
       console.log('[AdminService] Password match:', passwordMatch);
@@ -88,13 +99,49 @@ export class AdminService {
       [admin.id]
     );
 
-    // 生成简单的 token（实际应用中应该使用 JWT）
-    const token = `admin_${admin.id}_${Date.now()}`;
+    // 生成 JWT token（使用 HS256 签名）
+    const token = jwt.sign(
+      {
+        sub: admin.id,      // subject: admin ID
+        username: admin.username,
+        role: admin.role,
+        type: 'admin'       // 区分用户token和admin token
+      },
+      this.JWT_SECRET,
+      {
+        expiresIn: this.JWT_EXPIRES_IN,
+        issuer: 'nvwax-admin'
+      }
+    );
 
     return {
       admin: { ...admin, password: '' }, // 不返回密码
       token
     };
+  }
+
+  /**
+   * 验证 Admin JWT token
+   */
+  verifyToken(token: string): { adminId: string; username: string; role: string } | null {
+    try {
+      const decoded = jwt.verify(token, this.JWT_SECRET, {
+        issuer: 'nvwax-admin'
+      }) as any;
+      
+      // 确保是 admin token
+      if (decoded.type !== 'admin') {
+        return null;
+      }
+      
+      return {
+        adminId: decoded.sub,
+        username: decoded.username,
+        role: decoded.role
+      };
+    } catch (error) {
+      return null;
+    }
   }
 
   // 更新管理员信息

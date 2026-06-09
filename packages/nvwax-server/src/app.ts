@@ -7,6 +7,7 @@ import routes from './routes/index.js';
 import { stripeWebhookRouter } from './routes/stripe-webhook.routes.js';
 import { databaseService } from './services/database.service.js';
 import { crawlerSchedulerService } from './services/crawler-scheduler.service.js';
+import { errorHandler, notFoundHandler } from './middleware/error-handler.middleware.js';
 
 const app = express();
 
@@ -15,7 +16,47 @@ app.use('/api/stripe/webhook', stripeWebhookRouter);
 
 // Middleware
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors());
+
+// CORS 配置：支持白名单
+const corsOptions: cors.CorsOptions = {
+  origin: function (origin, callback) {
+    // 允许的来源列表
+    const allowedOrigins = [
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+      'https://nvwax.proclaw.cc',
+      'https://www.nvwax.proclaw.cc',
+    ];
+    
+    // 从环境变量添加更多允许的来源
+    const additionalOrigins = process.env.CORS_ALLOWED_ORIGINS
+      ? process.env.CORS_ALLOWED_ORIGINS.split(',')
+      : [];
+    
+    allowedOrigins.push(...additionalOrigins);
+    
+    // 允许没有 origin 的请求（如移动端、Postman）
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // 检查 origin 是否在白名单中
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // 在开发环境下允许所有来源
+    if (config.nodeEnv === 'development') {
+      return callback(null, true);
+    }
+    
+    callback(new Error(`CORS policy violation: Origin ${origin} not allowed`));
+  },
+  credentials: true, // 允许发送 cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Plugin-Capabilities'],
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
@@ -28,11 +69,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
+// 404 处理
+app.use(notFoundHandler);
+
+// 全局错误处理中间件
+app.use(errorHandler);
 
 // Start server
 const PORT = config.port;
