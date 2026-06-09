@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService } from '../services/user.service.js';
 import { adminService } from '../services/admin.service.js';
-import '../types/express.d.js';
 
 /**
  * 通用认证中间件

@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { userService } from '../services/user.service.js';
-import '../types/express.d.js';
 
 export function userAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   let token: string | undefined;

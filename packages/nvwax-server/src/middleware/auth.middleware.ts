@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { adminService } from '../services/admin.service.js';
-import '../types/express.d.js';
 
 /**
  * Admin 认证中间件

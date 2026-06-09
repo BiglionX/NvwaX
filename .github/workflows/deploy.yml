@@ -22,6 +22,7 @@ jobs:
           host: 43.156.133.180
           username: ubuntu
           key: ${{ secrets.SERVER_SSH_KEY }}
+          timeout: 30m
           script: |
             set -e
             echo "🚀 Starting deployment..."
@@ -32,9 +33,6 @@ jobs:
               git clone https://github.com/BiglionX/NvwaX.git /opt/nvwax
             fi
             cd /opt/nvwax
-            echo "🧹 Cleaning disk before pull..."
-            docker system prune -a -f --volumes 2>/dev/null || true
-            docker builder prune -a -f 2>/dev/null || true
             echo "📥 Pulling latest code..."
             git pull origin main
             echo "🔐 Setting up environment secrets..."
