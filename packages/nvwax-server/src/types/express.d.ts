@@ -1,4 +1,4 @@
-import 'express';
+/// <reference types="express" />
 
 // 用户认证信息
 export interface UserAuthInfo {
