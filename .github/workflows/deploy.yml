@@ -39,13 +39,15 @@ jobs:
             git pull origin main
             echo "🔐 Setting up environment secrets..."
             # 使用 sed 替换已有值或追加新值，确保每次部署都更新
-            for key in GOOGLE_CLIENT_ID NEXT_PUBLIC_GOOGLE_CLIENT_ID DEEPSEEK_API_KEY JWT_SECRET STRIPE_SECRET_KEY; do
+            for key in GOOGLE_CLIENT_ID NEXT_PUBLIC_GOOGLE_CLIENT_ID DEEPSEEK_API_KEY JWT_SECRET STRIPE_SECRET_KEY CROSS_AUTH_SECRET ADMIN_JWT_SECRET; do
               case "$key" in
                 GOOGLE_CLIENT_ID) val="${{ secrets.GOOGLE_CLIENT_ID }}" ;;
                 NEXT_PUBLIC_GOOGLE_CLIENT_ID) val="${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}" ;;
                 DEEPSEEK_API_KEY) val="${{ secrets.DEEPSEEK_API_KEY }}" ;;
                 JWT_SECRET) val="${{ secrets.JWT_SECRET }}" ;;
                 STRIPE_SECRET_KEY) val="${{ secrets.STRIPE_SECRET_KEY }}" ;;
+                CROSS_AUTH_SECRET) val="${{ secrets.CROSS_AUTH_SECRET }}" ;;
+                ADMIN_JWT_SECRET) val="${{ secrets.ADMIN_JWT_SECRET }}" ;;
               esac
               if grep -q "^${key}=" /opt/nvwax/.env 2>/dev/null; then
                 sed -i "s|^${key}=.*|${key}=${val}|" /opt/nvwax/.env
