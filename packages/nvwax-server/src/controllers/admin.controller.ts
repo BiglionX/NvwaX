@@ -63,7 +63,7 @@ export class AdminController {
   // 更新管理员信息
   async updateProfile(req: Request, res: Response) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
       const { name, email, avatar } = req.body;
 
       const admin = await adminService.updateAdmin(adminId, { name, email, avatar });
@@ -84,7 +84,7 @@ export class AdminController {
   // 修改密码
   async changePassword(req: Request, res: Response) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
       const { oldPassword, newPassword } = req.body;
 
       if (!oldPassword || !newPassword) {
@@ -128,7 +128,7 @@ export class AdminController {
       }
 
       const admin = await adminService.createAdmin(username, password, email, name, role || 'admin');
-      await adminService.logAction('info', 'CREATE_ADMIN', req.admin.id, `Created admin: ${username}`, req.ip);
+      await adminService.logAction('info', 'CREATE_ADMIN', req.admin!.id, `Created admin: ${username}`, req.ip);
 
       res.status(201).json({ data: { ...admin, password: undefined } });
     } catch (error: any) {
@@ -145,7 +145,7 @@ export class AdminController {
     try {
       const { id } = req.params;
 
-      if (id === req.admin.id) {
+      if (id === req.admin!.id) {
         return res.status(400).json({ error: 'Cannot delete yourself' });
       }
 
@@ -155,7 +155,7 @@ export class AdminController {
         return res.status(404).json({ error: 'Admin not found' });
       }
 
-      await adminService.logAction('warning', 'DELETE_ADMIN', req.admin.id, `Deleted admin: ${id}`, req.ip);
+      await adminService.logAction('warning', 'DELETE_ADMIN', req.admin!.id, `Deleted admin: ${id}`, req.ip);
 
       res.json({ message: 'Admin deleted successfully' });
     } catch (error) {
@@ -302,7 +302,7 @@ export class AdminController {
    */
   async triggerCrawler(req: Request, res: Response) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
       
       // 记录操作日志
       await adminService.logAction('info', 'TRIGGER_CRAWLER', adminId, 'Manual crawler triggered', req.ip);
@@ -332,7 +332,7 @@ export class AdminController {
    */
   async updateCrawlerConfig(req: Request, res: Response) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
       const { intervalHours } = req.body;
 
       if (!intervalHours || intervalHours < 1 || intervalHours > 168) {
@@ -401,7 +401,7 @@ export class AdminController {
    */
   async cleanOldAgents(req: Request, res: Response) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
       const { days } = req.body;
       
       if (!days || days < 1 || days > 365) {
@@ -566,7 +566,7 @@ export class AdminController {
     try {
       const { id } = req.params;
       const { reason } = req.body;
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
 
       if (!id || Array.isArray(id)) {
         return res.status(400).json({ error: 'User ID is required' });
@@ -595,7 +595,7 @@ export class AdminController {
   async unbanUser(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
 
       if (!id || Array.isArray(id)) {
         return res.status(400).json({ error: 'User ID is required' });
@@ -661,7 +661,7 @@ export class AdminController {
     try {
       const { id } = req.params;
       const { approved, notes } = req.body;
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
 
       if (!id || Array.isArray(id)) {
         return res.status(400).json({ error: 'Project ID is required' });
@@ -695,7 +695,7 @@ export class AdminController {
     try {
       const { id } = req.params;
       const { reason } = req.body;
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
 
       if (!id || Array.isArray(id)) {
         return res.status(400).json({ error: 'Project ID is required' });
@@ -724,7 +724,7 @@ export class AdminController {
   async restoreProject(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
 
       if (!id || Array.isArray(id)) {
         return res.status(400).json({ error: 'Project ID is required' });
@@ -788,7 +788,7 @@ export class AdminController {
   // 清理系统缓存
   async clearCache(req: Request, res: Response) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
 
       // 这里可以添加实际的缓存清理逻辑
       // 例如：清理 Redis、清理内存缓存等
@@ -868,7 +868,7 @@ export class AdminController {
   async sendSystemAnnouncement(req: Request, res: Response) {
     try {
       const { title, message, priority = 'high' } = req.body;
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
 
       if (!title || !message) {
         return res.status(400).json({ error: 'Title and message are required' });
@@ -912,7 +912,7 @@ export class AdminController {
   // 数据库备份
   async backupDatabase(req: Request, res: Response) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
 
       // 生成备份文件名
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -1034,7 +1034,7 @@ export class AdminController {
    */
   async resetMonthlyQuotas(req: Request, res: Response) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
       const count = await tokenQuotaService.resetAllMonthlyQuotas();
       
       await adminService.logAction('info', 'RESET_TOKEN_QUOTAS', adminId,
@@ -1056,7 +1056,7 @@ export class AdminController {
    */
   async toggleInternalTeam(req: Request, res: Response) {
     try {
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
       const userId = req.params.userId as string;
 
       if (!userId) {
@@ -1196,7 +1196,7 @@ export class AdminController {
   async confirmTokenOrder(req: Request, res: Response) {
     try {
       const orderId = req.params.id as string;
-      const adminId = req.admin.id;
+      const adminId = req.admin!.id;
 
       const order = await paymentService.confirmOrder(orderId, adminId);
       if (!order) {

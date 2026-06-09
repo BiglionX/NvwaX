@@ -21,7 +21,7 @@ export class TeamSkillController {
       }
 
       // TODO: 从认证中间件获取用户 ID
-      const authorId = req.user?.id || null;
+      const authorId: string | undefined = req.user?.id;
 
       const teamSkill = await teamSkillService.createTeamSkill({
         name,
