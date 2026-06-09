@@ -33,6 +33,9 @@ jobs:
               git clone https://github.com/BiglionX/NvwaX.git /opt/nvwax
             fi
             cd /opt/nvwax
+            echo "🧹 Discarding local changes..."
+            git fetch origin main
+            git reset --hard origin/main
             echo "📥 Pulling latest code..."
             git pull origin main
             echo "🔐 Setting up environment secrets..."
