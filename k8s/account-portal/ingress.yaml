@@ -1,0 +1,38 @@
+# Public Ingress for https://account.proclaw.cc
+# cert-manager will issue a Let's Encrypt cert and store it in `proclaw-account-tls`.
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: proclaw-account
+  namespace: proclaw
+  annotations:
+    # cert-manager: ask letsencrypt-prod to issue a cert for this host.
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Tell nginx to forward the original protocol so the backend can set Secure cookies.
+    nginx.ingress.kubernetes.io/proxy-body-size: 1m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header X-Forwarded-Proto $scheme;
+    # HSTS — force HTTPS for one year, including subdomains.
+    nginx.ingress.kubernetes.io/server-snippet: |
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+  labels:
+    app: proclaw-account
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - account.proclaw.cc
+      secretName: proclaw-account-tls
+  rules:
+    - host: account.proclaw.cc
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: proclaw-account-backend
+                port:
+                  number: 80
