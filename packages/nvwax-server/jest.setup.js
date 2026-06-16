@@ -1,5 +1,5 @@
-// Jest 全局设置 - CommonJS format
-const dotenv = require('dotenv');
+// Jest 全局设置 - ESM format
+import dotenv from 'dotenv';
 
 // 加载环境变量（使用测试环境配置）
 dotenv.config({ path: '.env.test' });

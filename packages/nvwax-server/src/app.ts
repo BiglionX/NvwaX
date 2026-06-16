@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { config } from './config/index.js';
 import routes from './routes/index.js';
+import oidcRouter from './routes/oidc.routes.js';
+import { oidcTokenService } from './services/oidc/oidc-token.service.js';
 import { stripeWebhookRouter } from './routes/stripe-webhook.routes.js';
 import { databaseService } from './services/database.service.js';
 import { crawlerSchedulerService } from './services/crawler-scheduler.service.js';
@@ -25,6 +27,9 @@ const corsOptions: cors.CorsOptions = {
       process.env.FRONTEND_URL || 'http://localhost:3000',
       'https://nvwax.proclaw.cc',
       'https://www.nvwax.proclaw.cc',
+      // Sprint 1 — OIDC IdP (account.proclaw.cc) 允许从 RP 发起跨域请求
+      'https://account.proclaw.cc',
+      'http://account.proclaw.cc',
     ];
     
     // 从环境变量添加更多允许的来源
@@ -62,6 +67,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
 // Routes
+// Sprint 1 — OIDC IdP 端点（根路径挂载，绕过 /api）
+app.use(oidcRouter);
 app.use('/api', routes);
 
 // Health check
@@ -80,7 +87,16 @@ const PORT = config.port;
 app.listen(PORT, async () => {
   console.log(`NvwaX Server is running on http://localhost:${PORT}`);
   console.log(`Environment: ${config.nodeEnv}`);
-  
+
+  // 初始化 OIDC 密钥（Sprint 1）
+  try {
+    await oidcTokenService.initialize();
+    console.log('✓ OIDC keys loaded (issuer=' + oidcTokenService.getIssuer() + ')');
+  } catch (error) {
+    console.error('Failed to initialize OIDC keys:', error);
+    process.exit(1);
+  }
+
   // 初始化数据库
   try {
     await databaseService.initializeDatabase();

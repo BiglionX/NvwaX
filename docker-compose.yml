@@ -42,6 +42,9 @@ services:
       ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
       FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
+      # Sprint 1 — OIDC IdP
+      OIDC_ISSUER: ${OIDC_ISSUER:-https://account.proclaw.cc}
+      OIDC_PRIVATE_KEY_PATH: ${OIDC_PRIVATE_KEY_PATH:-}
     ports:
       - "${BACKEND_PORT:-3001}:3001"
     depends_on:
@@ -104,6 +107,8 @@ services:
       - "443:443"
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Sprint 1 — OIDC IdP 路由 + self-signed SSL
+      - ./docker/nginx/account.proclaw.cc.conf:/etc/nginx/conf.d/account.proclaw.cc.conf:ro
       - ./docker/nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - frontend
