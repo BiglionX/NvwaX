@@ -354,7 +354,7 @@ export class UserService {
   async getUserById(id: string): Promise<User | null> {
     const result = await this.pool.query('SELECT * FROM users WHERE id = $1', [id]);
     if (result.rows.length === 0) return null;
-    
+
     return this.formatUser(result.rows[0]);
   }
 
@@ -362,8 +362,49 @@ export class UserService {
   async getUserByEmail(email: string): Promise<User | null> {
     const result = await this.pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (result.rows.length === 0) return null;
-    
+
     return this.formatUser(result.rows[0]);
+  }
+
+  // ───────── Sprint 2 激活状态 ─────────
+
+  /**
+   * 把用户标记为已激活（Sprint 2 邮件激活链路）。
+   * Idempotent: repeated calls just refresh activated_at.
+   */
+  async markUserActive(userId: string): Promise<void> {
+    await this.pool.query(
+      `UPDATE users
+          SET is_active = TRUE,
+              activated_at = COALESCE(activated_at, CURRENT_TIMESTAMP)
+        WHERE id = $1`,
+      [userId],
+    );
+  }
+
+  async isUserActive(userId: string): Promise<boolean> {
+    const result = await this.pool.query(
+      'SELECT is_active FROM users WHERE id = $1',
+      [userId],
+    );
+    if (result.rowCount === 0) return false;
+    return Boolean(result.rows[0].is_active);
+  }
+
+  /**
+   * Mark a freshly-registered user as not-yet-activated. Activation
+   * (via the email link) flips is_active to TRUE.
+   */
+  async markUserInactive(userId: string): Promise<void> {
+    try {
+      await this.pool.query(
+        'UPDATE users SET is_active = FALSE WHERE id = $1',
+        [userId],
+      );
+    } catch (err) {
+      // Older DBs without the is_active column — ignore so the legacy
+      // registerUser() contract still works.
+    }
   }
 
   // 用户登录

@@ -42,6 +42,17 @@ services:
       ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
       FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
+      # Sprint 1 — OIDC IdP
+      OIDC_ISSUER: ${OIDC_ISSUER:-https://account.proclaw.cc}
+      OIDC_PRIVATE_KEY_PATH: ${OIDC_PRIVATE_KEY_PATH:-}
+      # Sprint 2 — pc_session cookie + email channel
+      PC_SESSION_SECRET: ${PC_SESSION_SECRET:-dev-only-pc-session-secret}
+      PC_SESSION_COOKIE_DOMAIN: ${PC_SESSION_COOKIE_DOMAIN:-.proclaw.cc}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_FROM: ${SMTP_FROM:-ProClaw 团队 <noreply@account.proclaw.cc>}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
     ports:
       - "${BACKEND_PORT:-3001}:3001"
     depends_on:
@@ -104,6 +115,8 @@ services:
       - "443:443"
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Sprint 1 — OIDC IdP 路由 + self-signed SSL
+      - ./docker/nginx/account.proclaw.cc.conf:/etc/nginx/conf.d/account.proclaw.cc.conf:ro
       - ./docker/nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - frontend
@@ -112,6 +125,18 @@ services:
       - nvwax-network
     profiles:
       - production
+
+  # Sprint 2 — MailPit (SMTP sink for dev/test e2e). NOT used in production.
+  # Web UI on http://localhost:8025  •  SMTP on :1025 (no auth).
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: nvwax-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+    networks:
+      - nvwax-network
 
 volumes:
   postgres_data:

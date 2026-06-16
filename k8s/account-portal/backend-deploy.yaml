@@ -1,0 +1,142 @@
+# Backend Deployment + Service for the ProClaw account portal.
+# The backend serves:
+#   - /oauth/*             (Sprint 1 OIDC IdP, frozen)
+#   - /api/portal/*        (Sprint 2 account endpoints)
+#   - /portal/*            (Sprint 2 static export from account-portal/out)
+#   - /.well-known/*       (Sprint 1 discovery)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proclaw-account-backend
+  namespace: proclaw
+  labels:
+    app: proclaw-account-backend
+    app.kubernetes.io/component: oidc-idp
+    app.kubernetes.io/part-of: proclaw
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: proclaw-account-backend
+  template:
+    metadata:
+      labels:
+        app: proclaw-account-backend
+      annotations:
+        # Force a rolling restart when the secret rotation job updates the secret
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: backend
+          image: ghcr.io/proclaw/account-backend:1.0.0   # build via CI from nvwax-server
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3001
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3001"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: proclaw-account-secrets
+                  key: database-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: proclaw-account-secrets
+                  key: jwt-secret
+            - name: CROSS_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: proclaw-account-secrets
+                  key: cross-auth-secret
+            - name: OIDC_ISSUER
+              value: "https://account.proclaw.cc"
+            - name: OIDC_PRIVATE_KEY_PATH
+              value: /etc/oidc/keys/private.pem
+            - name: PC_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: proclaw-account-secrets
+                  key: pc-session-secret
+            - name: PC_SESSION_COOKIE_DOMAIN
+              value: ".proclaw.cc"
+            - name: SMTP_HOST
+              value: email-smtp.us-east-1.amazonaws.com
+            - name: SMTP_PORT
+              value: "587"
+            - name: SMTP_FROM
+              value: "ProClaw 团队 <noreply@account.proclaw.cc>"
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: aws-ses-credentials
+                  key: smtp-user
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: aws-ses-credentials
+                  key: smtp-pass
+          volumeMounts:
+            - name: oidc-private-key
+              mountPath: /etc/oidc/keys
+              readOnly: true
+            - name: account-portal-static
+              mountPath: /app/account-portal/out
+              readOnly: true
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: oidc-private-key
+          secret:
+            secretName: proclaw-oidc-keys
+        - name: account-portal-static
+          # Build the static export (`pnpm --filter account-portal build`) and
+          # bake it into the image OR mount a shared PVC. The CI pipeline
+          # currently bakes it into the backend image at /app/account-portal/out.
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: proclaw-account-backend
+  namespace: proclaw
+  labels:
+    app: proclaw-account-backend
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app: proclaw-account-backend
