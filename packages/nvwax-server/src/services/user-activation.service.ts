@@ -10,7 +10,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { databaseService } from '../database.service.js';
+import { databaseService } from './database.service.js';
 
 const TOKEN_TTL_HOURS = 24;
 const TOKEN_BYTES = 32;
@@ -106,10 +106,10 @@ class UserActivationService {
          ORDER BY created_at DESC`,
       [userId],
     );
-    return result.rows.map((r) => ({
-      token: r.token as string,
-      userId: r.user_id as string,
-      expiresAt: new Date(r.expires_at as string),
+    return result.rows.map((r: { token: string; user_id: string; expires_at: string }) => ({
+      token: r.token,
+      userId: r.user_id,
+      expiresAt: new Date(r.expires_at),
     }));
   }
 }

@@ -8,10 +8,10 @@
 
 import { describe, it, expect, beforeAll, beforeEach, jest } from '@jest/globals';
 
-const mockSendMail = jest.fn(async () => ({ messageId: 'mock-msg-id' }));
-const mockVerify = jest.fn(async () => true);
+const mockSendMail: jest.Mock = jest.fn(async () => ({ messageId: 'mock-msg-id' }));
+const mockVerify: jest.Mock = jest.fn(async () => true);
 
-const mockCreateTransport = jest.fn(() => ({
+const mockCreateTransport: jest.Mock = jest.fn(() => ({
   sendMail: mockSendMail,
   verify: mockVerify,
 }));

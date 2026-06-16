@@ -8,10 +8,10 @@
 
 import { describe, it, expect, beforeAll, beforeEach, jest } from '@jest/globals';
 
-const mockGetPool = jest.fn();
-const mockGetClient = jest.fn();
-const mockIssueAuthorizationCode = jest.fn();
-const mockVerifyScope = jest.fn();
+const mockGetPool = jest.fn() as jest.Mock;
+const mockGetClient = jest.fn() as jest.Mock;
+const mockIssueAuthorizationCode = jest.fn() as jest.Mock;
+const mockVerifyScope = jest.fn() as jest.Mock;
 
 jest.unstable_mockModule('../../database.service.js', () => ({
   databaseService: { getPool: mockGetPool },
@@ -26,7 +26,7 @@ jest.unstable_mockModule('../../../services/oidc/oidc.service.js', () => ({
 }));
 
 // Mocks for token service / issuer
-const mockGetIssuer = jest.fn(() => 'https://account.proclaw.cc');
+const mockGetIssuer = jest.fn(() => 'https://account.proclaw.cc') as jest.Mock;
 jest.unstable_mockModule('../../../services/oidc/oidc-token.service.js', () => ({
   oidcTokenService: { getIssuer: mockGetIssuer },
 }));
@@ -101,12 +101,12 @@ describe('oidcController.authorizeGet() — cookie fast-path (Task 2.10)', () =>
     mockGetClient.mockReset();
     mockIssueAuthorizationCode.mockReset();
     mockVerifyScope.mockReset();
-    mockGetClient.mockResolvedValue({
+    mockGetClient.mockImplementation(() => Promise.resolve({
       redirect_uris: ['https://rp.example.com/callback'],
       allowed_scopes: ['openid', 'profile', 'email'],
-    });
+    }));
     mockVerifyScope.mockImplementation((req) => req);
-    mockIssueAuthorizationCode.mockResolvedValue('CODE-XYZ');
+    mockIssueAuthorizationCode.mockImplementation(() => Promise.resolve('CODE-XYZ'));
   });
 
   it('302-redirects with code= when pc_session is valid', async () => {
