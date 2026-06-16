@@ -1,0 +1,81 @@
+# gitleaks 8.x configuration for NvwaX
+# 文档: https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+#
+# 触发原因:.env.example L30 历史 commit 泄露 DeepSeek API key
+# `sk-859b91e6d4514da0b61a609666cc506a`,已 rotate,本配置防止再发生
+
+title = "NvwaX Secret Scanning"
+
+# 允许文件:测试用 mock secret / 已知安全的占位符
+[allowlist]
+description = "global allowlist"
+paths = [
+  '''(.*?)(jpg|gif|doc|docx|zip|xls|pdf|bin|svg|socket)$''',
+  '''(go.mod|go.sum)$''',
+  '''\.lock$''',
+  '''pnpm-lock\.yaml$''',
+]
+# 测试代码里 mock 的假 secret,可加到这里避免误报
+# regexes = [
+#   "test-secret-mock-[a-z0-9]+",
+# ]
+
+# ──────────── 自定义规则:针对本仓库用到的服务 ────────────
+
+# DeepSeek API key 格式:`sk-` + 32 位 hex
+[[rules]]
+id = "deepseek-api-key"
+description = "DeepSeek API Key"
+regex = '''sk-[a-f0-9]{32}'''
+tags = ["secret", "ai-provider", "deepseek"]
+
+# 兜底:防止有人把 `sk-` 前缀打错(本地 .env 曾出现 `sk-sk-...`)
+[[rules]]
+id = "deepseek-api-key-double-prefix"
+description = "DeepSeek API Key (double sk- prefix typo)"
+regex = '''sk-sk-[a-f0-9]{32}'''
+tags = ["secret", "ai-provider", "deepseek"]
+
+# GitHub Personal Access Token (classic + fine-grained)
+[[rules]]
+id = "github-pat-classic"
+description = "GitHub Personal Access Token (classic)"
+regex = '''ghp_[a-zA-Z0-9]{36}'''
+tags = ["secret", "github"]
+
+[[rules]]
+id = "github-fine-grained-pat"
+description = "GitHub Fine-Grained Personal Access Token"
+regex = '''github_pat_[a-zA-Z0-9_]{82}'''
+tags = ["secret", "github"]
+
+# AWS Access Key
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key ID"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["secret", "aws"]
+
+# Stripe Live Secret Key
+[[rules]]
+id = "stripe-live-secret"
+description = "Stripe Live Secret Key"
+regex = '''sk_live_[0-9a-zA-Z]{24,}'''
+tags = ["secret", "stripe"]
+
+# Slack Bot Token
+[[rules]]
+id = "slack-bot-token"
+description = "Slack Bot Token"
+regex = '''xox[baprs]-[0-9a-zA-Z]{10,}'''
+tags = ["secret", "slack"]
+
+# OpenAI API Key(若日后引入)
+[[rules]]
+id = "openai-api-key"
+description = "OpenAI API Key"
+regex = '''sk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}'''
+tags = ["secret", "ai-provider", "openai"]
+
+# gitleaks 内置规则默认启用,涵盖通用 secret 模式;
+# 上方自定义规则针对本仓库特定服务做补充。
