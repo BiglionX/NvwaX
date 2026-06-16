@@ -68,6 +68,8 @@ jobs:
                 echo "${key}=${val}" >> /opt/nvwax/.env
               fi
             done
+            echo "🔐 Generating OIDC keys (if missing)..."
+            bash /opt/nvwax/scripts/generate-oidc-keys.sh
             echo " Stopping old containers..."
             docker-compose down
             echo " Building and starting containers..."
