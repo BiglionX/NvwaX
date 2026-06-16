@@ -127,8 +127,6 @@ services:
       - backend
     networks:
       - nvwax-network
-    profiles:
-      - production
 
   # Sprint 2 — MailPit (SMTP sink for dev/test e2e). NOT used in production.
   # Web UI on http://localhost:8025  •  SMTP on :1025 (no auth).
