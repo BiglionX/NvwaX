@@ -7,6 +7,57 @@
 
 ---
 
+## [1.6.0] - 2026-06-16
+
+### ✨ 新增功能
+
+#### Account Portal (Sprint 2 — ProClaw 白标)
+- **公开账户门户** `account.proclaw.cc`:Next.js 14 静态导出，注册 / 登录 / 激活 全闭环
+- **ProClaw 白标** UI:紫色 `#6D4AFF` 主色 + SVG Logo + 中英双语 i18n
+- **0 个 NvwaX 字符串** 出现在 portal 静态资源与邮件中
+- **跨子域 SSO**：`pc_session` cookie（Domain=`.proclaw.cc`, HttpOnly, Secure(产), SameSite=Lax, 24h TTL）
+- **用户注册 + 邮箱激活** 流程：密码强度校验 (≥10 字符 + 字母 + 数字) + 24h 激活链接
+- **authorizeGet SSO 快路径**：cookie 命中时直接签 `code` + 302 跳转（无 cookie 仍走原表单，完全 additive）
+- **4 个 RP 客户端 seed**：`proclaw-desktop` / `proclaw-web` / `proclaw-mobile` / `skillhub-web`
+- **AWS SES 邮件通道**：nodemailer 封装，开发环境 MailPit，生产 SES
+
+#### Kubernetes 部署
+- `k8s/account-portal/backend-deploy.yaml`：2 replicas，env 注入 + OIDC 私钥挂载
+- `k8s/account-portal/ingress.yaml`：cert-manager annotation + HSTS + TLS 1.2+
+- `k8s/account-portal/cert-issuer.yaml`：letsencrypt-prod（Cloudflare DNS-01）+ staging
+- `docs/runbooks/account.proclaw.cc.md`：部署 / 验证 / 回滚 / 监控 / 故障排查手册
+
+### 🔧 优化改进
+
+- **Sprint 1 协议契约冻结**：[ADR-004](docs/adr/ADR-004-oidc-contract-freeze.md) 显式声明 6 端点 / 6 错误码 / JWT claims / issuer 全部未动
+- 新增端点全部走 `/api/portal/*` 与 `/portal/*` 命名空间，与 OIDC `/oauth/*` 完全分离
+- `pc_session` 密钥 `PC_SESSION_SECRET` 独立于 `JWT_SECRET`，旋转不互相影响
+- 测试套件 6 套件 / 41 用例全过（Sprint 1 23 + Sprint 2 18 新增）
+
+### 🐛 Bug 修复
+
+- **DeepSeek API key 泄露修复**：`.env.example` L30 历史 commit 包含真 key `sk-859b91e6...`，已在 DeepSeek 后台 rotate 并清空占位符
+- `.env.example` 顶部加 WARNING 注释，明确模板与真值区别
+- L4 `DB_PASSWORD` 弱密码占位符替换
+
+### 🔒 安全
+
+- **新增 gitleaks CI 扫描**：`.gitleaks.toml` + `.github/workflows/gitleaks.yml`
+  - 自定义规则覆盖 DeepSeek / GitHub PAT / AWS / Stripe / Slack / OpenAI
+  - fetch-depth: 0 扫全历史
+  - SARIF 报告上传到 GitHub Security tab
+  - 任何 PR 包含 secret 格式字符串自动阻断
+- `.env` / `.env.local` / `.env.production` 全部 gitignore（已确认）
+
+### 📚 文档更新
+
+- `docs/adr/ADR-004-oidc-contract-freeze.md` 协议契约冻结
+- `docs/runbooks/account.proclaw.cc.md` 部署运行手册
+- `e2e/{oidc-flow,cookie-sso,email-grep,no-nvwax}.spec.ts` Playwright 端到端
+- `packages/account-portal/README.md` Portal 开发说明
+
+---
+
 ## [1.5.0] - 2026-05-18
 
 ### ✨ 新增功能
