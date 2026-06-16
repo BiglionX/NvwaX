@@ -1,0 +1,33 @@
+name: gitleaks
+
+# 触发条件:与 ci.yml 对齐,覆盖 main / develop / feature/** 分支的 push 与 PR
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  gitleaks:
+    name: Scan for hardcoded secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          # 必须 fetch 全历史,否则只能扫最新 commit
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 使用仓库根的 .gitleaks.toml
+          GITLEAKS_CONFIG: .gitleaks.toml
+          # 上传 SARIF 报告到 GitHub Security tab(需勾选 Actions 权限)
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
+          GITLEAKS_ENABLE_SUMMARY: true
