@@ -1,0 +1,28 @@
+{
+  "name": "account-portal",
+  "version": "2.0.0",
+  "private": true,
+  "description": "ProClaw account portal (white-labeled login/register/activate UI). Static export served by nvwax-server at /portal/*.",
+  "scripts": {
+    "dev": "next dev -p 3003",
+    "build": "next build",
+    "start": "next start -p 3003",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test __tests__/*.test.mjs"
+  },
+  "dependencies": {
+    "next": "14.2.18",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.10",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "typescript": "5.5.4"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}
