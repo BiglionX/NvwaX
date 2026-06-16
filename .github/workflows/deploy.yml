@@ -40,7 +40,7 @@ jobs:
             git pull origin main
             echo "🔐 Setting up environment secrets..."
             # 使用 sed 替换已有值或追加新值，确保每次部署都更新
-            for key in GOOGLE_CLIENT_ID NEXT_PUBLIC_GOOGLE_CLIENT_ID DEEPSEEK_API_KEY JWT_SECRET STRIPE_SECRET_KEY CROSS_AUTH_SECRET ADMIN_JWT_SECRET; do
+            for key in GOOGLE_CLIENT_ID NEXT_PUBLIC_GOOGLE_CLIENT_ID DEEPSEEK_API_KEY JWT_SECRET STRIPE_SECRET_KEY CROSS_AUTH_SECRET ADMIN_JWT_SECRET PC_SESSION_SECRET OIDC_PRIVATE_KEY_PATH SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_FROM; do
               case "$key" in
                 GOOGLE_CLIENT_ID) val="${{ secrets.GOOGLE_CLIENT_ID }}" ;;
                 NEXT_PUBLIC_GOOGLE_CLIENT_ID) val="${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}" ;;
@@ -49,7 +49,19 @@ jobs:
                 STRIPE_SECRET_KEY) val="${{ secrets.STRIPE_SECRET_KEY }}" ;;
                 CROSS_AUTH_SECRET) val="${{ secrets.CROSS_AUTH_SECRET }}" ;;
                 ADMIN_JWT_SECRET) val="${{ secrets.ADMIN_JWT_SECRET }}" ;;
+                PC_SESSION_SECRET) val="${{ secrets.PC_SESSION_SECRET }}" ;;
+                OIDC_PRIVATE_KEY_PATH) val="${{ secrets.OIDC_PRIVATE_KEY_PATH }}" ;;
+                SMTP_HOST) val="${{ secrets.SMTP_HOST }}" ;;
+                SMTP_PORT) val="${{ secrets.SMTP_PORT }}" ;;
+                SMTP_USER) val="${{ secrets.SMTP_USER }}" ;;
+                SMTP_PASS) val="${{ secrets.SMTP_PASS }}" ;;
+                SMTP_FROM) val="${{ secrets.SMTP_FROM }}" ;;
               esac
+              # 仅当 secret 实际有值时才更新（避免空值覆盖已有配置）
+              if [ -z "$val" ]; then
+                echo "⏭️  Skipping $key (empty in GitHub Secrets)"
+                continue
+              fi
               if grep -q "^${key}=" /opt/nvwax/.env 2>/dev/null; then
                 sed -i "s|^${key}=.*|${key}=${val}|" /opt/nvwax/.env
               else
