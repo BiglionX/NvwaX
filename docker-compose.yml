@@ -122,6 +122,9 @@ services:
       # Sprint 1 — OIDC IdP 路由 + self-signed SSL
       - ./docker/nginx/account.proclaw.cc.conf:/etc/nginx/conf.d/account.proclaw.cc.conf:ro
       - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      # Sprint 1 — Let's Encrypt 证书（certbot 签发后从宿主机 /etc/letsencrypt/ 挂入容器）
+      # 续期后 certbot 只需 update 宿主机文件，容器内自动可见，重启 nginx 生效
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - frontend
       - backend
