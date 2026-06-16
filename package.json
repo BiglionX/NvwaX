@@ -8,12 +8,19 @@
     "build": "pnpm --recursive --filter './packages/**' build || true",
     "build:web": "pnpm --filter nvwax-web build",
     "build:server": "pnpm --filter nvwax-server build",
+    "build:portal": "pnpm --filter account-portal build",
     "build:sdk": "pnpm --filter @nvwax/sdk build",
     "lint": "pnpm --recursive lint || true",
     "test": "pnpm --recursive test || true",
+    "test:server": "pnpm --filter nvwax-server test",
+    "test:portal": "pnpm --filter account-portal test",
+    "e2e": "playwright test --config=e2e/playwright.config.ts",
+    "e2e:headed": "playwright test --config=e2e/playwright.config.ts --headed",
+    "e2e:install": "playwright install --with-deps chromium",
     "clean": "pnpm --recursive clean || true"
   },
   "devDependencies": {
+    "@playwright/test": "1.48.2",
     "typescript": "^5.0.0"
   },
   "engines": {

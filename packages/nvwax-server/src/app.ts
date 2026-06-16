@@ -2,14 +2,23 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { config } from './config/index.js';
 import routes from './routes/index.js';
 import oidcRouter from './routes/oidc.routes.js';
+import portalRouter from './routes/portal.routes.js';
+import { pcSessionService } from './middleware/pc-session.middleware.js';
 import { oidcTokenService } from './services/oidc/oidc-token.service.js';
 import { stripeWebhookRouter } from './routes/stripe-webhook.routes.js';
 import { databaseService } from './services/database.service.js';
 import { crawlerSchedulerService } from './services/crawler-scheduler.service.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.middleware.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PORTAL_STATIC_DIR = path.resolve(__dirname, '../../account-portal/out');
 
 const app = express();
 
@@ -64,11 +73,35 @@ const corsOptions: cors.CorsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); // Sprint 2 — pc_session cookie parsing
 app.use(morgan('dev'));
+
+// Sprint 2 — pc-session middleware: attaches req.sessionUser if pc_session cookie is valid.
+// Note: this only annotates; portal.controller issues/clears the cookie.
+app.use(pcSessionService.middleware());
+
+// Sprint 2 — serve account-portal static export at /portal/* (Next.js `output: 'export'`).
+// Falls through to API routes for non-asset requests so /api/portal/* still works.
+app.use(
+  '/portal',
+  express.static(PORTAL_STATIC_DIR, {
+    // HTML pages use trailingSlash; assets are content-hashed.
+    maxAge: '1h',
+    setHeaders(res, file) {
+      if (file.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=3600, immutable');
+      }
+    },
+  }),
+);
 
 // Routes
 // Sprint 1 — OIDC IdP 端点（根路径挂载，绕过 /api）
 app.use(oidcRouter);
+// Sprint 2 — Portal account endpoints under /api
+app.use('/api/portal', portalRouter);
 app.use('/api', routes);
 
 // Health check

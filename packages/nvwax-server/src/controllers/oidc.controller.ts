@@ -94,6 +94,36 @@ class OidcController {
       return;
     }
 
+    // Sprint 2 — 优先查 pc_session cookie；命中则直接签 code 跳转（SSO 体验）
+    // req.sessionUser 由 pcSessionService.middleware() 写入
+    const sessionUser = req.sessionUser;
+    if (sessionUser && sessionUser.id) {
+      try {
+        const effectiveScope = oidcService.verifyScope(params.scope || 'openid', client.allowed_scopes);
+        const code = await oidcService.issueAuthorizationCode({
+          userId: sessionUser.id,
+          clientId: params.client_id,
+          redirectUri: params.redirect_uri,
+          scope: effectiveScope,
+          codeChallenge: params.code_challenge,
+          codeChallengeMethod: params.code_challenge_method,
+          nonce: params.nonce,
+        });
+        const sep = params.redirect_uri.includes('?') ? '&' : '?';
+        const location = `${params.redirect_uri}${sep}code=${encodeURIComponent(code)}${
+          params.state ? `&state=${encodeURIComponent(params.state)}` : ''
+        }`;
+        res.redirect(302, location);
+        return;
+      } catch (err) {
+        if (err instanceof OidcError) {
+          res.status(err.httpStatus).json(err.toJson());
+          return;
+        }
+        // Fall through to login form on unexpected error
+      }
+    }
+
     // 渲染最简 HTML form
     const html = this.renderLoginForm({
       action: '/oauth/authorize',
