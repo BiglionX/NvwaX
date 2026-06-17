@@ -1,46 +1,76 @@
-import axios from 'axios';
-
 /**
- * Admin API client（Sprint 2.2 改造后）
+ * Admin API client (Sprint 2.4 迁移到 authedFetch)
  *
- * Admin 鉴权独立通道保留（Sprint 2.2 范围外，不迁 OIDC）：
- *   - request 拦截器仍读 admin_token 注入 Authorization（admin 页面仍走 JWT）
- *   - 401 不再清 admin_token / admin_info localStorage
- *     （admin_token 由 admin 页面管理；OIDC cookie 由 /api/auth/session DELETE 清理）
- *   - 跳转 /admin/login 的兜底保留（避免 admin 页死循环）
+ * 鉴权通道：OIDC httpOnly cookie → /api/auth/proxy → 后端 auth.middleware
+ * 不再读 localStorage admin_token / admin_info（XSS 安全）
+ *
+ * adminApi.login() 保留为兼容老 admins 表独立登录：直连后端 (credentials: 'omit')
+ *   @deprecated Sprint 2.4 起 admin 鉴权走 OIDC；此方法保留为兼容老流程
  */
+
+import { authedFetch } from '@/lib/oidc/authed-fetch';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
+// ─────────── helpers ───────────
 
-// 请求拦截器：admin_token 注入 Authorization（admin 独立通道）
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('admin_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+async function getJson<T = any>(path: string): Promise<T> {
+  const res = await authedFetch(path);
+  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+  const json = await res.json();
+  // 后端统一响应格式: { success, data, ... }，解包 data
+  return (json && typeof json === 'object' && 'data' in json ? (json as { data: T }).data : json) as T;
+}
 
-// 响应拦截器：401 仅跳转 /admin/login（不清理 localStorage）
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // 只有在不在 admin 登录页时才跳转，避免循环
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/admin/login')) {
-        window.location.href = '/admin/login';
-      }
-    }
-    return Promise.reject(error);
+async function postJson<T = any>(path: string, body?: unknown): Promise<T> {
+  const res = await authedFetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(`POST ${path} failed: ${res.status}`);
+  const json = await res.json();
+  return (json && typeof json === 'object' && 'data' in json ? (json as { data: T }).data : json) as T;
+}
+
+async function putJson<T = any>(path: string, body?: unknown): Promise<T> {
+  const res = await authedFetch(path, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(`PUT ${path} failed: ${res.status}`);
+  const json = await res.json();
+  return (json && typeof json === 'object' && 'data' in json ? (json as { data: T }).data : json) as T;
+}
+
+async function deleteJson<T = any>(path: string): Promise<T> {
+  const res = await authedFetch(path, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`DELETE ${path} failed: ${res.status}`);
+  const json = await res.json().catch(() => undefined);
+  return (json && typeof json === 'object' && 'data' in json ? (json as { data: T }).data : json) as T;
+}
+
+/**
+ * 某些后端接口直接返回完整 JSON（如分页接口 `response.data` 是 { items, total, page, limit }），
+ * 用 rawGetJson 跳过 data 解包。
+ */
+async function rawGetJson<T = any>(path: string): Promise<T> {
+  const res = await authedFetch(path);
+  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+  return (await res.json()) as T;
+}
+
+function qs(params: Record<string, string | number | undefined>): string {
+  const usp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined) usp.set(k, String(v));
   }
-);
+  const s = usp.toString();
+  return s ? `?${s}` : '';
+}
+
+// ─────────── types ───────────
 
 export interface Admin {
   id: string;
@@ -94,302 +124,120 @@ export interface LoginResponse {
   };
 }
 
+// ─────────── adminApi ───────────
+
 export const adminApi = {
-  // 登录
+  /**
+   * 兼容老 admins 表独立登录（Sprint 2.4 起新流程走 OIDC，此方法标 @deprecated）
+   * 直连后端不走 proxy，credentials: 'omit' 避免污染 OIDC session cookie
+   */
   login: async (username: string, password: string): Promise<LoginResponse> => {
-    const response = await api.post('/admin/login', { username, password });
-    return response.data;
+    const res = await fetch(`${API_BASE_URL}/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+      credentials: 'omit',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Login failed' }));
+      throw new Error(err.error || `Login failed: ${res.status}`);
+    }
+    return res.json();
   },
 
-  // 获取当前管理员信息
-  getProfile: async (): Promise<Admin> => {
-    const response = await api.get('/admin/profile');
-    return response.data.data;
-  },
+  // ─── 当前管理员信息 ───
+  getProfile: () => getJson<Admin>('/admin/profile'),
+  updateProfile: (data: Partial<Pick<Admin, 'name' | 'email' | 'avatar'>>) =>
+    putJson<Admin>('/admin/profile', data),
+  changePassword: (oldPassword: string, newPassword: string) =>
+    postJson<void>('/admin/change-password', { oldPassword, newPassword }),
 
-  // 更新管理员信息
-  updateProfile: async (data: Partial<Pick<Admin, 'name' | 'email' | 'avatar'>>): Promise<Admin> => {
-    const response = await api.put('/admin/profile', data);
-    return response.data.data;
-  },
+  // ─── 管理员管理 ───
+  getAllAdmins: () => getJson<Admin[]>('/admin/admins'),
+  createAdmin: (data: { username: string; password: string; email: string; name?: string; role?: string }) =>
+    postJson<Admin>('/admin/admins', data),
+  deleteAdmin: (id: string) => deleteJson<void>(`/admin/admins/${id}`),
 
-  // 修改密码
-  changePassword: async (oldPassword: string, newPassword: string): Promise<void> => {
-    await api.post('/admin/change-password', { oldPassword, newPassword });
-  },
+  // ─── 系统统计 / 日志 ───
+  getSystemStats: () => getJson<any>('/admin/system/stats'),
+  getSystemLogs: (page: number = 1, limit: number = 20) =>
+    rawGetJson<any>(`/admin/system/logs${qs({ page, limit })}`),
 
-  // 获取所有管理员
-  getAllAdmins: async (): Promise<Admin[]> => {
-    const response = await api.get('/admin/admins');
-    return response.data.data;
-  },
+  // ─── 爬虫管理 ───
+  getCrawlerStatus: () => getJson<any>('/admin/crawler/status'),
+  triggerCrawler: () => postJson<any>('/admin/crawler/trigger'),
+  updateCrawlerConfig: (intervalHours: number) =>
+    putJson<any>('/admin/crawler/config', { intervalHours }),
+  getCrawlerHistory: (limit: number = 20) =>
+    rawGetJson<any>(`/admin/crawler/history${qs({ limit })}`),
+  cleanOldAgents: (days: number) => postJson<any>('/admin/crawler/clean', { days }),
 
-  // 创建管理员
-  createAdmin: async (data: { username: string; password: string; email: string; name?: string; role?: string }): Promise<Admin> => {
-    const response = await api.post('/admin/admins', data);
-    return response.data.data;
-  },
+  // ─── 用户管理 ───
+  getUserList: (page: number = 1, limit: number = 20, search?: string) =>
+    rawGetJson<any>(`/admin/users${qs({ page, limit, search })}`),
+  getUserStats: () => getJson<any>('/admin/users/stats'),
+  banUser: (userId: string, reason?: string) =>
+    postJson<any>(`/admin/users/${userId}/ban`, { reason }),
+  unbanUser: (userId: string) => postJson<any>(`/admin/users/${userId}/unban`),
+  getUserSocialAccounts: (userId: string) =>
+    rawGetJson<any>(`/admin/users/${userId}/social-accounts`),
+  getUserSocialStats: () => getJson<any>('/admin/users/social-stats'),
 
-  // 删除管理员
-  deleteAdmin: async (id: string): Promise<void> => {
-    await api.delete(`/admin/admins/${id}`);
-  },
+  // ─── 项目管理 ───
+  getProjectList: (page: number = 1, limit: number = 20, search?: string, status?: string) =>
+    rawGetJson<any>(`/admin/projects${qs({ page, limit, search, status })}`),
+  getProjectStats: () => getJson<any>('/admin/projects/stats'),
+  reviewProject: (projectId: string, approved: boolean, notes?: string) =>
+    postJson<any>(`/admin/projects/${projectId}/review`, { approved, notes }),
+  suspendProject: (projectId: string, reason?: string) =>
+    postJson<any>(`/admin/projects/${projectId}/suspend`, { reason }),
+  restoreProject: (projectId: string) =>
+    postJson<any>(`/admin/projects/${projectId}/restore`),
 
-  // 获取系统统计
-  getSystemStats: async () => {
-    const response = await api.get('/admin/system/stats');
-    return response.data.data;
-  },
+  // ─── 系统管理 ───
+  getSystemHealth: () => getJson<any>('/admin/system/health'),
+  clearCache: () => postJson<any>('/admin/system/clear-cache'),
+  backupDatabase: () => postJson<any>('/admin/system/backup'),
 
-  // 获取系统日志
-  getSystemLogs: async (page: number = 1, limit: number = 20) => {
-    const response = await api.get('/admin/system/logs', { params: { page, limit } });
-    return response.data;
-  },
+  // ─── AI 业务管理 ───
+  getAgentList: (page: number = 1, limit: number = 20, search?: string) =>
+    rawGetJson<any>(`/admin/agents${qs({ page, limit, search })}`),
+  getAiTeamBuilds: () => rawGetJson<any>('/admin/virtual-companies/builds'),
+  sendAnnouncement: (data: { title: string; message: string; priority?: string }) =>
+    postJson<any>('/admin/notifications/announce', data),
 
-  // ========== 爬虫管理 ==========
+  // ─── Token 配额管理 ───
+  getTokenOverview: () => getJson<any>('/admin/tokens/overview'),
+  getTokenUsersList: (page: number = 1, limit: number = 20, search?: string) =>
+    rawGetJson<any>(`/admin/tokens/users${qs({ page, limit, search })}`),
+  getTokenUserDetail: (userId: string, page: number = 1, limit: number = 20, sourceType?: string) =>
+    getJson<any>(`/admin/tokens/users/${userId}${qs({ page, limit, sourceType })}`),
+  getTokenConsumptionBreakdown: (period: 'day' | 'week' | 'month' = 'month') =>
+    getJson<any>(`/admin/tokens/consumption-breakdown${qs({ period })}`),
+  resetMonthlyQuotas: () => postJson<any>('/admin/tokens/reset-monthly'),
+  toggleInternalTeam: (userId: string) =>
+    putJson<any>(`/admin/tokens/internal-team/${userId}`),
 
-  // 获取爬虫状态和统计
-  getCrawlerStatus: async () => {
-    const response = await api.get('/admin/crawler/status');
-    return response.data.data;
-  },
-
-  // 手动触发爬虫
-  triggerCrawler: async () => {
-    const response = await api.post('/admin/crawler/trigger');
-    return response.data;
-  },
-
-  // 更新爬虫配置
-  updateCrawlerConfig: async (intervalHours: number) => {
-    const response = await api.put('/admin/crawler/config', { intervalHours });
-    return response.data;
-  },
-
-  // 获取爬取历史
-  getCrawlerHistory: async (limit: number = 20) => {
-    const response = await api.get('/admin/crawler/history', { params: { limit } });
-    return response.data;
-  },
-
-  // 清理旧数据
-  cleanOldAgents: async (days: number) => {
-    const response = await api.post('/admin/crawler/clean', { days });
-    return response.data;
-  },
-
-  // ========== 用户管理 ==========
-
-  // 获取用户列表（分页）
-  getUserList: async (page: number = 1, limit: number = 20, search?: string) => {
-    const params: Record<string, string | number> = { page, limit };
-    if (search) params.search = search;
-    const response = await api.get('/admin/users', { params });
-    return response.data;
-  },
-
-  // 获取用户统计信息
-  getUserStats: async () => {
-    const response = await api.get('/admin/users/stats');
-    return response.data.data;
-  },
-
-  // 封禁用户
-  banUser: async (userId: string, reason?: string) => {
-    const response = await api.post(`/admin/users/${userId}/ban`, { reason });
-    return response.data;
-  },
-
-  // 解封用户
-  unbanUser: async (userId: string) => {
-    const response = await api.post(`/admin/users/${userId}/unban`);
-    return response.data;
-  },
-
-  // 获取用户社交账号绑定
-  getUserSocialAccounts: async (userId: string) => {
-    const response = await api.get(`/admin/users/${userId}/social-accounts`);
-    return response.data;
-  },
-
-  // 获取社交账号绑定统计
-  getUserSocialStats: async () => {
-    const response = await api.get('/admin/users/social-stats');
-    return response.data.data;
-  },
-
-  // ========== 项目管理 ==========
-
-  // 获取项目列表（分页）
-  getProjectList: async (page: number = 1, limit: number = 20, search?: string, status?: string) => {
-    const params: Record<string, string | number> = { page, limit };
-    if (search) params.search = search;
-    if (status) params.status = status;
-    const response = await api.get('/admin/projects', { params });
-    return response.data;
-  },
-
-  // 获取项目统计信息
-  getProjectStats: async () => {
-    const response = await api.get('/admin/projects/stats');
-    return response.data.data;
-  },
-
-  // 审核项目
-  reviewProject: async (projectId: string, approved: boolean, notes?: string) => {
-    const response = await api.post(`/admin/projects/${projectId}/review`, { approved, notes });
-    return response.data;
-  },
-
-  // 下架项目
-  suspendProject: async (projectId: string, reason?: string) => {
-    const response = await api.post(`/admin/projects/${projectId}/suspend`, { reason });
-    return response.data;
-  },
-
-  // 恢复项目
-  restoreProject: async (projectId: string) => {
-    const response = await api.post(`/admin/projects/${projectId}/restore`);
-    return response.data;
-  },
-
-  // ========== 系统管理 ==========
-
-  // 获取系统健康状态
-  getSystemHealth: async () => {
-    const response = await api.get('/admin/system/health');
-    return response.data.data;
-  },
-
-  // 清理系统缓存
-  clearCache: async () => {
-    const response = await api.post('/admin/system/clear-cache');
-    return response.data;
-  },
-
-  // 数据库备份
-  backupDatabase: async () => {
-    const response = await api.post('/admin/system/backup');
-    return response.data;
-  },
-
-  // ========== AI 业务管理 ==========
-
-  // 获取 Agent 列表（分页）
-  getAgentList: async (page: number = 1, limit: number = 20, search?: string) => {
-    const params: Record<string, string | number> = { page, limit };
-    if (search) params.search = search;
-    const response = await api.get('/admin/agents', { params });
-    return response.data;
-  },
-
-  // 获取 AiTeam 打包任务列表
-  getAiTeamBuilds: async () => {
-    const response = await api.get('/admin/virtual-companies/builds');
-    return response.data;
-  },
-
-  // 发送系统公告
-  sendAnnouncement: async (data: { title: string; message: string; priority?: string }) => {
-    const response = await api.post('/admin/notifications/announce', data);
-    return response.data;
-  },
-
-  // ========== Token 配额管理 ==========
-
-  // 获取Token总览统计
-  getTokenOverview: async () => {
-    const response = await api.get('/admin/tokens/overview');
-    return response.data.data;
-  },
-
-  // 获取用户Token统计列表（分页）
-  getTokenUsersList: async (page: number = 1, limit: number = 20, search?: string) => {
-    const params: Record<string, string | number> = { page, limit };
-    if (search) params.search = search;
-    const response = await api.get('/admin/tokens/users', { params });
-    return response.data;
-  },
-
-  // 获取单个用户的Token消耗明细
-  getTokenUserDetail: async (userId: string, page: number = 1, limit: number = 20, sourceType?: string) => {
-    const params: Record<string, string | number> = { page, limit };
-    if (sourceType) params.sourceType = sourceType;
-    const response = await api.get(`/admin/tokens/users/${userId}`, { params });
-    return response.data.data;
-  },
-
-  // 获取Token消耗来源分类统计
-  getTokenConsumptionBreakdown: async (period: 'day' | 'week' | 'month' = 'month') => {
-    const response = await api.get('/admin/tokens/consumption-breakdown', { params: { period } });
-    return response.data.data;
-  },
-
-  // 手动重置月度配额
-  resetMonthlyQuotas: async () => {
-    const response = await api.post('/admin/tokens/reset-monthly');
-    return response.data;
-  },
-
-  // 切换用户内部团队状态
-  toggleInternalTeam: async (userId: string) => {
-    const response = await api.put(`/admin/tokens/internal-team/${userId}`);
-    return response.data;
-  },
-
-  // ========== 支付配置管理 ==========
-
-  // 获取开发者列表（有API Key的用户）
-  getDeveloperList: async (page: number = 1, limit: number = 20, search?: string) => {
-    const params: Record<string, string | number> = { page, limit };
-    if (search) params.search = search;
-    const response = await api.get('/admin/developers', { params });
-    return response.data;
-  },
-
-  // 获取支付配置列表
-  getPaymentConfigs: async () => {
-    const response = await api.get('/admin/payment-configs');
-    return response.data.data;
-  },
-
-  // 保存/更新支付配置
-  savePaymentConfig: async (data: {
+  // ─── 支付配置管理 ───
+  getDeveloperList: (page: number = 1, limit: number = 20, search?: string) =>
+    rawGetJson<any>(`/admin/developers${qs({ page, limit, search })}`),
+  getPaymentConfigs: () => getJson<any>('/admin/payment-configs'),
+  savePaymentConfig: (data: {
     provider: string;
     provider_label: string;
     qr_code_url?: string;
     account_name?: string;
     account_info?: string;
     sort_order?: number;
-  }) => {
-    const response = await api.post('/admin/payment-configs', data);
-    return response.data.data;
-  },
+  }) => postJson<any>('/admin/payment-configs', data),
+  togglePaymentConfig: (provider: string, enabled: boolean) =>
+    postJson<any>(`/admin/payment-configs/${provider}/toggle`, { enabled }),
 
-  // 启用/禁用支付配置
-  togglePaymentConfig: async (provider: string, enabled: boolean) => {
-    const response = await api.post(`/admin/payment-configs/${provider}/toggle`, { enabled });
-    return response.data.data;
-  },
-
-  // 获取Token订单列表
-  getTokenOrders: async (page: number = 1, limit: number = 20, status?: string) => {
-    const params: Record<string, string | number> = { page, limit };
-    if (status) params.status = status;
-    const response = await api.get('/admin/token-orders', { params });
-    return response.data;
-  },
-
-  // 确认Token订单付款
-  confirmTokenOrder: async (orderId: string) => {
-    const response = await api.post(`/admin/token-orders/${orderId}/confirm`);
-    return response.data.data;
-  },
-
-  // 取消Token订单
-  cancelTokenOrder: async (orderId: string) => {
-    const response = await api.post(`/admin/token-orders/${orderId}/cancel`);
-    return response.data.data;
-  }
+  // ─── Token 订单 ───
+  getTokenOrders: (page: number = 1, limit: number = 20, status?: string) =>
+    rawGetJson<any>(`/admin/token-orders${qs({ page, limit, status })}`),
+  confirmTokenOrder: (orderId: string) =>
+    postJson<any>(`/admin/token-orders/${orderId}/confirm`),
+  cancelTokenOrder: (orderId: string) =>
+    postJson<any>(`/admin/token-orders/${orderId}/cancel`),
 };
