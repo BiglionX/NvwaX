@@ -7,6 +7,10 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./', import.meta.url)),
     },
   },
+  // Sprint 2.4: 让被测组件无需显式 import React（生产用 Next.js 自动 JSX 运行时）
+  esbuild: {
+    jsx: 'automatic',
+  },
   test: {
     environment: 'happy-dom',
     globals: true,

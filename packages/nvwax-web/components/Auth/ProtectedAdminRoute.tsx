@@ -1,62 +1,40 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ProtectedAdminRouteProps {
   children: React.ReactNode;
 }
 
+/**
+ * ProtectedAdminRoute - Sprint 2.4 OIDC 化
+ *
+ * 来源：useAuth() OIDC session（httpOnly cookie + /api/auth/session）
+ * 校验：已登录 AND userInfo.is_admin === true
+ * 不再读 localStorage（XSS 安全）
+ */
 export default function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isChecking, setIsChecking] = useState(true);
-  const [hasChecked, setHasChecked] = useState(false);
+  const { isLoggedIn, userInfo, loading } = useAuth();
 
   useEffect(() => {
-    // 如果已经检查过，跳过
-    if (hasChecked) {
+    if (loading) return;
+    // /admin/login 始终允许访问
+    if (pathname === '/admin/login') return;
+
+    if (!isLoggedIn) {
+      router.replace('/admin/login');
       return;
     }
+    if (userInfo?.is_admin !== true) {
+      router.replace('/admin/login');
+    }
+  }, [loading, isLoggedIn, userInfo, pathname, router]);
 
-    const checkAdminAuth = () => {
-      const adminToken = localStorage.getItem('admin_token');
-      const userToken = localStorage.getItem('user_token');
-      const userInfo = localStorage.getItem('user_info');
-      
-      // 检查是否有管理员权限
-      let hasAdminAccess = !!adminToken;
-      
-      if (!hasAdminAccess && userToken && userInfo) {
-        try {
-          const user = JSON.parse(userInfo);
-          const adminEmails = ['1055603323@qq.com', 'admin'];
-          hasAdminAccess = adminEmails.includes(user.email) || user.email?.endsWith('@admin.com');
-          
-          if (hasAdminAccess) {
-            localStorage.setItem('admin_token', userToken);
-            localStorage.setItem('admin_info', userInfo);
-          }
-        } catch (e) {
-          console.error('[ProtectedAdminRoute] Failed to parse user info:', e);
-        }
-      }
-      
-      if (!hasAdminAccess && pathname !== '/admin/login') {
-        // 未登录且不是登录页，跳转到登录页
-        router.replace('/admin/login');
-        return; // 跳转后返回，不执行后面的 setIsChecking
-      }
-      
-      // 已登录或在登录页，允许访问
-      setHasChecked(true);
-      setIsChecking(false);
-    };
-
-    checkAdminAuth();
-  }, [pathname, router, hasChecked]);
-
-  if (isChecking) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
@@ -65,6 +43,16 @@ export default function ProtectedAdminRoute({ children }: ProtectedAdminRoutePro
         </div>
       </div>
     );
+  }
+
+  // /admin/login 页面：允许渲染
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
+  // 未通过 admin 校验：返回 null（已触发跳转）
+  if (!isLoggedIn || userInfo?.is_admin !== true) {
+    return null;
   }
 
   return <>{children}</>;
