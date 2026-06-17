@@ -7,9 +7,11 @@ export interface UserAuthInfo {
 }
 
 // 管理员认证信息
+// Sprint 2.4 扩展：AdminAuthInfo 加 email 字段；username 改 optional（OIDC 流程用 email 当 username）
 export interface AdminAuthInfo {
   id: string;
-  username: string;
+  email?: string;
+  username?: string;
   role: string;
 }
 
