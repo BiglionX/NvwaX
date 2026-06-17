@@ -27,6 +27,7 @@ tsc_output.txt
 # IDE
 .vscode/
 .idea/
+.qoder/
 *.swp
 *.swo
 *~

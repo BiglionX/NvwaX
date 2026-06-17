@@ -46,7 +46,7 @@ function buildCookieOptions() {
   return {
     httpOnly: true,
     secure: isProd(),
-    sameSite: 'lax' as const,
+    sameSite: 'none' as const,  // Sprint 2.10: 跨域 SSO（skillhub-web 等外部 RP）需要 SameSite=None
     path: '/',
     maxAge: COOKIE_MAX_AGE,
   };
@@ -56,7 +56,7 @@ function buildClearCookieOptions() {
   return {
     httpOnly: true,
     secure: isProd(),
-    sameSite: 'lax' as const,
+    sameSite: 'none' as const,  // Sprint 2.10: 跨域 SSO（skillhub-web 等外部 RP）需要 SameSite=None
     path: '/',
     maxAge: 0,
   };
