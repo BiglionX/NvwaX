@@ -16,7 +16,8 @@
     "create-super-admin": "tsx create-super-admin.ts",
     "migrate-sdk": "tsx run-sdk-migration.ts",
     "migrate-tenant-isolation": "tsx run-tenant-isolation-migration.ts",
-    "test:plugin-capabilities": "tsx src/tests/plugin-capabilities.integration.test.ts"
+    "test:plugin-capabilities": "tsx src/tests/plugin-capabilities.integration.test.ts",
+    "add-rp": "tsx src/cli/add-rp.ts"
   },
   "keywords": [],
   "author": "",

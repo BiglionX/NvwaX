@@ -29,6 +29,7 @@ import microbizRouter from './microbiz.routes.js';
 import capabilitiesRouter from './capabilities.routes.js';
 import actionRouter from './action.routes.js';
 import recommendationRouter from './recommendation.routes.js';
+import oidcAdminRouter from './oidc-admin.routes.js';
 
 const router = Router();
 
@@ -129,6 +130,9 @@ router.use('/', teamExecutionRouter);
 
 // Admin routes
 router.use('/admin', adminRouter);
+
+// OIDC RP 管理端点（Sprint 2.9）
+router.use('/admin/oidc/clients', oidcAdminRouter);
 
 // SDK routes
 router.use('/sdk', sdkRouter);

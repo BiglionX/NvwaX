@@ -38,7 +38,7 @@ class OidcController {
       id_token_signing_alg_values_supported: ['RS256'],
       token_endpoint_auth_methods_supported: ['none', 'client_secret_post'],
 
-      scopes_supported: ['openid', 'profile', 'email'],
+      scopes_supported: ['openid', 'profile', 'email', 'admin'],
       claims_supported: [
         'sub',
         'iss',
