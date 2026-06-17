@@ -2,23 +2,27 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
+/**
+ * AdminRootPage - Sprint 2.4 OIDC 化
+ *
+ * 用 useAuth() 替代 localStorage 读取
+ * 已登录 + is_admin=true → /admin/dashboard
+ * 其他 → /admin/login
+ */
 export default function AdminRootPage() {
   const router = useRouter();
+  const { isLoggedIn, userInfo, loading } = useAuth();
 
   useEffect(() => {
-    // 检查是否已登录
-    const adminToken = localStorage.getItem('admin_token');
-    const userToken = localStorage.getItem('user_token');
-    
-    if (adminToken || userToken) {
-      // 已登录，跳转到仪表板
+    if (loading) return;
+    if (isLoggedIn && userInfo?.is_admin === true) {
       router.replace('/admin/dashboard');
     } else {
-      // 未登录，跳转到登录页
       router.replace('/admin/login');
     }
-  }, [router]);
+  }, [loading, isLoggedIn, userInfo, router]);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-sky-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">

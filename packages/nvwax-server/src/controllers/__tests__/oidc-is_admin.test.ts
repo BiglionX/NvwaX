@@ -12,20 +12,20 @@
 
 import { describe, it, expect, beforeAll, beforeEach, jest } from '@jest/globals';
 
-const mockGetPool = jest.fn() as jest.Mock;
-const mockGetClient = jest.fn() as jest.Mock;
-const mockConsumeAuthorizationCode = jest.fn() as jest.Mock;
-const mockIssueRefreshToken = jest.fn() as jest.Mock;
-const mockRotateRefreshToken = jest.fn() as jest.Mock;
-const mockIssueAuthorizationCode = jest.fn() as jest.Mock;
-const mockVerifyScope = jest.fn() as jest.Mock;
+const mockGetPool = jest.fn() as jest.Mock<any>;
+const mockGetClient = jest.fn() as jest.Mock<any>;
+const mockConsumeAuthorizationCode = jest.fn() as jest.Mock<any>;
+const mockIssueRefreshToken = jest.fn() as jest.Mock<any>;
+const mockRotateRefreshToken = jest.fn() as jest.Mock<any>;
+const mockIssueAuthorizationCode = jest.fn() as jest.Mock<any>;
+const mockVerifyScope = jest.fn() as jest.Mock<any>;
 const mockGetIssuer = jest.fn(() => 'https://account.proclaw.cc') as jest.Mock;
-const mockSignIdToken = jest.fn() as jest.Mock;
-const mockSignAccessToken = jest.fn() as jest.Mock;
-const mockVerifyAccessToken = jest.fn() as jest.Mock;
+const mockSignIdToken = jest.fn() as jest.Mock<any>;
+const mockSignAccessToken = jest.fn() as jest.Mock<any>;
+const mockVerifyAccessToken = jest.fn() as jest.Mock<any>;
 const mockGetAccessTokenTtl = jest.fn(() => 3600) as jest.Mock;
-const mockGetUserById = jest.fn() as jest.Mock;
-const mockIsAdminByEmail = jest.fn() as jest.Mock;
+const mockGetUserById = jest.fn() as jest.Mock<any>;
+const mockIsAdminByEmail = jest.fn() as jest.Mock<any>;
 
 jest.unstable_mockModule('../../services/database.service.js', () => ({
   databaseService: { getPool: mockGetPool },
