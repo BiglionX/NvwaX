@@ -70,6 +70,19 @@ export class AdminService {
     return this.formatAdmin(result.rows[0]);
   }
 
+  /**
+   * 检查 email 是否在 admins 表中存在（OIDC userinfo 注入 is_admin 用）
+   * Sprint 2.4：OIDC IdP 在 signIdToken + userinfo 端点用此方法判断是否注入 is_admin=true
+   */
+  async isAdminByEmail(email: string): Promise<boolean> {
+    if (!email) return false;
+    const result = await this.pool.query(
+      'SELECT 1 FROM admins WHERE email = $1 LIMIT 1',
+      [email],
+    );
+    return (result.rowCount || 0) > 0;
+  }
+
   // 管理员登录
   async login(username: string, password: string): Promise<LoginResult | null> {
     console.log('[AdminService] Login attempt:', { username, hasPassword: !!password });

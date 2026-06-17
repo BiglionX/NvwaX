@@ -17,6 +17,7 @@ import { oidcService } from '../services/oidc/oidc.service.js';
 import { OidcError } from '../services/oidc/oidc-error.js';
 import { userService } from '../services/user.service.js';
 import { databaseService } from '../services/database.service.js';
+import { adminService } from '../services/admin.service.js';
 import { config } from '../config/index.js';
 
 class OidcController {
@@ -49,6 +50,7 @@ class OidcController {
         'email',
         'name',
         'picture',
+        'is_admin', // Sprint 2.4: 扩展 claim, 标识 OIDC user 是否为管理员
       ],
 
       code_challenge_methods_supported: ['S256', 'plain'],
@@ -290,6 +292,7 @@ class OidcController {
       scope: consumed.scope,
       client_id: clientId,
     });
+    const isAdmin = await adminService.isAdminByEmail(user.email);
     const idToken = await oidcTokenService.signIdToken({
       sub: user.id,
       aud: clientId,
@@ -297,6 +300,7 @@ class OidcController {
       name: user.name ?? undefined,
       nonce: consumed.nonce ?? undefined,
       auth_time: now,
+      is_admin: isAdmin,
     });
     const refresh = await oidcService.issueRefreshToken(
       user.id,
@@ -340,12 +344,14 @@ class OidcController {
       scope: rotated.scope,
       client_id: clientId,
     });
+    const isAdmin = await adminService.isAdminByEmail(user.email);
     const idToken = await oidcTokenService.signIdToken({
       sub: user.id,
       aud: clientId,
       email: user.email,
       name: user.name ?? undefined,
       auth_time: now,
+      is_admin: isAdmin,
     });
 
     res.set('Cache-Control', 'no-store');
@@ -396,6 +402,10 @@ class OidcController {
         if (user.name) responseJson.name = user.name;
         if (user.avatar) responseJson.picture = user.avatar;
       }
+
+      // Sprint 2.4: is_admin 扩展 claim（OIDC Core 允许 IdP 扩展）
+      const isAdmin = await adminService.isAdminByEmail(user.email);
+      responseJson.is_admin = isAdmin;
 
       res.set('Cache-Control', 'no-store');
       res.json(responseJson);

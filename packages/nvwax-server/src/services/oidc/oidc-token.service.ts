@@ -43,6 +43,7 @@ export interface IdTokenClaims {
   permissions?: string[];
   nonce?: string;
   auth_time: number;       // unix seconds
+  is_admin?: boolean;      // Sprint 2.4: OIDC IdP 注入, RS256 签名, 客户端可信任
 }
 
 export interface AccessTokenClaims {
@@ -185,6 +186,7 @@ class OidcTokenService {
       permissions: claims.permissions,
       nonce: claims.nonce,
       auth_time: claims.auth_time,
+      is_admin: claims.is_admin,
     })
       .setProtectedHeader({ alg: 'RS256', kid: this.kid!, typ: 'JWT' })
       .setIssuer(oidcConfig.issuer)
