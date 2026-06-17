@@ -127,9 +127,9 @@ export const authApi = {
     return response.data;
   },
 
-  // 登出
+  // 登出（Sprint 2.2 改造后：由 useAuth().logout() → DELETE /api/auth/session 处理）
+  // 此方法保留仅为向后兼容，不再操作 localStorage
   logout: () => {
-    localStorage.removeItem('user_token');
-    localStorage.removeItem('user_info');
-  }
+    // no-op: OIDC cookie 清理由 /api/auth/session DELETE 负责
+  },
 };
