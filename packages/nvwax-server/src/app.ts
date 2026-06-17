@@ -18,7 +18,8 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler.middle
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PORTAL_STATIC_DIR = path.resolve(__dirname, '../../account-portal/out');
+const PORTAL_STATIC_DIR = process.env.PORTAL_STATIC_DIR
+  ?? path.resolve(__dirname, '../../account-portal/out');
 
 const app = express();
 
@@ -81,12 +82,15 @@ app.use(morgan('dev'));
 app.use(pcSessionService.middleware());
 
 // Sprint 2 — serve account-portal static export at /portal/* (Next.js `output: 'export'`).
-// Falls through to API routes for non-asset requests so /api/portal/* still works.
+// express.static 默认会将 /portal/activate/?token=xxx/ 映射到 activate/index.html，
+// redirect:true 会将 /portal/activate 302 重定向到 /portal/activate/，
+// 避免 URL 变更破坏已有链接。
 app.use(
   '/portal',
   express.static(PORTAL_STATIC_DIR, {
     // HTML pages use trailingSlash; assets are content-hashed.
     maxAge: '1h',
+    redirect: true,
     setHeaders(res, file) {
       if (file.endsWith('.html')) {
         res.setHeader('Cache-Control', 'no-cache');

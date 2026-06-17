@@ -21,17 +21,19 @@ export function RegisterForm() {
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    startTransition(async () => {
-      try {
-        await portalApi.register({ email, password, locale });
-        setSuccess(true);
-      } catch (err) {
-        if (err instanceof PortalApiError) {
-          setError(translate(locale, ERROR_KEYS[err.code] ?? 'register.error.invalidEmail'));
-        } else {
-          setError(translate(locale, 'login.error.network'));
-        }
-      }
+    startTransition(() => {
+      portalApi
+        .register({ email, password, locale })
+        .then(() => {
+          setSuccess(true);
+        })
+        .catch((err) => {
+          if (err instanceof PortalApiError) {
+            setError(translate(locale, ERROR_KEYS[err.code] ?? 'register.error.invalidEmail'));
+          } else {
+            setError(translate(locale, 'login.error.network'));
+          }
+        });
     });
   }
 

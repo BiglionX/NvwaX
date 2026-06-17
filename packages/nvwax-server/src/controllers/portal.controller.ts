@@ -35,7 +35,8 @@ function isStrongEnough(pw: string): boolean {
 
 function buildActivationLink(token: string, req: Request): string {
   const issuer = oidcTokenService.getIssuer();
-  return `${issuer}/portal/activate/${token}/`;
+  // Sprint 2.10: 改用查询参数路径规避 Next.js static export 的 [token] 动态路由约束
+  return `${issuer}/portal/activate/?token=${encodeURIComponent(token)}/`;
 }
 
 function pickLocale(raw: unknown): 'zh-CN' | 'en-US' {

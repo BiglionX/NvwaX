@@ -25,19 +25,21 @@ export function LoginForm({ redirectTo }: Props) {
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    startTransition(async () => {
-      try {
-        const res = await portalApi.login({ email, password, redirectTo });
-        // Server should already have set pc_session. Hard navigate to ensure
-        // any RP that relies on the cookie sees it.
-        window.location.assign(res.redirectTo || redirectTo || '/portal/');
-      } catch (err) {
-        if (err instanceof PortalApiError) {
-          setError(translate(locale, ERROR_KEYS[err.code] ?? 'login.error.invalid'));
-        } else {
-          setError(translate(locale, 'login.error.network'));
-        }
-      }
+    // Sprint 2.10: useTransition 不接受 async callback（React 18 严格类型），
+    // 用 .then/.catch 链式写法替代
+    startTransition(() => {
+      portalApi
+        .login({ email, password, redirectTo })
+        .then((res) => {
+          window.location.assign(res.redirectTo || redirectTo || '/portal/');
+        })
+        .catch((err) => {
+          if (err instanceof PortalApiError) {
+            setError(translate(locale, ERROR_KEYS[err.code] ?? 'login.error.invalid'));
+          } else {
+            setError(translate(locale, 'login.error.network'));
+          }
+        });
     });
   }
 

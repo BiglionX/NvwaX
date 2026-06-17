@@ -6,7 +6,7 @@ import { useLocale, translate } from '@/lib/i18n';
 
 type Props = { token: string };
 
-export function ActivatePanel({ token }: Props) {
+export function ActivatePanelClient({ token }: Props) {
   const locale = useLocale();
   const [status, setStatus] = useState<'pending' | 'success' | 'error'>('pending');
   const [message, setMessage] = useState<string>('');
@@ -19,10 +19,7 @@ export function ActivatePanel({ token }: Props) {
         if (cancelled) return;
         setStatus('success');
         setMessage(translate(locale, 'activate.success'));
-        // Backend should have set pc_session; navigate to login portal home
-        // (or to the originally-requested RP after redirect).
         const target = res.redirectTo || '/portal/';
-        // Use a short delay so the success message is visible
         setTimeout(() => {
           if (!cancelled) window.location.assign(target);
         }, 1200);
@@ -70,5 +67,3 @@ export function ActivatePanel({ token }: Props) {
     </div>
   );
 }
-
-export default ActivatePanel;
