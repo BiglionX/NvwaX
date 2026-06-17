@@ -43,7 +43,8 @@ export default function AdminAdvancedSettingsPage() {
   const backupMutation = useMutation({
     mutationFn: () => adminApi.backupDatabase(),
     onSuccess: (data) => {
-      alert('备份已启动: ' + data.data?.backupFile);
+      const result = data as { data?: { backupFile?: string } };
+      alert('备份已启动: ' + result.data?.backupFile);
       setShowBackupConfirm(false);
     },
     onError: (error: Error) => {

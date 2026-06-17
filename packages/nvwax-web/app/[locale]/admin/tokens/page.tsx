@@ -282,7 +282,7 @@ export default function AdminTokensPage() {
               </tr>
             </thead>
             <tbody>
-              {usersData?.data?.length > 0 ? (
+              {usersData?.data && usersData.data.length > 0 ? (
                 usersData.data.map((user: { user_id: string; user_name: string; user_email: string; monthly_limit: number; used_this_month: number; remaining: number; usage_percent: number; overage_tokens: number; overage_cost: number; total_used: number; is_internal_team: boolean }) => (
                   <tr key={user.user_id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
                     <td className="py-3 px-4">

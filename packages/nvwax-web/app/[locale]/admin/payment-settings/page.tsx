@@ -266,7 +266,7 @@ export default function PaymentSettingsPage() {
             <Loader2 className="animate-spin mx-auto mb-2" size={24} />
             加载中...
           </div>
-        ) : ordersData?.data?.length > 0 ? (
+        ) : ordersData?.data && ordersData.data.length > 0 ? (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">

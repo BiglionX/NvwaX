@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/hooks/useAuth';
 import { startLogin } from '@/lib/oidc/login';
-import { Card, Input, Alert } from '@/components/UI';
+import { Card, Alert } from '@/components/UI';
 import { Mail } from 'lucide-react';
 
 const OIDC_ERROR_I18N: Record<string, { zh: string; en: string }> = {

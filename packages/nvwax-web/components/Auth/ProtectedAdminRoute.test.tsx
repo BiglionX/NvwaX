@@ -20,7 +20,6 @@ import { act } from 'react';
 // ─────────── mock: next/navigation ───────────
 const mockReplace = vi.fn();
 const mockUseRouter = vi.fn(() => ({ replace: mockReplace, push: vi.fn(), back: vi.fn() }));
-const mockUsePathname = vi.fn(() => '/admin/dashboard');
 let mockPathnameValue = '/admin/dashboard';
 
 vi.mock('next/navigation', () => ({

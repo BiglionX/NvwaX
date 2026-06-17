@@ -68,7 +68,8 @@ export default function AdminCrawlerPage() {
   const cleanDataMutation = useMutation({
     mutationFn: (days: number) => adminApi.cleanOldAgents(days),
     onSuccess: (data) => {
-      alert(data.message);
+      const result = data as { message?: string };
+      alert(result.message);
       setShowCleanForm(false);
       queryClient.invalidateQueries({ queryKey: ['crawler-status'] });
       queryClient.invalidateQueries({ queryKey: ['crawler-history'] });
@@ -311,7 +312,7 @@ export default function AdminCrawlerPage() {
         <div className="p-6">
           {loadingHistory ? (
             <div className="text-center py-8 text-gray-500">加载中...</div>
-          ) : crawlerHistory?.data?.length > 0 ? (
+          ) : crawlerHistory?.data && crawlerHistory.data.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>

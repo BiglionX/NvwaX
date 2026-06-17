@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { adminApi } from '@/lib/api/admin';
+import { adminApi, type AuditLog } from '@/lib/api/admin';
 import { Users, Folder, Shield, Activity, TrendingUp, Clock, Coins } from 'lucide-react';
 import LoadingState from '@/components/Layout/LoadingState';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -154,7 +154,7 @@ export default function AdminDashboardPage() {
                 <span className="text-gray-600 dark:text-gray-300">运行时间</span>
               </div>
               <span className="font-bold text-gray-900 dark:text-white">
-              <p>{`${Math.floor(stats?.systemUptime / 3600)} 小时`}</p>
+              <p>{`${Math.floor((stats?.systemUptime ?? 0) / 3600)} 小时`}</p>
               </span>
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
@@ -176,9 +176,9 @@ export default function AdminDashboardPage() {
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">最近系统日志</h2>
         </div>
         <div className="p-6">
-          {logs?.data?.length > 0 ? (
+          {logs?.data && logs.data.length > 0 ? (
             <div className="space-y-4">
-              {logs.data.map((log: { id: string; level: string; action: string; details?: string; created_at: string }) => (
+              {logs.data.map((log: AuditLog) => (
                 <div key={log.id} className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div className={`w-2 h-2 mt-2 rounded-full ${
                     log.level === 'warning' ? 'bg-yellow-500' : 
@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
                       <p className="font-medium text-gray-900 dark:text-white">{log.action}</p>
                       <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                         <Clock size={14} />
-                        <span>{new Date(log.created_at).toLocaleString('zh-CN')}</span>
+                        <span>{new Date(log.createdAt).toLocaleString('zh-CN')}</span>
                       </div>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{log.details}</p>

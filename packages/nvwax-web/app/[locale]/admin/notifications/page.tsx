@@ -15,7 +15,8 @@ export default function AdminNotificationsPage() {
   const sendMutation = useMutation({
     mutationFn: (data: typeof formData) => adminApi.sendAnnouncement(data),
     onSuccess: (result) => {
-      alert(`发送成功！已通知 ${result.sentCount} 位用户。`);
+      const r = result as { sentCount?: number };
+      alert(`发送成功！已通知 ${r.sentCount} 位用户。`);
       setFormData({ title: '', message: '', priority: 'high' });
     },
     onError: (error: Error) => {
