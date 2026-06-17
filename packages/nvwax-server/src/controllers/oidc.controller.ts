@@ -4,8 +4,7 @@
  * 6 个端点：
  * - GET  /.well-known/openid-configuration  → OIDC Discovery 元数据
  * - GET  /.well-known/jwks.json              → 公开密钥集
- * - GET  /oauth/authorize                    → 渲染临时登录 form（仅 development）
- * - POST /oauth/authorize                    → 验证密码 + 签发 code + 302 redirect
+ * - GET  /oauth/authorize                    → 渲染登录 form（GET）或处理登录提交（POST）+ 签发 code
  * - POST /oauth/token                        → authorization_code / refresh_token grant
  * - GET  /oauth/userinfo                     → Bearer 鉴权 + 返回用户信息
  * - POST /oauth/logout                       → 撤销 refresh token
@@ -73,11 +72,8 @@ class OidcController {
   // ──────────── Authorize GET ────────────
 
   authorizeGet = async (req: Request, res: Response): Promise<void> => {
-    // 生产环境不暴露临时登录页（Sprint 2 接 account-portal）
-    if (config.nodeEnv === 'production') {
-      res.status(404).json({ error: 'not_found' });
-      return;
-    }
+    // Sprint 2.10: 移除生产环境拦截，account-portal 已部署可用，
+    // pc_session cookie 由 account-portal 登录时 set，backend 读取后直接签 code 跳转
 
     const params = this.parseAuthorizeParams(req);
     if (params instanceof OidcError) {
@@ -145,13 +141,9 @@ class OidcController {
   };
 
   // ──────────── Authorize POST ────────────
+  // Sprint 2.10: 移除生产环境拦截，POST 处理账号密码登录 + 签发 code
 
   authorizePost = async (req: Request, res: Response): Promise<void> => {
-    if (config.nodeEnv === 'production') {
-      res.status(404).json({ error: 'not_found' });
-      return;
-    }
-
     const {
       email,
       password,
@@ -511,7 +503,7 @@ class OidcController {
     <input type="password" id="password" name="password" required />
     <button type="submit">登录</button>
   </form>
-  <p class="hint">Sprint 1 临时登录页 — Sprint 2 替换为 account-portal 白标 UI</p>
+  <p class="hint">account.proclaw.cc 登录页 — 登录成功后自动跳转</p>
 </body>
 </html>`;
   }
