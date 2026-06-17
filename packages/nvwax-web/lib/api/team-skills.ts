@@ -1,3 +1,4 @@
+import { authedFetch } from '@/lib/oidc/authed-fetch';
 import apiClient from './client';
 
 /**
@@ -272,9 +273,10 @@ export const teamSkillApi = {
   /**
    * 导出到 ProClaw
    */
-  exportToProClaw: async (id: string, token: string) => {
-    const response = await apiClient.post(`/team-skills/${id}/export-to-proclaw`, { token });
-    return response.data;
+  // Sprint 2.3: 走 authedFetch（OIDC session 鉴权）
+  exportToProClaw: async (id: string) => {
+    const res = await authedFetch(`/team-skills/${id}/export-to-proclaw`, { method: 'POST' });
+    return res.json();
   }
 };
 

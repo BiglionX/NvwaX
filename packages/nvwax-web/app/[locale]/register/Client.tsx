@@ -40,14 +40,13 @@ export default function RegisterClient() {
     setLoading(true);
 
     try {
-      const response = await authApi.register(
+      await authApi.register(
         formData.email,
         formData.password,
         formData.name || undefined
       );
-      localStorage.setItem('user_token', response.data.token);
-      localStorage.setItem('user_info', JSON.stringify(response.data.user));
-      router.push('/profile');
+      // Sprint 2.3: 注册成功后跳转登录页，通过 OIDC 流程获取 session（不再写 localStorage）
+      router.push('/login?registered=true');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } } };
       setError(error.response?.data?.error || t('registerFailed'));

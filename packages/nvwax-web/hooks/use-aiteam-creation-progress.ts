@@ -99,14 +99,8 @@ export function useAiTeamCreationProgress(
     try {
       console.log(`🔌 Connecting to SSE stream for session: ${sessionId}`);
       
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const token = typeof window !== 'undefined' ? localStorage.getItem('user_token') : null;
-      
-      // SSE EventSource 不支持自定义 header，通过 URL 参数传递 token
-      const url = token 
-        ? `${API_URL}/aiteam-creation/sessions/${sessionId}/stream?token=${encodeURIComponent(token)}`
-        : `${API_URL}/aiteam-creation/sessions/${sessionId}/stream`;
-      
+      // Sprint 2.3: SSE 走 /api/auth/sse-stream 代理（cookie 鉴权，不再暴露 token）
+      const url = `/api/auth/sse-stream?sessionId=${encodeURIComponent(sessionId)}`;
       const eventSource = new EventSource(url);
       
       eventSourceRef.current = eventSource;

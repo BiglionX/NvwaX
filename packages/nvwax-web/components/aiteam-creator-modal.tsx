@@ -206,19 +206,9 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
     setIsSending(true);
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch(`${API_URL}/aiteam-creation/sessions/${sessionId}/message`, {
+      const response = await authedFetch(`/aiteam-creation/sessions/${sessionId}/message`, {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: userMessage.content }),
       });
 
@@ -285,19 +275,9 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
       };
       setMessages(prev => [...prev, systemMessage]);
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch(`${API_URL}/aiteam-creation/sessions/${sessionId}/nvwax-match`, {
+      const response = await authedFetch(`/aiteam-creation/sessions/${sessionId}/nvwax-match`, {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const data = await response.json();
@@ -366,20 +346,14 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
     setIsConfirming(true);
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
-      const headers: Record<string, string> = {
+      const authedHeaders: Record<string, string> = {
         'Content-Type': 'application/json',
       };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      // Step 1: 确认并保存团队
-      const response = await fetch(`${API_URL}/aiteam-creation/sessions/${sessionId}/confirm`, {
+
+      // Step 1: 确认并保存团队（Sprint 2.3: 走 authedFetch）
+      const response = await authedFetch(`/aiteam-creation/sessions/${sessionId}/confirm`, {
         method: 'POST',
-        headers,
+        headers: authedHeaders,
       });
 
       const data = await response.json();
@@ -395,9 +369,9 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
       if (autoPublishToMarketplace && sessionId) {
         try {
           console.log('🚀 Auto-publishing to marketplace...');
-          const publishResponse = await fetch(`${API_URL}/aiteam-creation/sessions/${sessionId}/publish-to-marketplace`, {
+          const publishResponse = await authedFetch(`/aiteam-creation/sessions/${sessionId}/publish-to-marketplace`, {
             method: 'POST',
-            headers,
+            headers: authedHeaders,
           });
 
           const publishData = await publishResponse.json();
@@ -461,17 +435,8 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
    */
   const handleDownload = async (url: string) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
-      const headers: Record<string, string> = {};
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch(`${API_URL}${url}`, {
+      const response = await authedFetch(url, {
         method: 'GET',
-        headers,
       });
 
       if (!response.ok) {
@@ -502,21 +467,10 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
    */
   const handleIntegrateToProClaw = async (teamSessionId: string) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      // 调用后端 API 将团队集成到 ProClaw
-      // TODO: 后端接口尚未实现，返回占位响应
-      const response = await fetch(`${API_URL}/aiteam-creation/sessions/${teamSessionId}/integrate-proclaw`, {
+      // Sprint 2.3: 走 authedFetch（OIDC cookie 由 /api/auth/proxy 注入 Authorization）
+      const response = await authedFetch(`/aiteam-creation/sessions/${teamSessionId}/integrate-proclaw`, {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const data = await response.json();

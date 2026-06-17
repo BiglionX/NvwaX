@@ -9,6 +9,8 @@
  * - 动态加载 Facebook SDK
  * - Facebook 登录（弹出授权窗口 → 获取 token → 发送到后端）
  * - 处理登录成功/失败状态
+ *
+ * Sprint 2.3: 不再写 localStorage（社交登录后端返回的 token 已废弃，请走 OIDC）
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -139,9 +141,7 @@ export function useSocialAuth() {
           const result = await authApi.facebookLogin(accessToken);
 
           if (result.success && result.data) {
-            // 保存 token 和用户信息
-            localStorage.setItem('user_token', result.data.token);
-            localStorage.setItem('user_info', JSON.stringify(result.data.user));
+            // Sprint 2.3: 不再写 localStorage（OIDC session 由后端 cookie 管理）
             setIsLoggingIn(false);
             resolve(result);
           } else {
@@ -234,8 +234,7 @@ export function useSocialAuth() {
             const result = await authApi.googleLogin(response.credential);
 
             if (result.success && result.data) {
-              localStorage.setItem('user_token', result.data.token);
-              localStorage.setItem('user_info', JSON.stringify(result.data.user));
+              // Sprint 2.3: 不再写 localStorage（OIDC session 由后端 cookie 管理）
               setIsLoggingIn(false);
               resolve(result);
             } else {

@@ -109,11 +109,8 @@ export default function TeamSkillPackageModal({
       setIsLoading(true);
       setError(null);
 
-      // 在实际应用中，这里应该先检查用户是否已登录 ProClaw
-      // 如果未登录，则引导用户进行 OAuth 授权
-      const token = localStorage.getItem('proclaw_token') || 'mock-token-for-dev';
-      
-      const result = await teamSkillApi.exportToProClaw(teamSkillId, token);
+      // Sprint 2.3: ProClaw 集成走 authedFetch（OIDC session 鉴权，不再读 localStorage）
+      const result = await teamSkillApi.exportToProClaw(teamSkillId);
       setProClawResult(result);
       setIsLoading(false);
     } catch (err) {

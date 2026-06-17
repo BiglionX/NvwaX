@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bot, Send, Sparkles, Loader } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { authedFetch } from '@/lib/oidc/authed-fetch';
 
 interface Message {
   id: string;
@@ -42,17 +43,7 @@ export default function AiTeamChat({ sessionId, onComplete }: AiTeamChatProps) {
 
   const loadSessionHistory = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const token = localStorage.getItem('user_token');
-      const headers: Record<string, string> = {};
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch(`${API_URL}/aiteam-creation/sessions/${sessionId}`, {
-        headers,
-      });
+      const response = await authedFetch(`/aiteam-creation/sessions/${sessionId}`);
       const data = await response.json();
       
       if (data.success) {
@@ -86,19 +77,9 @@ export default function AiTeamChat({ sessionId, onComplete }: AiTeamChatProps) {
     setMessages(prev => [...prev, newUserMessage]);
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const token = localStorage.getItem('user_token');
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch(`${API_URL}/aiteam-creation/sessions/${sessionId}/message`, {
+      const response = await authedFetch(`/aiteam-creation/sessions/${sessionId}/message`, {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: userMessage })
       });
 
