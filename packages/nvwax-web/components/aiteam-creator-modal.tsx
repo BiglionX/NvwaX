@@ -6,6 +6,8 @@ import { useAiTeamCreationProgress } from '@/hooks/use-aiteam-creation-progress'
 import CEOConfigPreview from './CEOConfigPreview';
 import DocumentPackagePreview from './DocumentPackagePreview';
 import { useTranslations, useLocale } from 'next-intl';
+import { useAuth } from '@/hooks/useAuth';
+import { authedFetch } from '@/lib/oidc/authed-fetch';
 
 interface AiTeamCreatorModalProps {
   onClose: () => void;
@@ -66,6 +68,7 @@ interface Message {
 export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCreatorModalProps) {
   const t = useTranslations('vcChatModal');
   const locale = useLocale();
+  const { isLoggedIn } = useAuth();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -103,18 +106,15 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
 
   // 初始化会话
   useEffect(() => {
-    // 先检查登录状态
-    const token = localStorage.getItem('user_token');
-    const userInfo = localStorage.getItem('user_info');
-    
-    if (!token || !userInfo) {
+    // Sprint 2.2: 用 useAuth().isLoggedIn 判断（不再读 localStorage）
+    if (!isLoggedIn) {
       addSystemMessage(t('loginRequired'));
       console.warn('User not logged in, skipping session creation');
       return;
     }
-    
+
     createSession();
-  }, []);
+  }, [isLoggedIn]);
 
   // 自动滚动到底部
   useEffect(() => {
@@ -123,42 +123,23 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
 
   const createSession = async () => {
     try {
-      // 检查用户是否登录
-      const token = localStorage.getItem('user_token');
-      const userInfo = localStorage.getItem('user_info');
-      
-      if (!token || !userInfo) {
-        addSystemMessage(t('loginRequiredShort'));
-        console.warn('User not logged in');
-        return;
-      }
-      
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      };
-      
-      const response = await fetch(`${API_URL}/aiteam-creation/sessions`, {
+      // Sprint 2.2: 走 authedFetch（OIDC cookie 由 /api/auth/proxy 注入 Authorization）
+      const response = await authedFetch('/aiteam-creation/sessions', {
         method: 'POST',
-        headers,
       });
 
       const data = await response.json();
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Token 过期或无效，提示重新登录
+          // Session 过期或无效，提示重新登录
           addSystemMessage(t('tokenExpired'));
-          console.warn('Token expired or invalid');
-          // 清除过期 token
-          localStorage.removeItem('user_token');
-          localStorage.removeItem('user_info');
+          console.warn('Session expired or invalid');
           return;
         }
         throw new Error(data.error?.message || data.error || t('sessionCreateError'));
       }
-      
+
       if (!data.success) {
         throw new Error(data.error?.message || data.error || t('sessionCreateError'));
       }

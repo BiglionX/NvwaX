@@ -1,12 +1,23 @@
+/**
+ * 通用认证中间件 (Sprint 2.2.2 — OIDC RP 接入)
+ *
+ * 支持三种令牌（按优先级）：
+ *   1. OIDC RS256 access_token（OIDC IdP 颁发）→ req.user（用户身份）
+ *   2. 业务 HS256 JWT token（userService 颁发）    → req.user（用户身份）
+ *   3. 管理员 HS256 JWT token（adminService 颁发）→ req.admin（管理员身份）
+ *
+ * 三者都不合法：401
+ */
 import { Request, Response, NextFunction } from 'express';
 import { userService } from '../services/user.service.js';
 import { adminService } from '../services/admin.service.js';
+import { oidcTokenService } from '../services/oidc/oidc-token.service.js';
 
-/**
- * 通用认证中间件
- * 支持用户 JWT token 和管理员 JWT token
- */
-export function universalAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function universalAuthMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   let token: string | undefined;
 
   // 优先从 Authorization header 获取 token
@@ -17,50 +28,62 @@ export function universalAuthMiddleware(req: Request, res: Response, next: NextF
     // 支持从 URL 参数获取 token（用于 SSE EventSource）
     token = req.query.token as string;
   }
-  
+
   if (!token) {
-    return res.status(401).json({ 
+    res.status(401).json({
       success: false,
-      error: { code: 'UNAUTHORIZED', message: '需要登录' } 
+      error: { code: 'UNAUTHORIZED', message: '需要登录' },
     });
+    return;
   }
 
-  // 尝试作为普通用户 JWT token 验证
+  // 1. OIDC RS256 access_token
+  try {
+    const payload = await oidcTokenService.verifyAccessToken(token);
+    const sub = typeof payload?.sub === 'string' && payload.sub.length > 0 ? payload.sub : null;
+    if (sub) {
+      req.user = {
+        id: sub,
+        email: typeof payload.email === 'string' ? payload.email : '',
+      };
+      req.currentUser = { id: sub, type: 'user' };
+      next();
+      return;
+    }
+  } catch {
+    // 不是 OIDC token，fallback
+  }
+
+  // 2. 业务 HS256 JWT token
   const decodedUser = userService.verifyToken(token);
-  
+
   if (decodedUser) {
-    // 是普通用户
     req.user = {
       id: decodedUser.userId,
-      email: decodedUser.email
+      email: decodedUser.email,
     };
-    req.currentUser = {
-      id: decodedUser.userId,
-      type: 'user'
-    };
-    return next();
+    req.currentUser = { id: decodedUser.userId, type: 'user' };
+    next();
+    return;
   }
 
-  // 尝试作为管理员 JWT token 验证
+  // 3. 管理员 HS256 JWT token
   const decodedAdmin = adminService.verifyToken(token);
-  
+
   if (decodedAdmin) {
-    // 是管理员
     req.admin = {
       id: decodedAdmin.adminId,
       username: decodedAdmin.username,
-      role: decodedAdmin.role
+      role: decodedAdmin.role,
     };
-    req.currentUser = {
-      id: decodedAdmin.adminId,
-      type: 'admin'
-    };
-    return next();
+    req.currentUser = { id: decodedAdmin.adminId, type: 'admin' };
+    next();
+    return;
   }
 
-  // 如果都不是，返回未授权
-  return res.status(401).json({ 
+  // 都不是
+  res.status(401).json({
     success: false,
-    error: { code: 'INVALID_TOKEN', message: '无效的令牌' } 
+    error: { code: 'INVALID_TOKEN', message: '无效的令牌' },
   });
 }

@@ -1,0 +1,169 @@
+/**
+ * Session API Route（Sprint 2.2）
+ *
+ * POST   /api/auth/session    写入加密 cookie（OIDC 回调成功后由客户端调用）
+ * GET    /api/auth/session    返回 { isLoggedIn, userInfo, expiresAt }
+ * DELETE /api/auth/session    清空 cookie（登出）
+ *
+ * Cookie 策略：
+ *   - 名称: nvwax_oidc_session
+ *   - 加密: AES-256-GCM（lib/oidc/cookie-crypto.ts）
+ *   - 标记: HttpOnly, SameSite=Lax, Path=/
+ *   - Secure: 仅生产环境
+ *   - Max-Age: 24 小时
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { encryptForCookie, decryptFromCookie } from '@/lib/oidc/cookie-crypto';
+import { refreshTokens, fetchUserInfo, OidcClientError } from '@/lib/oidc/client';
+import type { OidcUserInfo } from '@/lib/oidc/types';
+
+export const runtime = 'nodejs'; // 需要稳定 Web Crypto；Edge 也支持，但 Node 更易调试
+
+const COOKIE_NAME = 'nvwax_oidc_session';
+const COOKIE_MAX_AGE = 24 * 60 * 60; // 24h
+
+interface SessionPayload {
+  accessToken: string;
+  refreshToken?: string;
+  idToken?: string;
+  /** access_token 过期时间（绝对毫秒时间戳） */
+  expiresAt: number;
+  userInfo: OidcUserInfo;
+}
+
+interface PublicSession {
+  isLoggedIn: boolean;
+  userInfo: OidcUserInfo | null;
+  expiresAt: number | null;
+}
+
+function isProd(): boolean {
+  return process.env.NODE_ENV === 'production';
+}
+
+function buildCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: isProd(),
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: COOKIE_MAX_AGE,
+  };
+}
+
+function buildClearCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: isProd(),
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: 0,
+  };
+}
+
+// ─────────── POST：写入 session ───────────
+
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  let body: SessionPayload;
+  try {
+    body = (await req.json()) as SessionPayload;
+  } catch {
+    return NextResponse.json({ error: 'invalid_request', error_description: 'invalid JSON body' }, { status: 400 });
+  }
+  if (!body.accessToken || !body.expiresAt || !body.userInfo?.sub) {
+    return NextResponse.json(
+      { error: 'invalid_request', error_description: 'accessToken, expiresAt, userInfo.sub are required' },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const encrypted = await encryptForCookie(JSON.stringify(body));
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set(COOKIE_NAME, encrypted, buildCookieOptions());
+    return res;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[api/auth/session] encrypt failed:', msg, 'secret length:', (process.env.OIDC_SESSION_SECRET ?? '').length);
+    return NextResponse.json({ error: 'server_error', error_description: msg }, { status: 500 });
+  }
+}
+
+// ─────────── GET：读取 session（必要时自动 refresh） ───────────
+
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const cookie = req.cookies.get(COOKIE_NAME)?.value;
+  if (!cookie) {
+    return NextResponse.json<PublicSession>({ isLoggedIn: false, userInfo: null, expiresAt: null });
+  }
+
+  let payload: SessionPayload;
+  try {
+    const plain = await decryptFromCookie(cookie);
+    payload = JSON.parse(plain) as SessionPayload;
+  } catch {
+    // 解密失败：cookie 被篡改或密钥轮换，强制重登
+    const res = NextResponse.json<PublicSession>({ isLoggedIn: false, userInfo: null, expiresAt: null });
+    res.cookies.set(COOKIE_NAME, '', buildClearCookieOptions());
+    return res;
+  }
+
+  // access_token 过期且有 refresh_token：尝试静默刷新
+  const now = Date.now();
+  if (payload.expiresAt <= now + 30 * 1000) {
+    if (!payload.refreshToken) {
+      const res = NextResponse.json<PublicSession>({ isLoggedIn: false, userInfo: null, expiresAt: null });
+      res.cookies.set(COOKIE_NAME, '', buildClearCookieOptions());
+      return res;
+    }
+    try {
+      const tokens = await refreshTokens(payload.refreshToken);
+      payload = {
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token ?? payload.refreshToken,
+        idToken: tokens.id_token ?? payload.idToken,
+        expiresAt: Date.now() + tokens.expires_in * 1000,
+        userInfo: payload.userInfo,
+      };
+      // 顺便刷一次 userinfo，捕捉账号变更
+      try {
+        payload.userInfo = await fetchUserInfo(payload.accessToken);
+      } catch {
+        // userinfo 失败不影响 access_token 刷新
+      }
+      const encrypted = await encryptForCookie(JSON.stringify(payload));
+      const refreshedRes = NextResponse.json<PublicSession>({
+        isLoggedIn: true,
+        userInfo: payload.userInfo,
+        expiresAt: payload.expiresAt,
+      });
+      refreshedRes.cookies.set(COOKIE_NAME, encrypted, buildCookieOptions());
+      return refreshedRes;
+    } catch (err) {
+      // refresh 失败：session 失效，强制重登
+      const reason = err instanceof OidcClientError ? err.error : 'server_error';
+      const res = NextResponse.json<PublicSession>(
+        { isLoggedIn: false, userInfo: null, expiresAt: null },
+        { status: 401 },
+      );
+      res.cookies.set(COOKIE_NAME, '', buildClearCookieOptions());
+      res.headers.set('x-oidc-session-error', reason);
+      return res;
+    }
+  }
+
+  return NextResponse.json<PublicSession>({
+    isLoggedIn: true,
+    userInfo: payload.userInfo,
+    expiresAt: payload.expiresAt,
+  });
+}
+
+// ─────────── DELETE：清空 session ───────────
+
+export async function DELETE(): Promise<NextResponse> {
+  const res = NextResponse.json({ ok: true });
+  res.cookies.set(COOKIE_NAME, '', buildClearCookieOptions());
+  return res;
+}

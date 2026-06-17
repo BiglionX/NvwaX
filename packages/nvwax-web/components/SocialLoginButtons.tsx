@@ -10,8 +10,6 @@
 import { useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSocialAuth } from '@/hooks/useSocialAuth';
-import { useAuth } from '@/hooks/useAuth';
-import type { User } from '@/lib/api/auth';
 import { Divider } from '@/components/UI';
 
 // Facebook 图标（SVG内联）
@@ -50,7 +48,6 @@ function WeChatIcon({ size = 20 }: { size?: number }) {
 export default function SocialLoginButtons() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login: setAuthState } = useAuth();
   const { facebookStatus, googleStatus, isLoggingIn, loginError, loginWithFacebook, loginWithGoogle } = useSocialAuth();
 
   // 获取重定向地址
@@ -65,13 +62,17 @@ export default function SocialLoginButtons() {
     try {
       const result = await loginWithFacebook();
       if (result.success && result.data) {
-        setAuthState(result.data.token, result.data.user as User & { [key: string]: unknown });
+        // Sprint 2.2：useAuth.login 仅触发 OIDC 跳转（returnTo?），不再接收 token/userInfo
+        // access_token 走 httpOnly cookie，前端不能也无法注入 token。
+        // Social 登录在 Sprint 2.2 OIDC 改造后仅作为兼容入口，
+        // 真实业务请走 ProClaw 账号（OIDC RP）登录。
+        console.warn('[SocialLogin] Facebook 登录返回 token 已废弃，请改用 ProClaw OIDC 登录');
         router.push(getRedirectUrl());
       }
     } catch {
       // 错误已经由 useSocialAuth 处理并设置 loginError
     }
-  }, [loginWithFacebook, setAuthState, router, getRedirectUrl]);
+  }, [loginWithFacebook, router, getRedirectUrl]);
 
   /**
    * Google 登录处理
@@ -80,13 +81,15 @@ export default function SocialLoginButtons() {
     try {
       const result = await loginWithGoogle();
       if (result.success && result.data) {
-        setAuthState(result.data.token, result.data.user as User & { [key: string]: unknown });
+        // Sprint 2.2：useAuth.login 仅触发 OIDC 跳转（returnTo?），不再接收 token/userInfo
+        // Social 登录在 Sprint 2.2 OIDC 改造后仅作为兼容入口。
+        console.warn('[SocialLogin] Google 登录返回 token 已废弃，请改用 ProClaw OIDC 登录');
         router.push(getRedirectUrl());
       }
     } catch {
       // 错误已经由 useSocialAuth 处理并设置 loginError
     }
-  }, [loginWithGoogle, setAuthState, router, getRedirectUrl]);
+  }, [loginWithGoogle, router, getRedirectUrl]);
 
   /**
    * 微信登录处理（预留）

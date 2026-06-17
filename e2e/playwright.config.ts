@@ -28,9 +28,6 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    extraHTTPHeaders: {
-      'X-Playwright-Request': 'true',
-    },
   },
 
   projects: [

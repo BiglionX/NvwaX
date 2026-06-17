@@ -14,6 +14,7 @@
     "test": "pnpm --recursive test || true",
     "test:server": "pnpm --filter nvwax-server test",
     "test:portal": "pnpm --filter account-portal test",
+    "test:web": "pnpm --filter nvwax-web test",
     "e2e": "playwright test --config=e2e/playwright.config.ts",
     "e2e:headed": "playwright test --config=e2e/playwright.config.ts --headed",
     "e2e:install": "playwright install --with-deps chromium",

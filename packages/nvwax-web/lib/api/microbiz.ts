@@ -1,9 +1,12 @@
 /**
  * MicroBiz API 模块
  * 小商家经营 AI Team 套件 API
+ *
+ * Sprint 2.2：所有请求走 /api/auth/proxy 转发，由 Next.js API Route 读 OIDC cookie
+ *           注入 Authorization 头。
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { authedFetch } from '@/lib/oidc/authed-fetch';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type JsonValue = any;
@@ -53,7 +56,7 @@ export const microbizApi = {
    */
   async getTeams(category?: string): Promise<{ success: boolean; data: MicroBizTeam[] }> {
     const params = category ? `?category=${category}` : '';
-    const res = await fetch(`${API_URL}/microbiz/teams${params}`);
+    const res = await authedFetch(`/microbiz/teams${params}`);
     return res.json();
   },
 
@@ -61,7 +64,7 @@ export const microbizApi = {
    * 获取团队详情
    */
   async getTeamById(id: string): Promise<{ success: boolean; data: MicroBizTeam }> {
-    const res = await fetch(`${API_URL}/microbiz/teams/${id}`);
+    const res = await authedFetch(`/microbiz/teams/${id}`);
     return res.json();
   },
 
@@ -69,7 +72,7 @@ export const microbizApi = {
    * 获取团队下的 Agent
    */
   async getTeamAgents(teamId: string): Promise<{ success: boolean; data: MicroBizAgent[] }> {
-    const res = await fetch(`${API_URL}/microbiz/teams/${teamId}/agents`);
+    const res = await authedFetch(`/microbiz/teams/${teamId}/agents`);
     return res.json();
   },
 
@@ -79,16 +82,12 @@ export const microbizApi = {
   async install(
     selectedTeams: string[],
     accountBindings?: Record<string, JsonValue>,
-    preferences?: Record<string, JsonValue>,
-    token?: string
+    preferences?: Record<string, JsonValue>
   ): Promise<{ success: boolean; data: MicroBizInstallation; message: string }> {
-    const res = await fetch(`${API_URL}/microbiz/install`, {
+    const res = await authedFetch('/microbiz/install', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({ selectedTeams, accountBindings, preferences })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ selectedTeams, accountBindings, preferences }),
     });
     return res.json();
   },
@@ -96,10 +95,8 @@ export const microbizApi = {
   /**
    * 获取用户的安装记录
    */
-  async getInstallation(token?: string): Promise<{ success: boolean; data: MicroBizInstallation | null }> {
-    const res = await fetch(`${API_URL}/microbiz/installations`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    });
+  async getInstallation(): Promise<{ success: boolean; data: MicroBizInstallation | null }> {
+    const res = await authedFetch('/microbiz/installations');
     return res.json();
   },
 
@@ -108,16 +105,12 @@ export const microbizApi = {
    */
   async updateBindings(
     platform: string,
-    bindingData: Record<string, JsonValue>,
-    token?: string
+    bindingData: Record<string, JsonValue>
   ): Promise<{ success: boolean; data: MicroBizInstallation }> {
-    const res = await fetch(`${API_URL}/microbiz/installations/bindings`, {
+    const res = await authedFetch('/microbiz/installations/bindings', {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({ platform, bindingData })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ platform, bindingData }),
     });
     return res.json();
   },
@@ -126,16 +119,12 @@ export const microbizApi = {
    * 更新运营偏好
    */
   async updatePreferences(
-    preferences: Record<string, JsonValue>,
-    token?: string
+    preferences: Record<string, JsonValue>
   ): Promise<{ success: boolean; data: MicroBizInstallation }> {
-    const res = await fetch(`${API_URL}/microbiz/installations/preferences`, {
+    const res = await authedFetch('/microbiz/installations/preferences', {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({ preferences })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preferences }),
     });
     return res.json();
   },
@@ -144,16 +133,12 @@ export const microbizApi = {
    * 更新安装状态（暂停/恢复/卸载）
    */
   async updateStatus(
-    status: 'active' | 'paused' | 'uninstalled',
-    token?: string
+    status: 'active' | 'paused' | 'uninstalled'
   ): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_URL}/microbiz/installations/status`, {
+    const res = await authedFetch('/microbiz/installations/status', {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({ status })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
     });
     return res.json();
   }

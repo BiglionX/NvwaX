@@ -1,5 +1,17 @@
 import axios from 'axios';
 
+/**
+ * Auth API client（Sprint 2.2 改造后）
+ *
+ * 鉴权模式从 localStorage JWT 切换为 OIDC httpOnly cookie：
+ *   - 业务请求由前端组件用 `authedFetch('/api/auth/proxy?path=...')` 转发，
+ *     API Route 读 nvwax_oidc_session cookie 注入 Authorization 头
+ *   - 此 axios 实例仍保留以兼容旧调用点，但：
+ *     · request 拦截器不再注入 Authorization（走 proxy 才带 token）
+ *     · response 401 不再清 localStorage（cookie 由 /api/auth/session DELETE 清理）
+ *   - register / social-login 旧 JWT 注册 API 保留，登录后跳 /login 走 OIDC
+ */
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 const api = axios.create({
@@ -9,25 +21,16 @@ const api = axios.create({
   }
 });
 
-// 添加请求拦截器，自动添加 token
+// 请求拦截器：不再注入 Authorization（走 /api/auth/proxy 才带 token）
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('user_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
   return config;
 });
 
-// 添加响应拦截器，处理 401 错误
+// 响应拦截器：401 不再清 localStorage（cookie 由 /api/auth/session DELETE 清理）
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // 普通用户 401，清除用户 token 并跳转到用户登录页
-      localStorage.removeItem('user_token');
-      localStorage.removeItem('user_info');
-      localStorage.removeItem('token');
-      localStorage.removeItem('userInfo');
       // 只有在不在登录页时才跳转，避免循环
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
         window.location.href = '/login';

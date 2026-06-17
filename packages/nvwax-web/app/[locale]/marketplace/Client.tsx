@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { searchApi, Agent, SkillRecommendation } from '@/lib/api/search';
 import { aiteamApi, AiTeam } from '@/lib/api/aiteams';
 import { teamSkillApi, TeamSkill } from '@/lib/api/team-skills';
+import { authedFetch } from '@/lib/oidc/authed-fetch';
 import { Star, Download, ExternalLink, Users, Search, X, TrendingUp, Plus, Sparkles, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 import { Button, Input, Space, Container, Card, Badge, Tag, Modal } from '@/components/UI';
@@ -174,15 +175,11 @@ export default function MarketplaceClient() {
   const handleAutoGenerate = async () => {
     setGeneratingAiTeam(true);
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const token = localStorage.getItem('user_token');
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const response = await fetch(`${API_URL}/aiteams/generate-from-query`, {
+      // Sprint 2.2: 走 authedFetch（/api/auth/proxy 读 OIDC cookie 注入 Authorization）
+      const response = await authedFetch('/aiteams/generate-from-query', {
         method: 'POST',
-        headers,
-        body: JSON.stringify({ query: debouncedSearch })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: debouncedSearch }),
       });
 
       const data = await response.json();

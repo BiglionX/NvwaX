@@ -38,14 +38,14 @@ const platformLabels: Record<string, string> = {
 export default function MicroBizManagementPage() {
   const { userInfo } = useAuth();
   const queryClient = useQueryClient();
-  const token = typeof window !== 'undefined' ? localStorage.getItem('user_token') || undefined : undefined;
   const userId = userInfo?.id;
 
   // 获取安装记录
+  // Sprint 2.2: 不传 token（后端由 /api/auth/proxy 注入 Authorization）
   const { data: installData, isLoading: loadingInstall, error: installError } = useQuery({
     queryKey: ['microbiz-installation', userId],
-    queryFn: () => microbizApi.getInstallation(token),
-    enabled: !!token
+    queryFn: () => microbizApi.getInstallation(),
+    enabled: !!userId,
   });
 
   // 获取所有团队定义
@@ -62,7 +62,7 @@ export default function MicroBizManagementPage() {
   // 更新状态（暂停/恢复/卸载）
   const statusMutation = useMutation({
     mutationFn: (newStatus: 'active' | 'paused' | 'uninstalled') =>
-      microbizApi.updateStatus(newStatus, token),
+      microbizApi.updateStatus(newStatus),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['microbiz-installation', userId] });
     }

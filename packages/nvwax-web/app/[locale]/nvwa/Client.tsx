@@ -119,11 +119,11 @@ export default function NvwaClient() {
         }
 
         // 使用 useAuth 的 login 方法存储 Token 和用户信息
-        login(data.data.token, {
-          id: data.data.user.id,
-          email: data.data.user.email,
-          name: data.data.user.name,
-        });
+        // Sprint 2.2：useAuth.login 仅触发 OIDC 跳转（returnTo?），不再接收 token/userInfo
+        // access_token 走 httpOnly cookie，前端不能也无法注入 token。
+        // ProClaw 跨服务认证已在 Sprint 2.2 重构后废弃（改走 OIDC RP 流程），
+        // 保留 fetch 调用仅为兼容历史链接，服务端忽略即可。
+        console.log('[ProClaw CrossAuth] legacy cross-auth ignored; use OIDC RP flow');
 
         console.log('[ProClaw CrossAuth] Auto-login successful:', data.data.user.email);
       } catch (err) {

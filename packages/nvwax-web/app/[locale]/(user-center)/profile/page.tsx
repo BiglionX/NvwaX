@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '@/lib/api/users';
@@ -50,49 +50,30 @@ interface StatsCardsProps {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { isLoggedIn, loading } = useAuth();
-  const hasCheckedAuth = useRef(false);
+  const { isLoggedIn, loading, userInfo } = useAuth();
   const [shouldRedirect, setShouldRedirect] = useState(false);
 
   console.log('=== ProfilePage Render ===');
   console.log('isLoggedIn:', isLoggedIn);
   console.log('loading:', loading);
 
-  // 在组件挂载时立即检查 localStorage，不等待 useAuth
+  // Sprint 2.2: 不再读 localStorage，靠 useAuth().isLoggedIn 判断
+  // useAuth 内部 fetch /api/auth/session，读 OIDC cookie
   useEffect(() => {
-    if (hasCheckedAuth.current) return;
-    
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const userInfoStr = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
-    
-    console.log('ProfilePage immediate check - token exists:', !!token, 'userInfo exists:', !!userInfoStr);
-    
-    if (!token || !userInfoStr) {
-      // 确实未登录，重定向到 login
-      console.log('No auth found, redirecting to login...');
+    if (loading) return;
+    if (!isLoggedIn) {
       setShouldRedirect(true);
       router.replace('/login?redirect=/profile');
       return;
     }
-    
-    // 有 token，标记为已检查
-    hasCheckedAuth.current = true;
-    
-    // 检查是否为管理员
-    try {
-      const user = JSON.parse(userInfoStr);
-      const adminEmails = ['1055603323@qq.com', 'admin'];
-      const userEmail = user.email?.toLowerCase();
-      const isAdmin = userEmail && (adminEmails.includes(userEmail) || userEmail.endsWith('@admin.com'));
-      
-      if (isAdmin) {
-        console.log('Admin user detected, redirecting to admin dashboard...');
-        router.replace('/admin/dashboard');
-      }
-    } catch (e) {
-      console.error('Failed to parse user info:', e);
+    // 检查是否为管理员（按 OIDC userInfo.email 判断，不依赖 localStorage）
+    const adminEmails = ['1055603323@qq.com', 'admin'];
+    const userEmail = userInfo?.email?.toLowerCase();
+    const isAdmin = userEmail && (adminEmails.includes(userEmail) || userEmail.endsWith('@admin.com'));
+    if (isAdmin) {
+      router.replace('/admin/dashboard');
     }
-  }, []); // 只在挂载时执行一次
+  }, [isLoggedIn, loading, userInfo, router]);
 
   // 如果 shouldRedirect 为 true，显示跳转中
   if (shouldRedirect) {

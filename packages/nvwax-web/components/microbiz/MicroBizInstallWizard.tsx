@@ -51,8 +51,8 @@ export default function MicroBizInstallWizard({ onComplete, onClose }: MicroBizI
     setInstalling(true);
     setError('');
     try {
-      const token = localStorage.getItem('user_token') || undefined;
-      const result = await microbizApi.install(selectedTeams, accountBindings, preferences, token);
+      // Sprint 2.2: 不传 token，由 microbizApi 内部走 /api/auth/proxy 转发
+      const result = await microbizApi.install(selectedTeams, accountBindings, preferences);
       if (result.success) {
         setCurrentStep('done');
       } else {

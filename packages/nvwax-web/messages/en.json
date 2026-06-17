@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "Loading...",
+    "locale": "en",
     "error": "Something went wrong",
     "save": "Save",
     "cancel": "Cancel",

@@ -1,5 +1,15 @@
 import axios from 'axios';
 
+/**
+ * Admin API client（Sprint 2.2 改造后）
+ *
+ * Admin 鉴权独立通道保留（Sprint 2.2 范围外，不迁 OIDC）：
+ *   - request 拦截器仍读 admin_token 注入 Authorization（admin 页面仍走 JWT）
+ *   - 401 不再清 admin_token / admin_info localStorage
+ *     （admin_token 由 admin 页面管理；OIDC cookie 由 /api/auth/session DELETE 清理）
+ *   - 跳转 /admin/login 的兜底保留（避免 admin 页死循环）
+ */
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 const api = axios.create({
@@ -9,7 +19,7 @@ const api = axios.create({
   }
 });
 
-// 添加请求拦截器，自动添加 token
+// 请求拦截器：admin_token 注入 Authorization（admin 独立通道）
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('admin_token');
   if (token) {
@@ -18,15 +28,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// 添加响应拦截器，处理 401 错误
+// 响应拦截器：401 仅跳转 /admin/login（不清理 localStorage）
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // 管理员 401，清除管理员 token 并跳转到管理员登录页
-      localStorage.removeItem('admin_token');
-      localStorage.removeItem('admin_info');
-      // 只有在不在登录页时才跳转，避免循环
+      // 只有在不在 admin 登录页时才跳转，避免循环
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/admin/login')) {
         window.location.href = '/admin/login';
       }
