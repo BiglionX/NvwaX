@@ -1,3 +1,5 @@
+'use client';
+
 import { useLocale, translate } from '@/lib/i18n';
 
 export default function ErrorPage() {
