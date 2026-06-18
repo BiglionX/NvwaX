@@ -123,21 +123,15 @@ class OidcController {
     }
 
     // 渲染最简 HTML form
-    const html = this.renderLoginForm({
-      action: '/oauth/authorize',
-      hidden: {
-        client_id: params.client_id,
-        redirect_uri: params.redirect_uri,
-        scope: params.scope,
-        state: params.state,
-        code_challenge: params.code_challenge,
-        code_challenge_method: params.code_challenge_method,
-        nonce: params.nonce,
-      },
-      error: req.query.error as string | undefined,
-    });
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.send(html);
+    // Sprint 2.10: 改为 302 重定向到 account-portal 登录页（/portal/login/），
+    // 把当前 /oauth/authorize 的完整 URL 作为 redirectTo 传过去；
+    // account-portal 登录成功后 set pc_session cookie，
+    // 然后 window.location.assign(redirectTo) 跳回这里，
+    // 这时 backend 看到 pc_session 会直接签 code 跳到 redirect_uri。
+    const returnTo = req.originalUrl || '/oauth/authorize';
+    const loginUrl = `/portal/login/?redirectTo=${encodeURIComponent(returnTo)}`;
+    res.redirect(302, loginUrl);
+    return;
   };
 
   // ──────────── Authorize POST ────────────
