@@ -317,3 +317,49 @@ a:hover {
 .pc-forgot-panel a.pc-link {
   font-size: 14px;
 }
+
+/* Sprint 2.11 — password input with inline show/hide toggle button */
+.pc-input-group {
+  position: relative;
+  display: block;
+}
+
+.pc-input-group .pc-input--with-action {
+  /* Leave room on the right for the toggle button so long passwords don't
+     slide underneath the icon. */
+  padding-right: 44px;
+}
+
+.pc-input-group__action {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--pc-radius-sm);
+  color: var(--pc-color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pc-input-group__action:hover {
+  background: var(--pc-color-bg-muted);
+  color: var(--pc-color-text);
+}
+
+.pc-input-group__action:focus-visible {
+  outline: 2px solid var(--pc-color-primary);
+  outline-offset: 2px;
+}
+
+.pc-input-group__action[aria-pressed='true'] {
+  color: var(--pc-color-primary);
+}

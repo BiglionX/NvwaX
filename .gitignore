@@ -110,3 +110,50 @@ id_ed25519*
 
 # Password records (security sensitive)
 PASSWORD_RECORD.md
+
+# ==== Project root: one-time debug/deploy/verify scripts & artifacts ====
+# Throwaway files generated during troubleshooting. Leading slash restricts
+# matching to the repo root, so legitimate files under packages/ are unaffected.
+/check-*
+/check_*
+/verify-*
+/verify_*
+/deploy-*
+/deploy_*
+/deploy-*.stdout
+/deploy.*.stdout
+/probe*
+/find-*
+/run-*
+/inspect*
+/sanity*
+/query-*
+/step*
+/py-check*
+/py-ssh-test.bat
+/cmd-check*
+/ssh-*
+/ssh-hostname.out
+/deep*
+/reg-*.json
+/prod-*
+/path-check.txt
+/idp-*.log
+/web-*.log
+/auth-resp.html
+/login-resp.html
+/login-page-dump.html
+/portal-out.tar.gz
+/backend-dist.tar.gz
+/1.log
+/tsc.log
+/.tmp-*
+/clean-*
+/restart-*
+/start-*
+/stop-*
+/rollback_*
+/reset_*
+# Playwright / test runners leave behind result directories at any depth.
+/test-results/
+/packages/*/test-results/

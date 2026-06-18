@@ -3,6 +3,7 @@
 import { useState, useTransition, FormEvent } from 'react';
 import { portalApi, PortalApiError } from '@/lib/api-client';
 import { useLocale, translate } from '@/lib/i18n';
+import { PasswordInput } from './PasswordInput';
 
 type Props = {
   /** Optional default value for the email input (used by SPA tab switching). */
@@ -15,11 +16,15 @@ type Props = {
   onSwitchMode?: (mode: 'login') => void;
 };
 
+// Map backend error codes to user-facing i18n keys. Unknown codes fall back to a
+// generic "something went wrong" message — never to the email-specific message,
+// which would mislead users when the actual failure is a server error.
 const ERROR_KEYS: Record<string, string> = {
   email_taken: 'register.error.emailTaken',
   weak_password: 'register.error.weakPassword',
   invalid_email: 'register.error.invalidEmail',
 };
+const FALLBACK_KEY = 'register.error.generic';
 
 export function RegisterForm({ defaultEmail, onEmailTaken, onSwitchMode }: Props) {
   const locale = useLocale();
@@ -41,11 +46,12 @@ export function RegisterForm({ defaultEmail, onEmailTaken, onSwitchMode }: Props
         .catch((err) => {
           if (err instanceof PortalApiError) {
             if (err.code === 'email_taken') {
-              setError(translate(locale, ERROR_KEYS[err.code] ?? 'register.error.invalidEmail'));
+              setError(translate(locale, ERROR_KEYS.email_taken));
               // Trigger SPA auto-switch to login tab with prefilled email.
               onEmailTaken?.(email);
             } else {
-              setError(translate(locale, ERROR_KEYS[err.code] ?? 'register.error.invalidEmail'));
+              const key = ERROR_KEYS[err.code] ?? FALLBACK_KEY;
+              setError(translate(locale, key));
             }
           } else {
             setError(translate(locale, 'login.error.network'));
@@ -88,16 +94,16 @@ export function RegisterForm({ defaultEmail, onEmailTaken, onSwitchMode }: Props
         <label className="pc-field__label" htmlFor="pc-register-password">
           {translate(locale, 'register.password')}
         </label>
-        <input
+        <PasswordInput
           id="pc-register-password"
-          className="pc-input"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={10}
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          data-testid="register-password"
+          onChange={setPassword}
+          autoComplete="new-password"
+          minLength={10}
+          showLabel={translate(locale, 'register.password.show')}
+          hideLabel={translate(locale, 'register.password.hide')}
+          testId="register-password"
+          toggleTestId="register-password-toggle"
         />
         <span className="pc-hint">{translate(locale, 'register.passwordHint')}</span>
       </div>

@@ -87,12 +87,14 @@ export function loginRateLimiter(req: Request, res: Response, next: NextFunction
 
   if (!allowed) {
     res.setHeader('Retry-After', retryAfter!.toString());
+    // Sprint 2.11: 响应体格式与其他 /api/portal/* 业务错误保持一致
+    // —— { code, message } 扁平结构，方便前端 PortalApiError 直接复用同一套 mapping。
+    // （之前嵌套在 { success: false, error: {...} } 里时，前端会落到
+    // login.error.generic 兜底文案，误导用户。修复后前端会显示 login.error.rateLimited。）
+    const minutes = Math.ceil(retryAfter! / 60);
     res.status(429).json({
-      success: false,
-      error: {
-        code: 'RATE_LIMITED',
-        message: `登录尝试过于频繁，请 ${Math.ceil(retryAfter! / 60)} 分钟后再试`
-      }
+      code: 'rate_limited',
+      message: `登录尝试过于频繁，请 ${minutes} 分钟后再试`,
     });
     return;
   }

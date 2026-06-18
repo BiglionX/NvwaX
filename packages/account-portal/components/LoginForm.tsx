@@ -3,6 +3,7 @@
 import { useState, useTransition, FormEvent } from 'react';
 import { portalApi, PortalApiError } from '@/lib/api-client';
 import { useLocale, translate } from '@/lib/i18n';
+import { PasswordInput } from './PasswordInput';
 
 type Props = {
   /** Optional next URL — preserved in hidden input to forward to the API. */
@@ -21,6 +22,10 @@ const ERROR_KEYS: Record<string, string> = {
   rate_limited: 'login.error.rateLimited',
   portal_unavailable: 'login.error.network',
 };
+// Unknown backend codes must NOT fall back to login.error.invalid — that would
+// mislead users with "email or password is incorrect" when the real cause is a
+// server-side failure. Use a generic message instead.
+const FALLBACK_KEY = 'login.error.generic';
 
 export function LoginForm({ redirectTo, defaultEmail, onSwitchMode, notice }: Props) {
   const locale = useLocale();
@@ -42,7 +47,7 @@ export function LoginForm({ redirectTo, defaultEmail, onSwitchMode, notice }: Pr
         })
         .catch((err) => {
           if (err instanceof PortalApiError) {
-            setError(translate(locale, ERROR_KEYS[err.code] ?? 'login.error.invalid'));
+            setError(translate(locale, ERROR_KEYS[err.code] ?? FALLBACK_KEY));
           } else {
             setError(translate(locale, 'login.error.network'));
           }
@@ -85,16 +90,16 @@ export function LoginForm({ redirectTo, defaultEmail, onSwitchMode, notice }: Pr
         <label className="pc-field__label" htmlFor="pc-login-password">
           {translate(locale, 'login.password')}
         </label>
-        <input
+        <PasswordInput
           id="pc-login-password"
-          className="pc-input"
-          type="password"
-          autoComplete="current-password"
-          required
-          minLength={10}
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          data-testid="login-password"
+          onChange={setPassword}
+          autoComplete="current-password"
+          minLength={10}
+          showLabel={translate(locale, 'login.password.show')}
+          hideLabel={translate(locale, 'login.password.hide')}
+          testId="login-password"
+          toggleTestId="login-password-toggle"
         />
         <div className="pc-field__meta">
           <a
