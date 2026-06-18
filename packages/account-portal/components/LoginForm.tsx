@@ -7,6 +7,13 @@ import { useLocale, translate } from '@/lib/i18n';
 type Props = {
   /** Optional next URL — preserved in hidden input to forward to the API. */
   redirectTo?: string;
+  /** Optional default value for the email input (used by SPA tab switching). */
+  defaultEmail?: string;
+  /** Optional callback fired when the user clicks "Create one" or "Forgot password?".
+   *  href on the underlying <a> is preserved as a no-JS fallback. */
+  onSwitchMode?: (mode: 'register' | 'forgot') => void;
+  /** Optional inline notice shown above the form (e.g. after email_taken auto-switch). */
+  notice?: string | null;
 };
 
 const ERROR_KEYS: Record<string, string> = {
@@ -15,9 +22,9 @@ const ERROR_KEYS: Record<string, string> = {
   portal_unavailable: 'login.error.network',
 };
 
-export function LoginForm({ redirectTo }: Props) {
+export function LoginForm({ redirectTo, defaultEmail, onSwitchMode, notice }: Props) {
   const locale = useLocale();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(defaultEmail ?? '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -48,6 +55,12 @@ export function LoginForm({ redirectTo }: Props) {
       {error ? (
         <div className="pc-error" role="alert" data-testid="login-error">
           {error}
+        </div>
+      ) : null}
+
+      {notice ? (
+        <div className="pc-success" role="status" data-testid="login-notice">
+          {notice}
         </div>
       ) : null}
 
@@ -83,6 +96,21 @@ export function LoginForm({ redirectTo }: Props) {
           onChange={(e) => setPassword(e.target.value)}
           data-testid="login-password"
         />
+        <div className="pc-field__meta">
+          <a
+            className="pc-link"
+            href="/portal/?mode=forgot"
+            onClick={(e) => {
+              if (onSwitchMode) {
+                e.preventDefault();
+                onSwitchMode('forgot');
+              }
+            }}
+            data-testid="login-forgot"
+          >
+            {translate(locale, 'login.forgot')}
+          </a>
+        </div>
       </div>
 
       <input type="hidden" name="redirectTo" value={redirectTo ?? ''} />
@@ -107,7 +135,17 @@ export function LoginForm({ redirectTo }: Props) {
 
       <p style={{ marginTop: 18, fontSize: 13, color: 'var(--pc-color-text-muted)' }}>
         {translate(locale, 'login.noAccount')}{' '}
-        <a className="pc-link" href="/portal/register/">
+        <a
+          className="pc-link"
+          href="/portal/register/"
+          onClick={(e) => {
+            if (onSwitchMode) {
+              e.preventDefault();
+              onSwitchMode('register');
+            }
+          }}
+          data-testid="login-switch-register"
+        >
           {translate(locale, 'login.register')}
         </a>
       </p>

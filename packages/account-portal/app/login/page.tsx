@@ -1,24 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { LoginForm } from '@/components/LoginForm';
-import { useLocale, translate } from '@/lib/i18n';
+import { useEffect } from 'react';
 
+/**
+ * Sprint 2.11 — Legacy /portal/login/ entry.
+ *
+ * Backend OIDC authorizeGet still issues 302 Location: /portal/login/?redirectTo=...
+ * (see packages/nvwax-server/src/controllers/oidc.controller.ts). We redirect
+ * client-side to the SPA at /portal/?mode=login&..., preserving all query params
+ * so `redirectTo` is not lost.
+ *
+ * If the caller already passed ?mode=register (deep link from an external page),
+ * we honor that instead of forcing login.
+ */
 export default function LoginPage() {
-  const locale = useLocale();
-  const [redirectTo, setRedirectTo] = useState<string | undefined>(undefined);
-
   useEffect(() => {
-    // Sprint 2.10: 从 URL 读 redirectTo 避免 searchParams 触发 dynamic 渲染
-    const params = new URLSearchParams(window.location.search);
-    setRedirectTo(params.get('redirectTo') ?? undefined);
+    if (typeof window === 'undefined') return;
+    const p = new URLSearchParams(window.location.search);
+    const incomingMode = p.get('mode');
+    p.set('mode', incomingMode === 'register' || incomingMode === 'forgot' ? incomingMode : 'login');
+    const qs = p.toString();
+    window.location.replace(`/portal/?${qs}`);
   }, []);
-
-  return (
-    <>
-      <h1 className="pc-card__title">{translate(locale, 'login.title')}</h1>
-      <p className="pc-card__subtitle">{translate(locale, 'login.subtitle')}</p>
-      <LoginForm redirectTo={redirectTo} />
-    </>
-  );
+  return null;
 }

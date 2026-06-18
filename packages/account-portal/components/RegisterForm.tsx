@@ -4,15 +4,26 @@ import { useState, useTransition, FormEvent } from 'react';
 import { portalApi, PortalApiError } from '@/lib/api-client';
 import { useLocale, translate } from '@/lib/i18n';
 
+type Props = {
+  /** Optional default value for the email input (used by SPA tab switching). */
+  defaultEmail?: string;
+  /** Fired when the backend reports email_taken; SPA container uses this to auto-switch
+   *  to the login tab with the email prefilled. */
+  onEmailTaken?: (email: string) => void;
+  /** Fired when the user clicks "Sign in" at the bottom. href on the <a> is preserved
+   *  as a no-JS fallback. */
+  onSwitchMode?: (mode: 'login') => void;
+};
+
 const ERROR_KEYS: Record<string, string> = {
   email_taken: 'register.error.emailTaken',
   weak_password: 'register.error.weakPassword',
   invalid_email: 'register.error.invalidEmail',
 };
 
-export function RegisterForm() {
+export function RegisterForm({ defaultEmail, onEmailTaken, onSwitchMode }: Props) {
   const locale = useLocale();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(defaultEmail ?? '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -29,7 +40,13 @@ export function RegisterForm() {
         })
         .catch((err) => {
           if (err instanceof PortalApiError) {
-            setError(translate(locale, ERROR_KEYS[err.code] ?? 'register.error.invalidEmail'));
+            if (err.code === 'email_taken') {
+              setError(translate(locale, ERROR_KEYS[err.code] ?? 'register.error.invalidEmail'));
+              // Trigger SPA auto-switch to login tab with prefilled email.
+              onEmailTaken?.(email);
+            } else {
+              setError(translate(locale, ERROR_KEYS[err.code] ?? 'register.error.invalidEmail'));
+            }
           } else {
             setError(translate(locale, 'login.error.network'));
           }
@@ -103,7 +120,17 @@ export function RegisterForm() {
 
       <p style={{ marginTop: 18, fontSize: 13, color: 'var(--pc-color-text-muted)' }}>
         {translate(locale, 'register.haveAccount')}{' '}
-        <a className="pc-link" href="/portal/login/">
+        <a
+          className="pc-link"
+          href="/portal/login/"
+          onClick={(e) => {
+            if (onSwitchMode) {
+              e.preventDefault();
+              onSwitchMode('login');
+            }
+          }}
+          data-testid="register-switch-login"
+        >
           {translate(locale, 'register.signIn')}
         </a>
       </p>

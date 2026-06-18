@@ -1,15 +1,21 @@
 'use client';
 
-import { RegisterForm } from '@/components/RegisterForm';
-import { useLocale, translate } from '@/lib/i18n';
+import { useEffect } from 'react';
 
+/**
+ * Sprint 2.11 — Legacy /portal/register/ entry.
+ *
+ * Mirrors the LoginPage client-side redirect to the unified SPA at /portal/,
+ * forcing mode=register. All other query params (e.g. ?redirectTo=...) are
+ * preserved verbatim.
+ */
 export default function RegisterPage() {
-  const locale = useLocale();
-  return (
-    <>
-      <h1 className="pc-card__title">{translate(locale, 'register.title')}</h1>
-      <p className="pc-card__subtitle">{translate(locale, 'register.subtitle')}</p>
-      <RegisterForm />
-    </>
-  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const p = new URLSearchParams(window.location.search);
+    p.set('mode', 'register');
+    const qs = p.toString();
+    window.location.replace(`/portal/?${qs}`);
+  }, []);
+  return null;
 }

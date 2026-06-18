@@ -248,3 +248,72 @@ a:hover {
   color: var(--pc-color-text-muted);
   margin-top: 4px;
 }
+
+/* Sprint 2.11 — unified auth portal tabs */
+
+.pc-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 4px;
+  background: var(--pc-color-bg-muted);
+  border-radius: var(--pc-radius-md);
+  border: 1px solid var(--pc-color-border);
+}
+
+.pc-tab {
+  flex: 1;
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pc-color-text-muted);
+  cursor: pointer;
+  border-radius: var(--pc-radius-sm);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pc-tab:hover:not(.pc-tab--active) {
+  color: var(--pc-color-text);
+}
+
+.pc-tab--active {
+  background: var(--pc-color-surface);
+  color: var(--pc-color-text);
+  box-shadow: var(--pc-shadow-sm);
+}
+
+.pc-tab:focus-visible {
+  outline: 2px solid var(--pc-color-primary);
+  outline-offset: 2px;
+}
+
+/* Field meta row (used by "Forgot password?" link under the password input) */
+.pc-field__meta {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.pc-field__meta .pc-link {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Sprint 2.11 — forgot-password placeholder panel (no backend yet) */
+.pc-forgot-panel {
+  padding: 4px 0 8px;
+}
+
+.pc-forgot-panel__body {
+  font-size: 14px;
+  color: var(--pc-color-text);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.pc-forgot-panel a.pc-link {
+  font-size: 14px;
+}
