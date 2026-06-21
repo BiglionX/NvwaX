@@ -1,0 +1,598 @@
+{
+  "info": {
+    "name": "NvwaX OIDC API",
+    "description": "NvwaX 统一登录认证中心 OIDC API 测试集合\n\n使用说明：\n1. 先修改环境变量（client_id, redirect_uri 等）\n2. 按流程顺序执行请求（Discovery → Authorization → Token → UserInfo）\n3. 所有需要 PKCE 的请求已自动生成 code_verifier 和 code_challenge",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "nvwax-oidc-api-v1"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://account.proclaw.cc",
+      "type": "string"
+    },
+    {
+      "key": "client_id",
+      "value": "your-partner-client-id",
+      "type": "string"
+    },
+    {
+      "key": "redirect_uri",
+      "value": "http://localhost:3000/callback",
+      "type": "string"
+    },
+    {
+      "key": "code_verifier",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "code_challenge",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authorization_code",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "id_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. OIDC Discovery",
+      "item": [
+        {
+          "name": "Get Discovery Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 验证响应",
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is JSON', function() {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test('Contains required endpoints', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('issuer');",
+                  "    pm.expect(jsonData).to.have.property('authorization_endpoint');",
+                  "    pm.expect(jsonData).to.have.property('token_endpoint');",
+                  "    pm.expect(jsonData).to.have.property('jwks_uri');",
+                  "});",
+                  "",
+                  "// 保存到环境变量（可选）",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('issuer', jsonData.issuer);",
+                  "pm.environment.set('authorization_endpoint', jsonData.authorization_endpoint);",
+                  "pm.environment.set('token_endpoint', jsonData.token_endpoint);",
+                  "pm.environment.set('jwks_uri', jsonData.jwks_uri);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/.well-known/openid-configuration",
+              "host": ["{{base_url}}"],
+              "path": ["well-known", "openid-configuration"]
+            },
+            "description": "获取 OIDC Discovery 文档，包含授权端点、Token 端点、JWKS 端点等信息"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. JWKS (Get Public Key)",
+      "item": [
+        {
+          "name": "Get JWKS",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is JSON', function() {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test('Contains RSA public key', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.keys).to.be.an('array').that.is.not.empty;",
+                  "    pm.expect(jsonData.keys[0]).to.have.property('kty', 'RSA');",
+                  "    pm.expect(jsonData.keys[0]).to.have.property('use', 'sig');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/.well-known/jwks.json",
+              "host": ["{{base_url}}"],
+              "path": ["well-known", "jwks.json"]
+            },
+            "description": "获取 JWKS (JSON Web Key Set)，包含验证 JWT 签名所需的公钥"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Authorization (Login)",
+      "item": [
+        {
+          "name": "Step 1: Generate PKCE Parameters",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 生成 code_verifier (随机字符串)",
+                  "var codeVerifier = '';",
+                  "var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';",
+                  "for (var i = 0; i < 128; i++) {",
+                  "    codeVerifier += chars.charAt(Math.floor(Math.random() * chars.length));",
+                  "}",
+                  "",
+                  "// 保存到环境变量",
+                  "pm.environment.set('code_verifier', codeVerifier);",
+                  "",
+                  "// 生成 code_challenge (SHA256 hash of code_verifier, base64url encoded)",
+                  "// 注意：Postman 不支持直接计算 SHA256，需要手动计算或使用外部工具",
+                  "// 这里提供一个示例值，实际使用时需要替换",
+                  "console.log('code_verifier: ' + codeVerifier);",
+                  "console.log('请使用外部工具生成 code_challenge:');",
+                  "console.log('Node.js: crypto.createHash(\\'sha256\\').update(codeVerifier).digest(\\'base64url\\')');",
+                  "console.log('Online tool: https://tonyxpage.github.io/pkce-generator/');",
+                  "",
+                  "// 临时使用一个占位符（实际测试时需要替换）",
+                  "pm.environment.set('code_challenge', 'PLACEHOLDER_REPLACE_WITH_ACTUAL_VALUE');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/oauth/authorize?response_type=code&client_id={{client_id}}&redirect_uri={{redirect_uri}}&scope=openid%20profile%20email&state={{$randomUUID}}&code_challenge={{code_challenge}}&code_challenge_method=S256",
+              "host": ["{{base_url}}"],
+              "path": ["oauth", "authorize"],
+              "query": [
+                {
+                  "key": "response_type",
+                  "value": "code",
+                  "description": "固定值：code (授权码模式)"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{client_id}}",
+                  "description": "你的客户端 ID"
+                },
+                {
+                  "key": "redirect_uri",
+                  "value": "{{redirect_uri}}",
+                  "description": "回调地址（必须和注册时一致）"
+                },
+                {
+                  "key": "scope",
+                  "value": "openid profile email",
+                  "description": "请求的 Scope"
+                },
+                {
+                  "key": "state",
+                  "value": "{{$randomUUID}}",
+                  "description": "随机字符串（防 CSRF 攻击）"
+                },
+                {
+                  "key": "code_challenge",
+                  "value": "{{code_challenge}}",
+                  "description": "PKCE code challenge (SHA256 hash of code_verifier)"
+                },
+                {
+                  "key": "code_challenge_method",
+                  "value": "S256",
+                  "description": "固定值：S256"
+                }
+              ]
+            },
+            "description": "⚠️ 注意：此请求需要在浏览器中手动完成！\n\n步骤：\n1. 点击 'Send' 按钮，会返回一个 HTML 页面（登录页面）\n2. 复制 Response 中的 HTML 内容，保存为 .html 文件\n3. 在浏览器中打开该 .html 文件\n4. 完成登录流程\n5. 登录成功后会重定向到 redirect_uri，并附带 authorization_code\n6. 从 URL 中提取 code 参数，并保存到环境变量 'authorization_code'"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Token Exchange",
+      "item": [
+        {
+          "name": "Exchange Code for Tokens",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains access_token', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "    pm.expect(jsonData).to.have.property('refresh_token');",
+                  "    pm.expect(jsonData).to.have.property('id_token');",
+                  "});",
+                  "",
+                  "// 保存到环境变量",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('access_token', jsonData.access_token);",
+                  "pm.environment.set('refresh_token', jsonData.refresh_token);",
+                  "pm.environment.set('id_token', jsonData.id_token);",
+                  "",
+                  "console.log('access_token: ' + jsonData.access_token);",
+                  "console.log('refresh_token: ' + jsonData.refresh_token);",
+                  "console.log('id_token: ' + jsonData.id_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "authorization_code",
+                  "type": "text",
+                  "description": "固定值：authorization_code"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{client_id}}",
+                  "type": "text",
+                  "description": "你的客户端 ID"
+                },
+                {
+                  "key": "code",
+                  "value": "{{authorization_code}}",
+                  "type": "text",
+                  "description": "上一步获取到的 authorization_code"
+                },
+                {
+                  "key": "redirect_uri",
+                  "value": "{{redirect_uri}}",
+                  "type": "text",
+                  "description": "回调地址（必须和之前一致）"
+                },
+                {
+                  "key": "code_verifier",
+                  "value": "{{code_verifier}}",
+                  "type": "text",
+                  "description": "PKCE code verifier"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/oauth/token",
+              "host": ["{{base_url}}"],
+              "path": ["oauth", "token"]
+            },
+            "description": "使用 authorization_code 交换 token (access_token, refresh_token, id_token)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Get UserInfo",
+      "item": [
+        {
+          "name": "Get User Info",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains user info', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('sub');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "    pm.expect(jsonData).to.have.property('name');",
+                  "});",
+                  "",
+                  "console.log('User Info:');",
+                  "console.log(JSON.stringify(pm.response.json(), null, 2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text",
+                "description": "Bearer Token (从 Token Exchange 步骤获取)"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/oauth/userinfo",
+              "host": ["{{base_url}}"],
+              "path": ["oauth", "userinfo"]
+            },
+            "description": "使用 access_token 获取用户信息"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Refresh Token",
+      "item": [
+        {
+          "name": "Refresh Access Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains new access_token', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "    pm.expect(jsonData).to.have.property('refresh_token');",
+                  "});",
+                  "",
+                  "// 更新环境变量",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('access_token', jsonData.access_token);",
+                  "pm.environment.set('refresh_token', jsonData.refresh_token);",
+                  "",
+                  "console.log('New access_token: ' + jsonData.access_token);",
+                  "console.log('New refresh_token: ' + jsonData.refresh_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "refresh_token",
+                  "type": "text",
+                  "description": "固定值：refresh_token"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{client_id}}",
+                  "type": "text",
+                  "description": "你的客户端 ID"
+                },
+                {
+                  "key": "refresh_token",
+                  "value": "{{refresh_token}}",
+                  "type": "text",
+                  "description": "之前获取到的 refresh_token"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/oauth/token",
+              "host": ["{{base_url}}"],
+              "path": ["oauth", "token"]
+            },
+            "description": "使用 refresh_token 获取新的 access_token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. End Session (Logout)",
+      "item": [
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 or 302', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 302]);",
+                  "});",
+                  "",
+                  "console.log('Logout successful');",
+                  "console.log('请清除本地存储的 token');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/oauth/logout?post_logout_redirect_uri={{redirect_uri}}",
+              "host": ["{{base_url}}"],
+              "path": ["oauth", "logout"],
+              "query": [
+                {
+                  "key": "post_logout_redirect_uri",
+                  "value": "{{redirect_uri}}",
+                  "description": "退出登录后的重定向地址"
+                }
+              ]
+            },
+            "description": "退出登录（撤销 token 并重定向到 post_logout_redirect_uri）"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. Social Login (Optional)",
+      "item": [
+        {
+          "name": "GitHub Login (Redirect)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/github?client_id={{client_id}}&redirect_uri={{redirect_uri}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "github"],
+              "query": [
+                {
+                  "key": "client_id",
+                  "value": "{{client_id}}"
+                },
+                {
+                  "key": "redirect_uri",
+                  "value": "{{redirect_uri}}"
+                }
+              ]
+            },
+            "description": "⚠️ 此请求会重定向到 GitHub 授权页面，需要在浏览器中手动完成"
+          },
+          "response": []
+        },
+        {
+          "name": "Google Login (Redirect)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/google?client_id={{client_id}}&redirect_uri={{redirect_uri}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "google"],
+              "query": [
+                {
+                  "key": "client_id",
+                  "value": "{{client_id}}"
+                },
+                {
+                  "key": "redirect_uri",
+                  "value": "{{redirect_uri}}"
+                }
+              ]
+            },
+            "description": "⚠️ 此请求会重定向到 Google 授权页面，需要在浏览器中手动完成"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "9. Validate ID Token (Optional)",
+      "item": [
+        {
+          "name": "Decode ID Token",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// 解码 id_token (JWT)",
+                  "var idToken = pm.environment.get('id_token');",
+                  "",
+                  "if (!idToken) {",
+                  "    console.log('Error: id_token not found. Please run Token Exchange first.');",
+                  "} else {",
+                  "    // 解码 payload (第二部分)",
+                  "    var parts = idToken.split('.');",
+                  "    var payload = JSON.parse(atob(parts[1]));",
+                  "    ",
+                  "    console.log('ID Token Payload:');",
+                  "    console.log(JSON.stringify(payload, null, 2));",
+                  "    ",
+                  "    // 保存到环境变量（可选）",
+                  "    pm.environment.set('id_token_payload', JSON.stringify(payload));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/.well-known/jwks.json",
+              "host": ["{{base_url}}"],
+              "path": ["well-known", "jwks.json"]
+            },
+            "description": "解码 id_token (JWT) 并查看 payload\n\n注意：此请求只是获取 JWKS，实际验证需要在代码中完成（使用公钥验证签名）"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
