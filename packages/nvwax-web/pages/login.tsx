@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { GitHubLoginButton } from '@/components/auth/GitHubLoginButton';
+import { GitHubLoginButton } from '@/components/Auth/GitHubLoginButton';
 import { useSocialAuth } from '@/hooks/useSocialAuth';
 import Link from 'next/link';
 
