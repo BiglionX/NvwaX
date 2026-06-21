@@ -8,7 +8,7 @@ import { authApi } from '@/lib/api/auth';
  * 
  * 处理 GitHub 授权后的回调，完成登录流程
  */
-export default function GitHubCallbackPage() {
+function GitHubCallbackPage() {
   const router = useRouter();
   const { code, error, state } = router.query;
   

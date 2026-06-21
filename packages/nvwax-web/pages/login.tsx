@@ -14,7 +14,7 @@ import Link from 'next/link';
  * - Google 社交登录
  * - Facebook 社交登录（预留）
  */
-export default function LoginPage() {
+function LoginPage() {
   const router = useRouter();
   const { error: oauthError } = router.query;
   

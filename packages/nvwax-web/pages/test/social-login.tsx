@@ -9,7 +9,7 @@ import { authApi } from '@/lib/api/auth';
  * 
  * 访问：http://localhost:3000/test/social-login
  */
-export default function SocialLoginTestPage() {
+function SocialLoginTestPage() {
   const [testResults, setTestResults] = useState<any>({});
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
