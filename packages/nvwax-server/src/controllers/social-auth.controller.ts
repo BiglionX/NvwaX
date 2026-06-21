@@ -16,6 +16,7 @@ import { Request, Response } from 'express';
 import { userService } from '../services/user.service.js';
 import { facebookOAuthService } from '../services/oauth/facebook-oauth.service.js';
 import { googleOAuthService } from '../services/oauth/google-oauth.service.js';
+import { githubOAuthService } from '../services/oauth/github-oauth.service.js';
 import { weChatOAuthService } from '../services/oauth/wechat-oauth.service.js';
 
 class SocialAuthController {
