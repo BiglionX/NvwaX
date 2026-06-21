@@ -103,6 +103,20 @@ export const authApi = {
     return response.data;
   },
 
+  // GitHub 登录
+  githubLogin: async (code: string, redirectUri?: string): Promise<SocialLoginResponse> => {
+    const response = await api.post('/auth/github/login', { code, redirectUri });
+    return response.data;
+  },
+
+  // GitHub 获取授权 URL
+  githubAuthorize: async (redirectUri: string, state?: string): Promise<{ success: boolean; data: { authorizeUrl: string; state: string } }> => {
+    const params = new URLSearchParams({ redirectUri });
+    if (state) params.set('state', state);
+    const response = await api.get(`/auth/github/authorize?${params.toString()}`);
+    return response.data;
+  },
+
   // 获取当前用户信息
   getProfile: async (): Promise<User> => {
     const response = await api.get('/auth/profile');

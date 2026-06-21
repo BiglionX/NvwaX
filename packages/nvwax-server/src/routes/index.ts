@@ -94,7 +94,12 @@ router.get('/auth/profile', userAuthController.getProfile);
 // Social login routes (with rate limiting)
 router.post('/auth/facebook/login', loginRateLimiter, socialAuthController.facebookLogin.bind(socialAuthController));
 router.post('/auth/google/login', loginRateLimiter, socialAuthController.googleLogin.bind(socialAuthController));
+router.post('/auth/github/login', loginRateLimiter, socialAuthController.githubLogin.bind(socialAuthController));
 router.post('/auth/wechat/login', loginRateLimiter, socialAuthController.wechatLogin.bind(socialAuthController));
+
+// GitHub OAuth routes
+router.get('/auth/github/authorize', socialAuthController.githubAuthorize.bind(socialAuthController));
+router.get('/auth/github/callback', socialAuthController.githubCallback.bind(socialAuthController));
 router.get('/auth/social/accounts', userAuthMiddleware, socialAuthController.getSocialAccounts.bind(socialAuthController));
 router.post('/auth/social/bind', userAuthMiddleware, socialAuthController.bindSocialAccount.bind(socialAuthController));
 router.post('/auth/social/unbind', userAuthMiddleware, socialAuthController.unbindSocialAccount.bind(socialAuthController));

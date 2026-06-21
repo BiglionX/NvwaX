@@ -34,14 +34,29 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-nvwax}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-nvwax}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:-change-this-to-a-secure-random-string}
       REDIS_URL: redis://redis:6379
+      
+      # Google OAuth
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
-      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
-      CROSS_AUTH_SECRET: ${CROSS_AUTH_SECRET}
-      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      
+      # GitHub OAuth
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      NEXT_PUBLIC_GITHUB_CLIENT_ID: ${NEXT_PUBLIC_GITHUB_CLIENT_ID}
+      
+      # Facebook OAuth
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
       FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
+      
+      # AI Model
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      
+      # Payment
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      
+      # Security
+      CROSS_AUTH_SECRET: ${CROSS_AUTH_SECRET}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
       # Sprint 1 — OIDC IdP
       OIDC_ISSUER: ${OIDC_ISSUER:-https://account.proclaw.cc}
       OIDC_PRIVATE_KEY_PATH: ${OIDC_PRIVATE_KEY_PATH:-}
@@ -80,12 +95,14 @@ services:
       dockerfile: Dockerfile.frontend
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://nvwax.proclaw.cc/api}
+        NEXT_PUBLIC_GITHUB_CLIENT_ID: ${NEXT_PUBLIC_GITHUB_CLIENT_ID}
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
     container_name: nvwax-frontend
     restart: unless-stopped
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://nvwax.proclaw.cc/api}
+      NEXT_PUBLIC_GITHUB_CLIENT_ID: ${NEXT_PUBLIC_GITHUB_CLIENT_ID}
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
       PORT: 3000
     ports:

@@ -92,9 +92,170 @@ class SocialAuthController {
   }
 
   /**
-   * 微信登录（预留）
+   * GitHub OAuth 授权入口
    * 
-   * 微信开放平台认证开通前返回"即将上线"提示
+   * 生成 GitHub OAuth 授权 URL，前端跳转此 URL 进行授权
+   */
+  async githubAuthorize(req: Request, res: Response) {
+    try {
+      const { redirectUri, state } = req.query;
+
+      if (!redirectUri) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'INVALID_REQUEST', message: 'redirectUri is required' }
+        });
+      }
+
+      // 生成 state 用于防 CSRF
+      const stateParam = state || githubOAuthService.generateState();
+      
+      // 构建授权 URL
+      const authorizeUrl = githubOAuthService.getAuthorizeUrl(stateParam as string);
+      
+      // 添加 redirect_uri 到授权 URL
+      const url = new URL(authorizeUrl);
+      url.searchParams.set('redirect_uri', redirectUri as string);
+
+      return res.json({
+        success: true,
+        data: {
+          authorizeUrl: url.toString(),
+          state: stateParam
+        }
+      });
+    } catch (error: any) {
+      console.error('[SocialAuth] GitHub authorize error:', error);
+      return res.status(500).json({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'Failed to generate authorize URL' }
+      });
+    }
+  }
+
+  /**
+   * GitHub OAuth 回调处理
+   * 
+   * 处理 GitHub 授权后的回调，用 code 换 token 并登录
+   */
+  async githubCallback(req: Request, res: Response) {
+    try {
+      const { code, state, redirectUri } = req.query;
+
+      if (!code) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'INVALID_REQUEST', message: 'code is required' }
+        });
+      }
+
+      // 用 code 换 access_token 并登录
+      const loginReq = {
+        body: {
+          code,
+          redirectUri
+        }
+      } as Request;
+
+      return this.githubLogin(loginReq, res);
+    } catch (error: any) {
+      console.error('[SocialAuth] GitHub callback error:', error);
+      const message = githubOAuthService.formatErrorMessage(error);
+      return res.status(401).json({
+        success: false,
+        error: { code: 'GITHUB_AUTH_FAILED', message }
+      });
+    }
+  }
+
+  /**
+   * GitHub 登录
+   * 
+   * 流程：
+   * 1. 接收前端传来的授权 code
+   * 2. 后端用 code 换 access_token
+   * 3. 从 GitHub API 获取用户基本信息
+   * 4. 查询 social_accounts 表，判断用户是否存在
+   * 5. 不存在则创建新用户，存在则返回已有用户
+   * 6. 生成 JWT token 返回前端
+   */
+  async githubLogin(req: Request, res: Response) {
+    try {
+      const { code, redirectUri } = req.body;
+
+      if (!code) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'INVALID_REQUEST', message: 'code is required' }
+        });
+      }
+
+      console.log('[SocialAuth] GitHub login: GITHUB_CLIENT_ID has value:', !!process.env.GITHUB_CLIENT_ID);
+
+      // 1. 用 code 换 access_token
+      const accessToken = await githubOAuthService.exchangeCodeForToken(code, redirectUri);
+      
+      // 2. 验证 access_token 并获取用户信息
+      const userInfo = await githubOAuthService.verifyAndGetUserInfo(accessToken);
+      console.log('[SocialAuth] GitHub user verified:', userInfo.email);
+
+      // 3. 查找是否已有账号绑定
+      const existing = await userService.findUserBySocialAccount('github', userInfo.providerUserId);
+
+      if (existing) {
+        // 已有账号，直接登录
+        const token = userService['generateToken'](existing.user);
+        const { password: _, ...userWithoutPassword } = existing.user;
+
+        return res.json({
+          success: true,
+          data: {
+            token,
+            user: userWithoutPassword,
+            isNewUser: false
+          }
+        });
+      }
+
+      // 4. 新用户，自动创建
+      const result = await userService.createUserFromSocialAccount({
+        provider: 'github',
+        providerUserId: userInfo.providerUserId,
+        email: userInfo.email,
+        name: userInfo.name,
+        avatarUrl: userInfo.avatarUrl,
+        rawData: userInfo.rawData
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          token: result.token,
+          user: result.user,
+          isNewUser: true
+        }
+      });
+
+    } catch (error: any) {
+      console.error('[SocialAuth] GitHub login error:', error);
+      const message = githubOAuthService.formatErrorMessage(error);
+      return res.status(401).json({
+        success: false,
+        error: { code: 'GITHUB_AUTH_FAILED', message }
+      });
+    }
+  }
+
+  /**
+   * Google 登录
+   * 
+   * 流程：
+   * 1. 接收前端传来的授权 code
+   * 2. 后端用 code 换 access_token
+   * 3. 从 Google API 获取用户基本信息
+   * 4. 查询 social_accounts 表，判断用户是否存在
+   * 5. 不存在则创建新用户，存在则返回已有用户
+   * 6. 生成 JWT token 返回前端
    */
   async googleLogin(req: Request, res: Response) {
     try {
