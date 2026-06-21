@@ -1,61 +1,104 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { adminApi } from '@/lib/api/admin';
-import { Shield, Lock, User, Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Shield, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
-// 注意：权限检查和重定向逻辑已由 ProtectedAdminRoute 统一处理
+/**
+ * Sprint 2.11 — Admin 登录页面（OIDC 集成版）
+ * 
+ * 变更说明：
+ * 1. 移除传统登录表单（username/password），直接走 OIDC
+ * 2. 检查 OIDC session，已登录则重定向到 dashboard
+ * 3. 未登录则显示 OIDC 登录按钮，点击后跳转到 account.proclaw.cc
+ * 4. 支持 Social Login（Google、GitHub、Discord）
+ * 
+ * OIDC 流程：
+ * - 点击"管理员登录" → 跳转到 OIDC 授权端点
+ * - 后端回调时检查 userInfo.is_admin === true
+ * - 通过后在 /api/auth/session 中返回 admin 权限
+ */
 
 export default function AdminLoginPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [oidcPrompt, setOidcPrompt] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(3);
+  const { isLoggedIn, userInfo, loading } = useAuth();
+  const router = useRouter();
+  const [redirecting, setRedirecting] = useState(false);
 
-  // Sprint 2.4: 倒计时跳 OIDC issuer
+  // 已登录且是管理员 → 重定向到 dashboard
   useEffect(() => {
-    if (oidcPrompt === null) return;
-    if (countdown <= 0) {
-      const issuer = process.env.NEXT_PUBLIC_OIDC_ISSUER || 'https://account.proclaw.cc';
-      window.location.href = `${issuer}/oauth/authorize?...`;
-      return;
+    if (loading) return;
+    if (isLoggedIn && userInfo?.is_admin) {
+      router.replace('/admin/dashboard');
     }
-    const t = setTimeout(() => setCountdown(countdown - 1), 1000);
-    return () => clearTimeout(t);
-  }, [oidcPrompt, countdown]);
+  }, [loading, isLoggedIn, userInfo, router]);
 
-  // 注意：登录状态检查和重定向已由 ProtectedAdminRoute 处理，无需重复
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    console.log('[Admin Login Page] Attempting login:', { 
-      username, 
-      passwordLength: password.length,
-      password: password // 临时显示密码用于调试
-    });
-
-    try {
-      // Sprint 2.4: admins 表独立登录保留为兼容流程
-      // 登录成功不再写 localStorage（Sprint 2.3 已清理），改提示走 OIDC
-      const response = await adminApi.login(username, password);
-      console.log('[Admin Login Page] Legacy login successful:', response.data.admin.email);
-
-      // 提示用户走 OIDC 流程以激活管理权限
-      setOidcPrompt(response.data.admin.email);
-    } catch (err: unknown) {
-      console.error('[Admin Login Page] Login failed:', err);
-      const error = err as { response?: { data?: { error?: string } }; message?: string };
-      setError(error.response?.data?.error || error.message || '登录失败，请检查用户名和密码');
-    } finally {
-      setLoading(false);
-    }
+  // 跳转到 OIDC 授权端点
+  const handleOidcLogin = () => {
+    setRedirecting(true);
+    
+    // 构建 OIDC 授权 URL
+    const issuer = process.env.NEXT_PUBLIC_OIDC_ISSUER || 'https://account.proclaw.cc';
+    const clientId = process.env.NEXT_PUBLIC_OIDC_ADMIN_CLIENT_ID || 'nvwax-admin'; // 使用 admin 专用客户端
+    const redirectUri = encodeURIComponent(`${window.location.origin}/oauth/callback`); // 修正回调路径
+    const responseType = 'code';
+    const scope = 'openid profile email';
+    const state = Math.random().toString(36).substring(2, 15);
+    
+    // 存储 state 用于 CSRF 防护
+    sessionStorage.setItem('oidc_state', state);
+    
+    const authUrl = `${issuer}/oidc/auth?` +
+      `client_id=${clientId}` +
+      `&redirect_uri=${redirectUri}` +
+      `&response_type=${responseType}` +
+      `&scope=${encodeURIComponent(scope)}` +
+      `&state=${state}` +
+      `&prompt=login`; // 强制重新登录，确保管理员身份
+    
+    window.location.href = authUrl;
   };
 
+  // 加载中
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-sky-50 dark:from-gray-900 dark:to-gray-800">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">验证会话...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 已登录但不是管理员
+  if (isLoggedIn && !userInfo?.is_admin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-sky-50 dark:from-gray-900 dark:to-gray-800 p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-xl mb-4">
+                <AlertCircle className="text-red-600 dark:text-red-400" size={32} />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">权限不足</h1>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                当前账户 <span className="font-mono text-sm">{userInfo?.email}</span> 没有管理员权限。
+              </p>
+              <button
+                onClick={() => router.replace('/')}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
+              >
+                返回首页
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 未登录 → 显示 OIDC 登录界面
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-sky-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
@@ -66,86 +109,52 @@ export default function AdminLoginPage() {
               <Shield className="text-white" size={32} />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">NvwaX 管理后台</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">管理员登录</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">请使用管理员账户登录</p>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                用户名
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white"
-                  placeholder="输入用户名"
-                  required
-                />
+          {/* OIDC 登录说明 */}
+          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" size={20} />
+              <div className="text-sm text-blue-700 dark:text-blue-300">
+                <p className="font-medium mb-1">统一认证中心</p>
+                <p>使用 account.proclaw.cc 的统一认证系统登录，支持邮箱登录和社交账号登录。</p>
               </div>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                密码
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white"
-                  placeholder="输入密码"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                  aria-label={showPassword ? '隐藏密码' : '显示密码'}
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-            </div>
+          {/* OIDC 登录按钮 */}
+          <button
+            onClick={handleOidcLogin}
+            disabled={redirecting}
+            className="w-full py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {redirecting ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                跳转中...
+              </>
+            ) : (
+              <>
+                <Shield size={20} />
+                管理员登录
+              </>
+            )}
+          </button>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? '登录中...' : '登录'}
-            </button>
-          </form>
-
-          {/* OIDC 跳转提示（Sprint 2.4: 老 admin 登录成功后引导走 OIDC） */}
-          {oidcPrompt && (
-            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-blue-700 dark:text-blue-300 text-sm mb-2">
-                账号 <span className="font-mono">{oidcPrompt}</span> 已通过验证。
-              </p>
-              <p className="text-blue-700 dark:text-blue-300 text-sm mb-3">
-                请回 OIDC 入口完成 SSO 登录以激活管理权限（{countdown} 秒后跳转）。
-              </p>
+          {/* 社交登录链接 */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">或使用社交账号登录</p>
+            <div className="flex justify-center gap-4">
               <a
-                href={process.env.NEXT_PUBLIC_OIDC_ISSUER || 'https://account.proclaw.cc'}
-                className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium"
+                href={`${process.env.NEXT_PUBLIC_OIDC_ISSUER || 'https://account.proclaw.cc'}/portal/login?mode=login&redirectTo=${encodeURIComponent('/admin/dashboard')}`}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors text-sm"
               >
-                立即跳转 <ExternalLink size={14} />
+                <ExternalLink size={16} />
+                社交登录
               </a>
             </div>
-          )}
+          </div>
 
           {/* Footer */}
           <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">

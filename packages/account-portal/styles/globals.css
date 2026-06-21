@@ -363,3 +363,98 @@ a:hover {
 .pc-input-group__action[aria-pressed='true'] {
   color: var(--pc-color-primary);
 }
+
+/* Sprint 2.12 — 统一登录模块 social auth 按钮 */
+.pc-notice {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: var(--pc-radius-sm);
+  background: var(--pc-color-bg-muted);
+  color: var(--pc-color-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pc-social {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.pc-social__divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 4px;
+  font-size: 12px;
+  color: var(--pc-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pc-social__divider::before,
+.pc-social__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--pc-color-border, #d4d4d8);
+}
+
+.pc-social__google {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.pc-social__google > div,
+.pc-social__google > iframe {
+  width: 100% !important;
+  max-width: 320px;
+}
+
+.pc-social__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  border: 1px solid var(--pc-color-border, #d4d4d8);
+  border-radius: var(--pc-radius-sm, 6px);
+  background: #fff;
+  color: var(--pc-color-text);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pc-social__btn:hover:not(:disabled) {
+  background: var(--pc-color-bg-muted, #f4f4f5);
+}
+
+.pc-social__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pc-social__btn--github {
+  background: #24292f;
+  color: #fff;
+  border-color: #24292f;
+}
+
+.pc-social__btn--github:hover:not(:disabled) {
+  background: #1f2328;
+  border-color: #1f2328;
+}
+
+.pc-social__btn--facebook,
+.pc-social__btn--wechat {
+  background: #f4f4f5;
+  color: #71717a;
+}

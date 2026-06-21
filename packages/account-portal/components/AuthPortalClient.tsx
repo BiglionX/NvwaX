@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LoginForm } from '@/components/LoginForm';
 import { RegisterForm } from '@/components/RegisterForm';
+import { SocialButtons } from '@/components/SocialButtons';
 import { useLocale, translate } from '@/lib/i18n';
 
 export type AuthMode = 'login' | 'register' | 'forgot';
@@ -50,6 +51,8 @@ export function AuthPortalClient(props: AuthPortalClientProps) {
   const [formKey, setFormKey] = useState(0);
   /** Transient notice shown on the login tab after email_taken auto-switch. */
   const [loginNotice, setLoginNotice] = useState<string | null>(null);
+  /** Transient notice shown on social success/error (from URL ?social_success=... or ?social_error=...) */
+  const [socialNotice, setSocialNotice] = useState<string | null>(null);
 
   // Hydrate state from URL on first mount (covers static-export no-SSR case).
   useEffect(() => {
@@ -66,6 +69,27 @@ export function AuthPortalClient(props: AuthPortalClientProps) {
     if (!props.initialEmail) {
       const e = p.get('email');
       if (e) setPrefilledEmail(e);
+    }
+    // social success / error 回跳提示
+    const ss = p.get('social_success');
+    const se = p.get('social_error');
+    if (ss === 'github_new') {
+      setSocialNotice(translate(locale, 'social.success.new'));
+    } else if (ss === 'github_existing') {
+      setSocialNotice(translate(locale, 'social.success.existing'));
+    } else if (se === 'github_denied') {
+      setSocialNotice(translate(locale, 'social.error.githubDenied'));
+    } else if (se === 'github_failed') {
+      const msg = p.get('message');
+      setSocialNotice(msg ? decodeURIComponent(msg) : translate(locale, 'social.error.githubFailed'));
+    }
+    // 清理掉一次性 query 参数
+    if (ss || se) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('social_success');
+      url.searchParams.delete('social_error');
+      url.searchParams.delete('message');
+      window.history.replaceState(null, '', url.toString());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -154,31 +178,59 @@ export function AuthPortalClient(props: AuthPortalClientProps) {
     );
   })();
 
+  const socialNoticeEl = socialNotice ? (
+    <div className="pc-notice" role="status" data-testid="social-notice">
+      {socialNotice}
+    </div>
+  ) : null;
+
+  const socialButtons = (
+    <SocialButtons
+      redirectTo={redirectTo}
+      onError={(msg) => setSocialNotice(msg)}
+      onSuccess={(info) => {
+        setSocialNotice(
+          translate(locale, info.isNewUser ? 'social.success.new' : 'social.success.existing'),
+        );
+        window.location.assign(info.redirectTo);
+      }}
+    />
+  );
+
   const panel = (() => {
     if (mode === 'login') {
       return (
-        <LoginForm
-          key={`login-${formKey}`}
-          redirectTo={redirectTo}
-          defaultEmail={prefilledEmail}
-          notice={loginNotice}
-          onSwitchMode={(m) => switchMode(m)}
-        />
+        <>
+          {socialNoticeEl}
+          {socialButtons}
+          <LoginForm
+            key={`login-${formKey}`}
+            redirectTo={redirectTo}
+            defaultEmail={prefilledEmail}
+            notice={loginNotice}
+            onSwitchMode={(m) => switchMode(m)}
+          />
+        </>
       );
     }
     if (mode === 'register') {
       return (
-        <RegisterForm
-          key={`register-${formKey}`}
-          defaultEmail={prefilledEmail}
-          onEmailTaken={handleEmailTaken}
-          onSwitchMode={(m) => switchMode(m)}
-        />
+        <>
+          {socialNoticeEl}
+          {socialButtons}
+          <RegisterForm
+            key={`register-${formKey}`}
+            defaultEmail={prefilledEmail}
+            onEmailTaken={handleEmailTaken}
+            onSwitchMode={(m) => switchMode(m)}
+          />
+        </>
       );
     }
     // forgot
     return (
       <div className="pc-forgot-panel" data-testid="forgot-panel">
+        {socialNoticeEl}
         <p className="pc-forgot-panel__body">
           {translate(locale, 'forgot.body', { email: SUPPORT_EMAIL })}
         </p>
