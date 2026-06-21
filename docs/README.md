@@ -1,185 +1,232 @@
-# 📚 NvwaX 文档索引
+# NvwaX 文档中心
 
-**最后更新**: 2026-04-25 | **版本**: v1.2.0
+> **欢迎来到 NvwaX 文档中心！**
+>
+> 这里汇集了所有 NvwaX 项目的文档，包括部署指南、API 接入指南、前端 API 说明等。
 
 ---
 
-## 🗂️ 文档分类
+## 📖 文档索引
 
-### 📖 用户指南
+### 1. 部署相关
 
-适合最终用户阅读，了解如何使用 NvwaX 平台。
+| 文档 | 说明 | 适用对象 |
+|------|------|---------|
+| [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) | 完整部署指南（前置要求、快速部署、手动部署、验证、常见问题） | 运维工程师、DevOps |
+| [../scripts/quick-deploy.sh](../scripts/quick-deploy.sh) | 快速部署脚本（一键部署） | 运维工程师、开发者 |
 
-| 文档 | 描述 | 大小 |
+**快速开始**：
+```bash
+# 克隆仓库
+git clone https://github.com/BiglionX/NvwaX.git /opt/nvwax
+cd /opt/nvwax
+
+# 运行快速部署脚本
+sudo DOMAIN=account.yourdomain.com \
+     EMAIL=admin@yourdomain.com \
+     DB_PASSWORD=<密码> \
+     JWT_SECRET=<密钥> \
+     bash scripts/quick-deploy.sh
+```
+
+---
+
+### 2. 接入相关
+
+| 文档 | 说明 | 适用对象 |
+|------|------|---------|
+| [API_GUIDE.md](./API_GUIDE.md) | API 接入指南（OIDC 标准协议、前后端集成、Social Login、API 参考、示例代码） | 后端开发者、前端开发者 |
+| [FRONTEND_API.md](./FRONTEND_API.md) | 前端 API 说明（组件说明、API 函数、状态管理、样式定制） | 前端开发者、UI/UX 设计师 |
+
+**快速接入**：
+- **OIDC 标准协议**：参考 [API_GUIDE.md](./API_GUIDE.md) 第 2 节
+- **前端集成（JavaScript/TypeScript）**：参考 [API_GUIDE.md](./API_GUIDE.md) 第 3 节
+- **后端集成（Node.js/Python/Java）**：参考 [API_GUIDE.md](./API_GUIDE.md) 第 4 节
+
+---
+
+### 3. 其他文档
+
+| 文档 | 说明 | 位置 |
 |------|------|------|
-| [快速开始指南](../GETTING-STARTED.md) | 安装和配置指南 | 287行 |
-| [用户使用指南](./BOUNTY-USER-GUIDE.md) | 悬赏系统使用教程 | 497行 |
-| [Admin 后台使用](../ADMIN-GUIDE.md) | 管理员操作手册 | - |
-| [常见问题](./FAQ.md) | 常见问题解答 | - |
+| **架构设计** | 系统架构、模块设计 | [docs/architecture/](../docs/architecture/) |
+| **API 参考** | 后端 API 文档 | [docs/api/](../docs/api/) |
+| **开发者指南** | 代码规范、贡献指南 | [CONTRIBUTING.md](../CONTRIBUTING.md) |
+| **Changelog** | 版本更新记录 | [CHANGELOG.md](../CHANGELOG.md) |
 
 ---
 
-### 🛠️ 开发文档
+## 🚀 快速开始
 
-适合开发者阅读，了解项目架构和开发流程。
+### 场景 1：我是运维工程师，需要部署 NvwaX
 
-| 文档 | 描述 | 大小 |
-|------|------|------|
-| [项目结构说明](../PROJECT-STRUCTURE.md) | 代码组织结构 | - |
-| [NvwaX架构升级概要](./NVWAX-UPGRADE-SUMMARY.md) ⭐ | **快速了解核心变更** | 173行 |
-| [NvwaX核心架构设计](./NVWAX-CORE-ARCHITECTURE.md) ⭐ | **Aiteam创建专家系统** | 746行 |
-| [NvwaX实施计划](./NVWAX-IMPLEMENTATION-PLAN.md) ⭐ | **详细实施路线图** | 807行 |
-| [API 文档](./API-DOCUMENTATION.md) | 完整的 API 参考 | 908行 |
-| [贡献指南](../CONTRIBUTING.md) | 如何贡献代码 | - |
-| [代码规范](./CODE-STANDARDS.md) | 编码风格和最佳实践 | - |
+1. 阅读 [部署指南](./DEPLOYMENT_GUIDE.md) 第 1 节（前置要求）
+2. 使用 [快速部署脚本](./../scripts/quick-deploy.sh) 一键部署
+3. 参考 [部署指南](./DEPLOYMENT_GUIDE.md) 第 5 节验证部署
+
+**预计时间**：30 分钟
 
 ---
 
-### 📊 项目报告
+### 场景 2：我是后端开发者，需要接入统一登录
 
-项目进展和技术报告。
+1. 向 NvwaX 团队申请 OIDC 客户端凭证（参考 [API 接入指南](./API_GUIDE.md) 第 1.3 节）
+2. 阅读 [API 接入指南](./API_GUIDE.md) 第 2 节（OIDC 标准协议接入）
+3. 根据后端语言选择示例（Node.js/Python/Java）（参考 [API 接入指南](./API_GUIDE.md) 第 4 节）
 
-| 文档 | 描述 | 大小 |
-|------|------|------|
-| [项目完整总结](./PROJECT-SUMMARY-2026-04.md) ⭐ | **最新完整报告** | 775行 |
-| [项目最终总结](./PROJECT-FINAL-SUMMARY.md) | 悬赏系统总结 | 524行 |
-| [Phase 1 完成报告](./PHASE1-COMPLETION-REPORT.md) | 第一阶段报告 | - |
-| [Phase 2 完成报告](./PHASE2-FINAL-COMPLETION-REPORT.md) | 第二阶段报告 | - |
+**预计时间**：1-2 小时
 
 ---
 
-### 🔧 技术文档
+### 场景 3：我是前端开发者，需要集成登录功能
 
-深入技术实现细节。
+1. 向 NvwaX 团队申请 OIDC 客户端凭证
+2. 阅读 [API 接入指南](./API_GUIDE.md) 第 3 节（前端集成）
+3. 或使用 [前端 API 说明](./FRONTEND_API.md) 了解组件和 API 函数
 
-| 文档 | 描述 | 大小 |
-|------|------|------|
-| [部署指南](./DEPLOYMENT-GUIDE.md) | 生产环境部署 | 666行 |
-| [Nvwa 布局优化](./NVWA-LAYOUT-OPTIMIZATION.md) | 智能体工厂 UI 优化 | 318行 |
-| [搜索增强报告](./SEARCH-ENHANCEMENT-COMPLETION.md) | 搜索功能实现 | 434行 |
-| [功能完善报告](./BOUNTY-FEATURE-ENHANCEMENT.md) | 悬赏功能增强 | 370行 |
-| [前端完成报告](./BOUNTY-FRONTEND-COMPLETION.md) | 前端开发报告 | 335行 |
-| [测试报告](./BOUNTY-SYSTEM-TEST-REPORT.md) | 系统测试报告 | 306行 |
+**预计时间**：30 分钟 - 1 小时
 
 ---
 
-### 🎨 设计文档
+### 场景 4：我是合作项目开发者，需要了解 NvwaX 能提供什么
 
-UI/UX 设计和产品规划。
+1. 阅读 [API 接入指南](./API_GUIDE.md) 第 1 节（概述）
+2. 了解 OIDC 标准协议和 PKCE 流程
+3. 联系 NvwaX 团队申请 OIDC 客户端凭证
 
-| 文档 | 描述 | 大小 |
-|------|------|------|
-| [Nvwa 设计文档](../Nvwa-design.md) | 智能体工厂设计稿 | - |
-| [Nvwa 开发计划](../NVWA-AGENT-FACTORY-PLAN.md) | 开发路线图 | - |
-| [搜索建议完成](./SEARCH-SUGGESTIONS-COMPLETION.md) | 搜索建议功能 | 394行 |
+**预计时间**：15 分钟
 
 ---
 
-### 🔍 代码分析
+## 📋 常见问题速查
 
-代码质量和技术分析。
-
-| 文档 | 描述 | 大小 |
-|------|------|------|
-| [代码重复检查](./CODE-DUPLICATION-CHECK.md) | 代码质量分析 | - |
-| [深度代码分析](./DEEP-CODE-ANALYSIS-AGENT-EXISTING.md) | 现有代码分析 | - |
-
----
-
-## 🎯 快速导航
-
-### 我想...
-
-#### 🚀 快速开始
-- → [阅读快速开始指南](../GETTING-STARTED.md)
-- → [查看项目总结](./PROJECT-SUMMARY-2026-04.md)
-
-#### 🎁 使用悬赏系统
-- → [阅读用户指南](./BOUNTY-USER-GUIDE.md)
-- → [查看 API 文档](./API-DOCUMENTATION.md)
-
-#### 🤖 创建智能体
-- → [访问 Nvwa 工厂](http://localhost:3000/nvwa)
-- → [查看设计文档](../Nvwa-design.md)
-
-#### 🛠️ 开发贡献
-- → [阅读贡献指南](../CONTRIBUTING.md)
-- → [查看代码规范](./CODE-STANDARDS.md)
-
-#### 📦 部署上线
-- → [阅读部署指南](./DEPLOYMENT-GUIDE.md)
-- → [查看 Docker 配置](../docker-compose.yml)
-
-#### 📊 了解项目进展
-- → [查看完整总结](./PROJECT-SUMMARY-2026-04.md) ⭐
-- → [查看阶段报告](./PHASE2-FINAL-COMPLETION-REPORT.md)
+| 问题 | 文档位置 |
+|------|---------|
+| 如何部署 NvwaX？ | [部署指南](./DEPLOYMENT_GUIDE.md) |
+| 如何接入统一登录？ | [API 接入指南](./API_GUIDE.md) 第 2 节 |
+| 如何使用 Social Login？ | [API 接入指南](./API_GUIDE.md) 第 5 节 |
+| 如何创建 OIDC 客户端？ | [部署指南](./DEPLOYMENT_GUIDE.md) 第 4 节 |
+| 如何验证部署是否成功？ | [部署指南](./DEPLOYMENT_GUIDE.md) 第 5 节 |
+| 前端如何集成登录组件？ | [前端 API 说明](./FRONTEND_API.md) 第 2 节 |
+| Token 过期怎么办？ | [API 接入指南](./API_GUIDE.md) 第 2.8 节 |
+| 如何调试 OIDC 流程？ | [API 接入指南](./API_GUIDE.md) 第 8.5 节 |
 
 ---
 
-## 📈 文档统计
+## 🔗 相关链接
 
-| 类别 | 文档数量 | 总行数 |
-|------|----------|--------|
-| 用户指南 | 4 | ~800行 |
-| 开发文档 | 7 | ~2,920行 |
-| 项目报告 | 4 | ~1,600行 |
-| 技术文档 | 6 | ~2,500行 |
-| 设计文档 | 3 | ~700行 |
-| 代码分析 | 2 | ~300行 |
-| **总计** | **26** | **~8,820行** |
+### 官方资源
 
----
+- **官方网站**：https://account.proclaw.cc
+- **Discovery 端点**：https://account.proclaw.cc/.well-known/openid-configuration
+- **JWKS 端点**：https://account.proclaw.cc/.well-known/jwks.json
+- **GitHub 仓库**：https://github.com/BiglionX/NvwaX
 
-## 🔄 文档更新记录
+### 标准规范
 
-| 日期 | 文档 | 更新内容 |
-|------|------|----------|
-| 2026-05-19 | PHASE5-COMPLETION-REPORT.md | Phase 5 完成报告 & 项目总结 |
-| 2026-05-19 | PHASE4-COMPLETION-REPORT.md | Phase 4 完成报告 |
-| 2026-05-19 | PHASE4-PROGRESS-REPORT.md | Phase 4 进度报告 |
-| 2026-05-19 | PHASE3-FINAL-SUMMARY.md | Phase 3 最终总结 |
-| 2026-05-19 | PHASE3-COMPLETION-REPORT.md | Phase 3 完成报告 |
-| 2026-05-19 | PHASE3-PROGRESS-REPORT.md | Phase 3 进度报告 |
-| 2026-05-19 | PHASE2-FINAL-SUMMARY.md | Phase 2 最终总结 |
-| 2026-05-19 | PHASE2-COMPLETION-REPORT.md | Phase 2 完成报告 |
-| 2026-05-19 | PHASE2-PROGRESS-REPORT.md | Phase 2 进度报告 |
-| 2026-05-19 | PHASE1-FINAL-SUMMARY.md | Phase 1 最终总结 |
-| 2026-05-19 | PHASE1-COMPLETION-REPORT.md | Phase 1 完成报告 |
-| 2026-05-19 | PHASE1-PROGRESS-REPORT.md | Phase 1 实施进度报告 |
-| 2026-05-19 | NVWAX-UPGRADE-SUMMARY.md | 创建架构升级概要文档 |
-| 2026-05-19 | NVWAX-IMPLEMENTATION-PLAN.md | 创建NvwaX实施计划文档 |
-| 2026-05-19 | NVWAX-CORE-ARCHITECTURE.md | 创建NvwaX核心架构设计文档 |
-| 2026-04-25 | PROJECT-SUMMARY-2026-04.md | 创建完整项目总结 |
-| 2026-04-25 | README.md | 更新功能特性 |
-| 2026-04-25 | GETTING-STARTED.md | 添加数据库初始化 |
-| 2026-04-25 | NVWA-LAYOUT-OPTIMIZATION.md | Nvwa 布局优化 |
-| 2026-04-25 | SEARCH-ENHANCEMENT-COMPLETION.md | 搜索增强功能 |
-| 2026-04-25 | BOUNTY-FEATURE-ENHANCEMENT.md | 悬赏功能完善 |
+- **OIDC 标准**：https://openid.net/specs/
+- **OAuth 2.0 标准**：https://oauth.net/2/
+- **PKCE 规范**：https://oauth.net/2/pkce/
+
+### 常用库
+
+- **前端（JavaScript/TypeScript）**：
+  - [oidc-client-ts](https://github.com/authts/oidc-client-ts)
+  - [next-auth](https://next-auth.js.org/)
+- **后端（Node.js）**：
+  - [openid-client](https://github.com/panva/node-openid-client)
+  - [passport-openidconnect](https://github.com/jaredhanson/passport-openidconnect)
+- **后端（Python）**：
+  - [authlib](https://authlib.org/)
+  - [django-allauth](https://django-allauth.readthedocs.io/)
+- **后端（Java）**：
+  - [Spring Security OAuth2](https://spring.io/projects/spring-security-oauth)
+  - [Nimbus OAuth 2.0 SDK](https://connect2id.com/products/nimbus-oauth-openid-connect-sdk)
 
 ---
 
-## 📮 文档贡献
+## 📞 支持与反馈
 
-如果您发现文档有误或需要补充，欢迎：
+如果你在部署或接入过程中遇到问题，可以：
 
-1. **提交 Issue**: https://github.com/BigLionX/NvwaX/issues
-2. **提交 PR**: https://github.com/BigLionX/NvwaX/pulls
-3. **邮件联系**: 1055603323@qq.com
+### 1. 查看文档
+- 先查看本文档中心的对应文档
+- 使用 Ctrl+F 搜索关键词
+
+### 2. 查看 GitHub Issues
+- 访问 https://github.com/BiglionX/NvwaX/issues
+- 查看是否有类似问题
+
+### 3. 联系支持团队
+- 📧 **Email**：admin@proclaw.cc
+- 💬 **微信群**：NvwaX 开发者交流群（请联系管理员获取邀请链接）
+
+### 4. 提交 Issue
+- 访问 https://github.com/BiglionX/NvwaX/issues
+- 点击 "New Issue" 创建新问题
+- 请详细描述问题，并附上错误日志、截图等信息
+
+---
+
+## 📝 文档贡献指南
+
+如果你发现文档有错误或需要补充，欢迎贡献！
+
+### 贡献步骤
+
+1. **Fork 仓库**：
+   ```bash
+   git fork https://github.com/BiglionX/NvwaX.git
+   ```
+
+2. **创建分支**：
+   ```bash
+   git checkout -b docs/update-api-guide
+   ```
+
+3. **修改文档**：
+   - 编辑对应的 Markdown 文件
+   - 确保格式正确（使用 Markdown 语法）
+   - 添加示例代码（如果有）
+
+4. **提交更改**：
+   ```bash
+   git add docs/API_GUIDE.md
+   git commit -m "docs: 更新 API 接入指南，添加 Python 示例"
+   git push origin docs/update-api-guide
+   ```
+
+5. **创建 Pull Request**：
+   - 访问 https://github.com/BiglionX/NvwaX/pulls
+   - 点击 "New Pull Request"
+   - 填写 PR 描述，说明修改内容
 
 ### 文档规范
 
-- 使用 Markdown 格式
-- 标题使用中文
-- 代码块标明语言
-- 保持更新及时性
-- 添加适当的链接
+- ✅ 使用清晰的标题和目录
+- ✅ 使用表格、代码块、示意图等可视化元素
+- ✅ 提供完整的示例代码
+- ✅ 说明适用对象和预计时间
+- ✅ 添加锚点链接，方便跳转
 
 ---
 
-<div align="center">
+## 📅 文档更新日志
 
-**NvwaX 文档中心**
+| 日期 | 版本 | 更新内容 | 作者 |
+|------|------|---------|------|
+| 2026-06-21 | 1.0 | 初始版本（创建部署指南、API 接入指南、前端 API 说明） | NvwaX Team |
+|  |  |  |  |
 
-让开发更简单，让使用更便捷！ 🚀
+---
 
-</div>
+## 📄 许可证
+
+本文档遵循 **MIT License** 开源。
+
+---
+
+**文档版本**：1.0  
+**最后更新**：2026-06-21  
+**维护者**：NvwaX Team  
+**联系方式**：admin@proclaw.cc
