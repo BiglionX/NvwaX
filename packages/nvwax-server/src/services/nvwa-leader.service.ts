@@ -2,6 +2,7 @@ import { Pool } from 'pg';
 import { v4 as uuidv4 } from 'uuid';
 import OpenAI from 'openai';
 import { tokenQuotaService } from './token-quota.service.js';
+import { structuredOutputService, TEAM_GENERATION_SCHEMA } from './structured-output.service.js';
 
 // 系统级用户ID用于LLM生成成本
 const SYSTEM_USER_ID_FOR_LLM = 'system-nvwa-leader';
@@ -64,7 +65,7 @@ export class NvwaLeaderService {
   }
 
   /**
-   * 使用 LLM 生成团队配置
+   * 使用 LLM 生成团队配置（Structured Output 模式）
    * @param nvwaData Nvwa 需求数据
    * @param isAiTeam 是否为 AiTeam 模式
    * @returns 生成的团队配置
@@ -79,62 +80,39 @@ export class NvwaLeaderService {
     const prompt = this.buildTeamGenerationPrompt(nvwaData, isAiTeam);
     
     try {
-      const completion = await this.openai!.chat.completions.create({
-        model: 'deepseek-v4-flash',
-        messages: [
-          {
-            role: 'system',
-            content: `你是一个专业的虚拟团队配置生成专家。根据用户需求，生成最优的团队配置方案。
-            
-要求：
-1. 生成的配置必须符合 JSON 格式
-2. 团队角色应根据实际需求合理配置（通常 3-5 个核心角色）
-3. 工作流程应清晰明确，每一步都有明确的输出
-4. 通信协议和冲突解决机制必须合理可行
-5. 考虑团队协作效率，避免角色职责重叠`
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
+      const result = await structuredOutputService.callWithSchema<any>({
+        model: 'deepseek-chat',
         temperature: 0.7,
-        max_tokens: 2000
+        maxTokens: 2000,
+        systemPrompt: `你是一个专业的虚拟团队配置生成专家。根据用户需求，生成最优的团队配置方案。
+        
+要求：
+1. 团队角色应根据实际需求合理配置（通常 3-5 个核心角色）
+2. 工作流程应清晰明确，每一步都有明确的输出
+3. 通信协议和冲突解决机制必须合理可行
+4. 考虑团队协作效率，避免角色职责重叠`,
+        userPrompt: prompt,
+        schemaName: 'team_generation',
+        schema: TEAM_GENERATION_SCHEMA,
+        maxRetries: 2
       });
 
-      const response = completion.choices[0]?.message?.content || '';
-      const totalTokens = completion.usage?.total_tokens || 0;
-
       // 记录 Token 消耗
-      if (totalTokens > 0) {
-        tokenQuotaService.checkAndDeductTokens(SYSTEM_USER_ID_FOR_LLM, totalTokens, {
+      if (result.tokensUsed > 0) {
+        tokenQuotaService.checkAndDeductTokens(SYSTEM_USER_ID_FOR_LLM, result.tokensUsed, {
           endpoint: '/v1/chat/completions',
           sourceType: 'nvwa_team_generation',
-          model: 'deepseek-v4-flash',
-          metadata: { isAiTeam }
+          model: result.model,
+          metadata: { isAiTeam, mode: result.mode }
         }).catch(err => console.error('[TokenQuota] Failed to deduct tokens:', err));
       }
 
-      // 尝试解析 JSON 响应
-      try {
-        // 移除可能的 markdown 代码块标记
-        let jsonStr = response;
-        if (jsonStr.includes('```json')) {
-          jsonStr = jsonStr.split('```json')[1].split('```')[0];
-        } else if (jsonStr.includes('```')) {
-          jsonStr = jsonStr.split('```')[1].split('```')[0];
-        }
-        
-        return JSON.parse(jsonStr.trim());
-      } catch (parseError) {
-        console.error('[NvwaLeader] Failed to parse LLM response, using mock data:', parseError);
-        console.log('[NvwaLeader] Raw response:', response.substring(0, 500));
-        // 降级使用 mock 数据
-        return isAiTeam ? this.generateMockAiTeam(nvwaData) : this.generateMockTeam(nvwaData);
-      }
+      console.log(`[NvwaLeader] Team generation via ${result.mode} mode (${result.tokensUsed} tokens)`);
+
+      return result.data;
     } catch (error: any) {
-      console.error('[NvwaLeader] LLM call failed:', error.message);
-      // LLM 调用失败时降级使用 mock 数据
+      console.error('[NvwaLeader] Structured output failed, using mock data:', error.message);
+      // 降级使用 mock 数据
       return isAiTeam ? this.generateMockAiTeam(nvwaData) : this.generateMockTeam(nvwaData);
     }
   }

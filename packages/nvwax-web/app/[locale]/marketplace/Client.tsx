@@ -11,6 +11,7 @@ import { Star, Download, ExternalLink, Users, Search, X, TrendingUp, Plus, Spark
 import Link from 'next/link';
 import { Button, Input, Space, Container, Card, Badge, Tag, Modal } from '@/components/UI';
 import { useAiSearch } from '@/contexts/AiSearchContext';
+import AgentWizardModal from '@/components/Search/AgentWizardModal';
 
 type Category = 'all' | 'agents' | 'aiteams' | 'virtual-company' | 'website_operations' | 'social_media' | 'industry-plugin';
 
@@ -21,6 +22,7 @@ export default function MarketplaceClient() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAgentWizard, setShowAgentWizard] = useState(false);
   // 推荐结果状态
   const [recommendedAiteams, setRecommendedAiteams] = useState<AiTeam[]>([]);
   const [recommendedSkills, setRecommendedSkills] = useState<SkillRecommendation[]>([]);
@@ -908,8 +910,14 @@ export default function MarketplaceClient() {
             </div>
           </Link>
 
-          {/* 创建智能体 */}
-          <Link href="/nvwa" onClick={() => setShowCreateModal(false)} className="block">
+          {/* 创建智能体 - v2.2.0 向导式 */}
+          <button
+            onClick={() => {
+              setShowCreateModal(false);
+              setShowAgentWizard(true);
+            }}
+            className="w-full text-left block"
+          >
             <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:shadow-md transition-all group">
               <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-1 flex items-center gap-2">
                 <span className="text-lg">🤖</span> {t('createAgent')}
@@ -918,7 +926,7 @@ export default function MarketplaceClient() {
                 {t('createAgentDesc')}
               </p>
             </div>
-          </Link>
+          </button>
 
           {/* 创建 AiTeam */}
           <Link href="/nvwa" onClick={() => setShowCreateModal(false)} className="block">
@@ -1027,6 +1035,18 @@ export default function MarketplaceClient() {
           </div>
         ) : null}
       </Modal>
+
+      {/* v2.2.0 Agent 创建向导 */}
+      <AgentWizardModal
+        isOpen={showAgentWizard}
+        onClose={() => setShowAgentWizard(false)}
+        initialQuery={debouncedSearch || undefined}
+        onSuccess={(agent) => {
+          console.log('✅ Agent 创建成功:', agent);
+          setShowAgentWizard(false);
+          // 可选：刷新列表或跳转到详情页
+        }}
+      />
 
     </Container>
   );

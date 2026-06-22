@@ -62,6 +62,28 @@ export type { PaginationProps } from './Pagination';
 export { default as Stepper } from './Stepper';
 export type { StepperProps, StepItem } from './Stepper';
 
+// v2.2.0 增强版向导步骤指示器
+export { default as WizardStepper } from './WizardStepper';
+export type { WizardStepperProps, WizardStep, WizardStepStatus } from './WizardStepper';
+
+// 行业模板卡片（用于 Agent 创建向导）
+export { default as IndustryTemplateCard, IndustryTemplateGrid } from './IndustryTemplateCard';
+export type { IndustryTemplateCardProps, IndustryTemplate, IndustryType } from './IndustryTemplateCard';
+export { INDUSTRY_TEMPLATES } from './IndustryTemplateCard';
+
+// 沙箱对话（用于 Agent 测试）
+export { default as SandboxChat } from './SandboxChat';
+export type { SandboxChatProps, SandboxMessage, SandboxMessageRole, SandboxExecutor } from './SandboxChat';
+
+// 状态机可视化（用于 Aiteam 创建流程）
+export { default as StateGraphVisualizer } from './StateGraphVisualizer';
+export type { StateGraphVisualizerProps, StateGraphNode, StateGraphEdge } from './StateGraphVisualizer';
+export { DEFAULT_STATE_MACHINE_NODES, DEFAULT_STATE_MACHINE_EDGES } from './StateGraphVisualizer';
+
+// v2.2.0 Aiteam 状态机视图（集成 StateGraphVisualizer + 操作面板 + Checkpoint）
+export { default as AiteamStateGraphView } from '../Search/AiteamStateGraphView';
+export type { AiteamStateGraphViewProps } from '../Search/AiteamStateGraphView';
+
 // 表单组件
 export { default as Input } from './Input';
 export type { InputProps } from './Input';

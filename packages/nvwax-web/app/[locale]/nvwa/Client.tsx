@@ -5,6 +5,7 @@ import { Send, Bot, Sparkles, Loader, RotateCcw, Lightbulb, Zap, Database, FileT
 import { useAuth } from '@/hooks/useAuth';
 import AiTeamCreatorModal from '@/components/aiteam-creator-modal';
 import { useTranslations } from 'next-intl';
+import { AiteamStateGraphView } from '@/components/UI';
 
 interface Message {
   id: string;
@@ -160,6 +161,8 @@ export default function NvwaClient() {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(0);
+  const [useStateMachine, setUseStateMachine] = useState<boolean>(false); // v2.2.0 切换
+  const [stateMachineSessionId, setStateMachineSessionId] = useState<string | null>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [formData, setFormData] = useState<AgentFormData>({
     name: '',
@@ -847,6 +850,27 @@ export default function NvwaClient() {
                 </span>
               </div>
 
+              {/* v2.2.0 状态机模式切换 */}
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">创建模式</span>
+                <button
+                  onClick={() => setUseStateMachine(!useStateMachine)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    useStateMachine ? 'bg-primary' : 'bg-muted'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      useStateMachine ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-xs font-medium">{useStateMachine ? '状态机' : '对话式'}</span>
+              </div>
+
+              {/* 进度条和步骤列表（仅对话式模式） */}
+              {!useStateMachine && (
+                <>
               {/* 进度条 */}
               <div className="mb-5">
                 <div className="w-full h-2 bg-gray-100 dark:bg-gray-700/50 rounded-full overflow-hidden">
@@ -920,6 +944,22 @@ export default function NvwaClient() {
                   );
                 })}
               </div>
+              </>
+              )}
+
+              {/* v2.2.0 状态机视图 */}
+              {useStateMachine && stateMachineSessionId && (
+                <AiteamStateGraphView
+                  sessionId={stateMachineSessionId}
+                  onNodeAction={(nodeId, action) => {
+                    console.log(`🎯 节点操作: ${nodeId} → ${action}`);
+                  }}
+                  onStateChange={(state) => {
+                    console.log('📊 状态变更:', state);
+                  }}
+                />
+              )}
+
             </div>
           </aside>
 

@@ -10,6 +10,11 @@ import { skillMatchingService } from './skill-matching.service.js';
 import { ceoAgentGenerator, CEOConfig, TeamContext } from './ceo-agent-generator.service.js';
 import { documentGeneratorService, DocumentPackage } from './document-generator.service.js';
 import { tokenQuotaService } from './token-quota.service.js';
+import {
+  structuredOutputService,
+  REQUIREMENT_ANALYSIS_SCHEMA,
+  TEAM_DESIGN_SCHEMA
+} from './structured-output.service.js';
 
 /**
  * NvwaX 需求分析结果
@@ -155,7 +160,7 @@ export class NvwaXAgentService {
   }
 
   /**
-   * 使用 LLM 进行需求分析
+   * 使用 LLM 进行需求分析（Structured Output 模式）
    */
   private async analyzeWithLLM(userInput: string, userId?: string): Promise<RequirementAnalysis> {
     if (!this.openai) {
@@ -164,54 +169,86 @@ export class NvwaXAgentService {
 
     const prompt = REQUIREMENT_ANALYSIS_PROMPT.replace('{{userInput}}', userInput);
 
-    const completion = await this.openai.chat.completions.create({
-      model: 'deepseek-v4-flash',
-      messages: [
-        { role: 'system', content: '你是一个专业的需求分析师，擅长从用户描述中提取关键信息。' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.3,
-      max_tokens: 500
-    });
+    try {
+      const result = await structuredOutputService.callWithSchema<RequirementAnalysis>({
+        model: 'deepseek-chat',
+        temperature: 0.3,
+        maxTokens: 500,
+        systemPrompt: '你是一个专业的需求分析师，擅长从用户描述中提取关键信息。请严格按照 JSON Schema 格式输出分析结果。',
+        userPrompt: prompt,
+        schemaName: 'requirement_analysis',
+        schema: REQUIREMENT_ANALYSIS_SCHEMA,
+        userId,
+        maxRetries: 2
+      });
 
-    // 从 DeepSeek 响应中获取真实 Token 消耗并记录
-    if (userId && completion.usage?.total_tokens) {
-      tokenQuotaService.checkAndDeductTokens(userId, completion.usage.total_tokens, {
-        endpoint: '/aiteam-creation/analyze',
-        sourceType: 'agent_factory',
-        description: 'NvwaX 需求分析',
-        model: 'deepseek-v4-flash',
-        metadata: {
-          prompt_tokens: completion.usage.prompt_tokens,
-          completion_tokens: completion.usage.completion_tokens
-        }
-      }).catch(err => console.error('[TokenQuota] Failed to deduct tokens for analyzeWithLLM:', err));
-    }
-
-    const response = completion.choices[0]?.message?.content || '';
-    
-    // 尝试解析 JSON
-    const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
-    if (jsonMatch) {
-      try {
-        const parsed = JSON.parse(jsonMatch[1]);
-        return {
-          companyType: parsed.companyType || '未知团队',
-          industry: parsed.industry,
-          responsibilities: parsed.responsibilities || [],
-          expectedOutputs: parsed.expectedOutputs || [],
-          targetUsers: parsed.targetUsers,
-          specialRequirements: parsed.specialRequirements,
-          scale: parsed.scale || 'medium',
-          confidence: parsed.confidence || 0.8
-        };
-      } catch (e) {
-        console.warn('Failed to parse LLM response, using fallback');
+      // 记录 Token 消耗
+      if (userId && result.tokensUsed > 0) {
+        tokenQuotaService.checkAndDeductTokens(userId, result.tokensUsed, {
+          endpoint: '/aiteam-creation/analyze',
+          sourceType: 'agent_factory',
+          description: 'NvwaX 需求分析',
+          model: result.model,
+          metadata: { mode: result.mode }
+        }).catch(err => console.error('[TokenQuota] Failed to deduct tokens for analyzeWithLLM:', err));
       }
+
+      console.log(`[NvwaX] Requirement analysis via ${result.mode} mode (${result.tokensUsed} tokens)`);
+
+      return {
+        companyType: result.data.companyType || '未知团队',
+        industry: result.data.industry,
+        responsibilities: result.data.responsibilities || [],
+        expectedOutputs: result.data.expectedOutputs || [],
+        targetUsers: result.data.targetUsers,
+        specialRequirements: result.data.specialRequirements,
+        scale: result.data.scale || 'medium',
+        confidence: result.data.confidence || 0.8
+      };
+    } catch (error: any) {
+      console.error('[NvwaX] Structured output failed, using text extraction fallback:', error.message);
+      // 最终降级：使用原始 LLM 调用 + 文本提取
+      return this.analyzeWithLLMFallback(userInput, userId);
+    }
+  }
+
+  /**
+   * 需求分析的 LLM 降级方案（当 structured output 完全失败时使用）
+   */
+  private async analyzeWithLLMFallback(userInput: string, userId?: string): Promise<RequirementAnalysis> {
+    if (!this.openai) {
+      return this.getMockAnalysis(userInput);
     }
 
-    // 降级处理
-    return this.extractRequirementsFromText(response);
+    const prompt = REQUIREMENT_ANALYSIS_PROMPT.replace('{{userInput}}', userInput);
+
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: 'deepseek-v4-flash',
+        messages: [
+          { role: 'system', content: '你是一个专业的需求分析师，擅长从用户描述中提取关键信息。请以 JSON 格式输出。' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 500
+      });
+
+      const response = completion.choices[0]?.message?.content || '';
+
+      if (userId && completion.usage?.total_tokens) {
+        tokenQuotaService.checkAndDeductTokens(userId, completion.usage.total_tokens, {
+          endpoint: '/aiteam-creation/analyze',
+          sourceType: 'agent_factory',
+          description: 'NvwaX 需求分析(fallback)',
+          model: 'deepseek-v4-flash',
+          metadata: { mode: 'raw_fallback' }
+        }).catch(err => console.error('[TokenQuota] Failed to deduct tokens:', err));
+      }
+
+      return this.extractRequirementsFromText(response);
+    } catch {
+      return this.getMockAnalysis(userInput);
+    }
   }
 
   /**
@@ -300,7 +337,7 @@ export class NvwaXAgentService {
   }
 
   /**
-   * 使用 LLM 设计团队
+   * 使用 LLM 设计团队（Structured Output 模式）
    */
   private async designWithLLM(requirements: RequirementAnalysis, userId?: string): Promise<TeamDesign> {
     if (!this.openai) {
@@ -315,44 +352,37 @@ export class NvwaXAgentService {
       .replace('{{targetUsers}}', requirements.targetUsers || '未指定')
       .replace('{{specialRequirements}}', requirements.specialRequirements || '无');
 
-    const completion = await this.openai.chat.completions.create({
-      model: 'deepseek-v4-flash',
-      messages: [
-        { role: 'system', content: '你是一个专业的团队架构师，擅长设计高效的AI团队结构。' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.5,
-      max_tokens: 1000
-    });
+    try {
+      const result = await structuredOutputService.callWithSchema<TeamDesign>({
+        model: 'deepseek-chat',
+        temperature: 0.5,
+        maxTokens: 1000,
+        systemPrompt: '你是一个专业的团队架构师，擅长设计高效的AI团队结构。请严格按照 JSON Schema 格式输出设计方案。',
+        userPrompt: prompt,
+        schemaName: 'team_design',
+        schema: TEAM_DESIGN_SCHEMA,
+        userId,
+        maxRetries: 2
+      });
 
-    // 从 DeepSeek 响应中获取真实 Token 消耗并记录
-    if (userId && completion.usage?.total_tokens) {
-      tokenQuotaService.checkAndDeductTokens(userId, completion.usage.total_tokens, {
-        endpoint: '/aiteam-creation/design-team',
-        sourceType: 'agent_factory',
-        description: 'NvwaX 团队设计',
-        model: 'deepseek-v4-flash',
-        metadata: {
-          prompt_tokens: completion.usage.prompt_tokens,
-          completion_tokens: completion.usage.completion_tokens
-        }
-      }).catch(err => console.error('[TokenQuota] Failed to deduct tokens for designWithLLM:', err));
-    }
-
-    const response = completion.choices[0]?.message?.content || '';
-    
-    // 尝试解析 JSON
-    const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
-    if (jsonMatch) {
-      try {
-        return JSON.parse(jsonMatch[1]);
-      } catch (e) {
-        console.warn('Failed to parse team design JSON');
+      // 记录 Token 消耗
+      if (userId && result.tokensUsed > 0) {
+        tokenQuotaService.checkAndDeductTokens(userId, result.tokensUsed, {
+          endpoint: '/aiteam-creation/design-team',
+          sourceType: 'agent_factory',
+          description: 'NvwaX 团队设计',
+          model: result.model,
+          metadata: { mode: result.mode }
+        }).catch(err => console.error('[TokenQuota] Failed to deduct tokens for designWithLLM:', err));
       }
-    }
 
-    // 降级方案
-    return this.getMockTeamDesign(requirements);
+      console.log(`[NvwaX] Team design via ${result.mode} mode (${result.tokensUsed} tokens)`);
+
+      return result.data;
+    } catch (error: any) {
+      console.error('[NvwaX] Structured output failed for team design, using mock fallback:', error.message);
+      return this.getMockTeamDesign(requirements);
+    }
   }
 
   /**

@@ -12,6 +12,7 @@ import teamSkillRouter from './team-skill.routes.js';
 import nvwaLeaderRouter from './nvwa-leader.routes.js';
 import nvwaAgentRouter from './nvwa-agent.routes.js';
 import aiteamCreationRouter from './aiteam-creation.routes.js';
+import aiteamStateMachineRouter from './aiteam-state-machine.routes.js';
 import teamExecutionRouter from './team-execution.routes.js';
 import adminRouter from './admin.routes.js';
 import sdkRouter from './sdk.routes.js';
@@ -129,6 +130,9 @@ router.use('/nvwa-agent', nvwaAgentRouter);
 
 // Virtual Company Creation routes
 router.use('/aiteam-creation', aiteamCreationRouter);
+
+// v2.2.0 Aiteam State Machine routes (图状态机 + Checkpoint)
+router.use('/aiteam-state-machine', aiteamStateMachineRouter);
 
 // Team Execution routes
 router.use('/', teamExecutionRouter);

@@ -15,6 +15,7 @@ import { stripeWebhookRouter } from './routes/stripe-webhook.routes.js';
 import { databaseService } from './services/database.service.js';
 import { crawlerSchedulerService } from './services/crawler-scheduler.service.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.middleware.js';
+import { createMCPRouter } from './mcp/nvwax-mcp-server.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -106,6 +107,8 @@ app.use(
 app.use(oidcRouter);
 // Sprint 2 — Portal account endpoints under /api
 app.use('/api/portal', portalRouter);
+// v2.2.0 — MCP (Model Context Protocol) 端点，支持外部 Agent 框架调用
+app.use('/api/mcp', createMCPRouter());
 app.use('/api', routes);
 
 // Health check

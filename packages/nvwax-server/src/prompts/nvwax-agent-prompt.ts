@@ -171,23 +171,26 @@ export const NVWAX_SYSTEM_PROMPT = `你是 NvwaX，一个专业的 AI 团队架�
 
 /**
  * 需求分析提示词
+ * 注意：输出格式由 Structured Output Schema 约束，无需在 prompt 中指定 JSON 格式
  */
 export const REQUIREMENT_ANALYSIS_PROMPT = `请分析以下用户需求，提取关键信息：
 
 用户输入：{{userInput}}
 
-请识别：
-1. 团队类型和行业背景
-2. 主要职责和目标
-3. 期望的产出类型
-4. 目标用户群体
-5. 特殊要求和约束
-6. 团队规模预期
+请识别并输出：
+1. 团队类型（companyType）和行业背景（industry）
+2. 主要职责列表（responsibilities）
+3. 期望的产出类型列表（expectedOutputs）
+4. 目标用户群体（targetUsers）
+5. 特殊要求和约束（specialRequirements）
+6. 团队规模预期（scale: small/medium/large）
+7. 分析置信度（confidence: 0-1 之间的数字）
 
-如果信息不足，列出需要澄清的问题。`;
+如果信息不足，在对应字段中填写合理的默认值，并降低 confidence 值。`;
 
 /**
  * 团队设计提示词
+ * 注意：输出格式由 Structured Output Schema 约束，无需在 prompt 中指定 JSON 格式
  */
 export const TEAM_DESIGN_PROMPT = `基于以下需求，设计一个高效的 AI 团队结构：
 
@@ -198,12 +201,11 @@ export const TEAM_DESIGN_PROMPT = `基于以下需求，设计一个高效的 AI
 目标用户：{{targetUsers}}
 特殊要求：{{specialRequirements}}
 
-请推荐：
-1. 3-5 个核心角色
-2. 每个角色的详细职责
-3. 所需的技能和能力
-4. 角色间的协作关系
-5. 团队工作流程
+请设计并输出：
+1. 3-5 个核心角色（roles），每个角色包含：名称、描述、职责列表、所需技能列表、优先级（required/recommended/optional）
+2. 协作流程描述（collaborationFlow）：说明角色之间如何协作
+3. 预估团队规模（estimatedSize）
+4. 设计理由（rationale）：解释为什么这样设计
 
 确保角色互补、职责清晰、协作顺畅。`;
 
