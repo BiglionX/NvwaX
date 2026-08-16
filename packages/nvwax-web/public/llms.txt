@@ -1,0 +1,47 @@
+# NvwaX
+
+> NvwaX 是一个 AI 虚拟公司制造工厂（Virtual Company Factory）平台：通过对话式需求分析自动组建 AI 团队（AiTeam），提供 240+ 可搜索的 AI Agent、可复用的团队协作模板（Team Skills）与悬赏市场（Bounties），帮助个人和企业用 AI 智能体驱动真实业务。
+
+## 关于 NvwaX
+
+NvwaX（女娲 X）得名于中国神话"女娲造人"，寓意用 AI 智能体"创造"你的虚拟公司。核心能力：
+
+- **AI Agent 搜索**：240+ 覆盖研发、内容、营销、数据分析等领域的 AI 智能体
+- **AiTeam 组建**：通过自然语言描述需求，自动生成包含 Leader 与成员的 AI 团队配置
+- **Team Skills**：可复用的团队协作模板（角色、工作流、协作规则），一键应用到项目
+- **悬赏市场**：发布任务、寻找技能、获得奖励
+- **开发者平台**：REST API、Webhook、SDK 与桌面端 ProClaw 集成
+
+## 关键页面
+
+- [首页](https://nvwax.proclaw.cc/): NvwaX 平台入口，搜索与创建入口
+- [智能体市场 Marketplace](https://nvwax.proclaw.cc/marketplace): 搜索 240+ AI Agent，浏览已发布的 AiTeam 与 Team Skill
+- [Nvwa 智能体工厂](https://nvwax.proclaw.cc/nvwa): 对话式需求分析，自动生成虚拟公司团队配置
+- [Team Skills 市场](https://nvwax.proclaw.cc/team-skills): 可复用的 AI 团队协作模板
+- [悬赏市场 Bounties](https://nvwax.proclaw.cc/bounties): 发布悬赏任务、承接任务获得奖励
+- [站内搜索](https://nvwax.proclaw.cc/search): 搜索 AI Agent 与 AiTeam
+- [常见问题 FAQ](https://nvwax.proclaw.cc/faq): 平台使用常见问题
+- [开发者中心](https://nvwax.proclaw.cc/developer): 定价、教程、社区与支持
+- [API 参考](https://nvwax.proclaw.cc/developer/api-reference): REST API 接口文档
+
+## 开始使用
+
+1. 注册账户（免费）：https://nvwax.proclaw.cc/register
+2. 在 Marketplace 搜索 AI Agent：https://nvwax.proclaw.cc/marketplace
+3. 用 Nvwa 对话创建你的虚拟公司：https://nvwax.proclaw.cc/nvwa
+4. 复用 Team Skills 模板应用到项目：https://nvwax.proclaw.cc/team-skills
+5. 在悬赏市场发布或承接任务：https://nvwax.proclaw.cc/bounties
+
+## API 与开发者
+
+- 开发者中心：https://nvwax.proclaw.cc/developer
+- API 参考：https://nvwax.proclaw.cc/developer/api-reference
+- 开源仓库：https://github.com/BigLionX/NvwaX
+
+## 联系与支持
+
+- 销售咨询：sales@nvwax.com
+- 技术支持：support@nvwax.com
+- 商务合作：partnerships@nvwax.com
+
+> 本文件遵循 llmstxt.org 规范，供大语言模型与生成式引擎读取站点结构；英文版见 /llms-en.txt。

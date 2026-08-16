@@ -1,0 +1,154 @@
+/**
+ * SEO / GEO 工具库
+ *
+ * 统一管理站点的：
+ *  - 站点基址（SITE_URL）
+ *  - 多语言路径（zh 默认语言不带前缀，en 带 /en）
+ *  - canonical / hreflang alternates
+ *  - 结构化数据（JSON-LD）：Organization / WebSite / SoftwareApplication / FAQPage / BreadcrumbList
+ *
+ * GEO（Generative Engine Optimization）说明：
+ * 生成式引擎（ChatGPT、Perplexity、Gemini、Copilot、AI Overviews 等）依赖结构化数据、
+ * 清晰的站点描述与可引用的权威内容来理解并引用站点。本文件为全站统一提供这些资产。
+ */
+
+export const PRODUCTION_URL = 'https://nvwax.proclaw.cc';
+
+/**
+ * 站点基址。
+ *
+ * 注意：Next.js 生产构建时 .env.local 的优先级高于 .env.production，
+ * 而仓库内的 .env.local 指向 http://localhost:3000。
+ * 因此生产环境（NODE_ENV=production）强制使用正式域名，避免
+ * canonical / hreflang / llms.txt 链接错误地指向 localhost。
+ */
+export const SITE_URL =
+  process.env.NODE_ENV === 'production'
+    ? PRODUCTION_URL
+    : process.env.NEXT_PUBLIC_SITE_URL || PRODUCTION_URL;
+
+/** API 基址（同样在生产环境强制使用正式域名，规避 .env.local 覆盖） */
+export function getApiBaseUrl(): string {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || `${SITE_URL}/api`;
+  return process.env.NODE_ENV === 'production' ? `${PRODUCTION_URL}/api` : apiUrl;
+}
+
+export const DEFAULT_LOCALE = 'zh';
+export const LOCALES = ['zh', 'en'] as const;
+export type Locale = (typeof LOCALES)[number];
+
+/** 生成带 locale 前缀的路径（zh 默认不带前缀，en 带 /en 前缀） */
+export function localizedPath(path: string, locale: string): string {
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  if (locale === DEFAULT_LOCALE) {
+    return normalized === '/' ? '/' : normalized;
+  }
+  return `/en${normalized === '/' ? '' : normalized}`;
+}
+
+/** 生成绝对 URL（用于 canonical / hreflang / sitemap） */
+export function absoluteUrl(path: string, locale: string): string {
+  return `${SITE_URL}${localizedPath(path, locale)}`;
+}
+
+/** 生成 canonical + 双语 hreflang alternates（Metadata.alternates） */
+export function alternatesFor(path: string, locale: string) {
+  return {
+    canonical: absoluteUrl(path, locale),
+    languages: {
+      zh: absoluteUrl(path, 'zh'),
+      en: absoluteUrl(path, 'en'),
+    },
+  };
+}
+
+/* ────────────────────────── JSON-LD 构建器 ────────────────────────── */
+
+/** 站点组织信息 */
+export function organizationJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'NvwaX',
+    alternateName: 'NvwaX 虚拟公司制造工厂',
+    url: SITE_URL,
+    logo: `${SITE_URL}/logo.png`,
+    description:
+      'NvwaX 是一个 AI 虚拟公司制造工厂平台，支持搜索 AI Agent、组建 AiTeam（AI 团队）、复用 Team Skills 团队模板，并用 AI 智能体驱动真实业务。',
+    sameAs: ['https://github.com/BigLionX/NvwaX'],
+  };
+}
+
+/** 站点搜索行为（支持 /search?q= 站内搜索） */
+export function webSiteJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'NvwaX',
+    alternateName: 'NvwaX 虚拟公司制造工厂',
+    url: SITE_URL,
+    description:
+      '虚拟公司制造工厂 - 轻松创建个性化的 AI 虚拟公司，搜索和管理 AI Agent，组建 AiTeam',
+    inLanguage: 'zh-CN',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+}
+
+/** 软件应用结构化数据（帮助 AI 引擎理解这是一款可用的 SaaS 产品） */
+export function softwareApplicationJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'NvwaX',
+    url: SITE_URL,
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    description:
+      'NvwaX 虚拟公司制造工厂：搜索 240+ AI Agent，组建 AiTeam 团队，复用 Team Skills 模板，发布悬赏任务，用 AI 智能体驱动业务。',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'CNY',
+      description: '免费注册开始使用，另有 Pro 与 Enterprise 付费套餐',
+    },
+  };
+}
+
+/** FAQPage 结构化数据（GEO 高价值：AI 引擎直接引用问答内容） */
+export function faqJsonLd(items: Array<{ question: string; answer: string }>) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  };
+}
+
+/** 面包屑结构化数据 */
+export function breadcrumbJsonLd(
+  items: Array<{ name: string; url: string }>,
+) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}

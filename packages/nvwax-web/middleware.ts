@@ -14,10 +14,15 @@
  *   - /api/auth/*        （session 写入/读取/代理）
  *   - 静态资源 /_next/*、/images/*、/favicon.ico、/*.svg|ico|png|jpg...
  *
- * 受保护：
- *   - /dashboard, /profile, /projects, /marketplace, /bounties, /team-skills,
- *     /developer, /admin, /user-center, /test-connection, /faq, /search, /nvwa
- *   - /api/* (除 /api/auth/*) — 业务 API 应走 API Route 内部鉴权
+ * 受保护（仅登录用户可访问，用户私有数据）：
+ *   - /dashboard, /profile, /user-center/*, /admin/*
+ *   - /projects*          （用户的 AI 项目管理与执行）
+ *   - /bounties/create    （发布悬赏需登录）
+ *   - /test-connection, /test-v22
+ *
+ * SEO/GEO（Sprint SEO-1）：目录与内容页对所有人开放，便于搜索引擎与
+ * AI 爬虫（GPTBot / ClaudeBot / PerplexityBot 等）直接抓取收录：
+ *   - /marketplace, /team-skills, /faq, /search, /nvwa, /developer, /bounties
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -31,21 +36,16 @@ const SESSION_COOKIE = 'nvwax_oidc_session';
 // 静态资源 / 系统路径
 const SYSTEM_PREFIXES = ['/_next', '/_vercel', '/api/auth', '/oauth', '/portal'];
 
-// 受保护的业务路径前缀
+// 受保护的业务路径前缀（用户私有数据，SEO 上 robots.txt 同步 disallow + noindex 头）
 const PROTECTED_PREFIXES = [
   '/dashboard',
   '/profile',
-  '/projects',
-  '/marketplace',
-  '/bounties',
-  '/team-skills',
-  '/developer',
-  '/admin',
   '/user-center',
+  '/admin',
+  '/projects',
+  '/bounties/create',
   '/test-connection',
-  '/faq',
-  '/search',
-  '/nvwa',
+  '/test-v22',
 ];
 
 // 总是公开的路径

@@ -28,17 +28,92 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // SEO: 响应头优化
+  // SEO: 响应头优化（Sprint SEO-1）
+  // - 全站默认索引由 layout 的 <meta name="robots"> 承担
+  // - 用户私有路径显式 noindex, nofollow（防误收录，与 robots.txt 同步）
+  // - llms.txt / llms-en.txt 按 markdown 类型输出（llmstxt.org 规范）
   async headers() {
+    const noindex = { key: 'X-Robots-Tag', value: 'noindex, nofollow' };
     return [
       {
-        source: '/(.*)',
+        source: '/llms.txt',
         headers: [
+          { key: 'Content-Type', value: 'text/markdown; charset=utf-8' },
           {
-            key: 'X-Robots-Tag',
-            value: 'index, follow',
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, stale-while-revalidate=86400',
           },
         ],
+      },
+      {
+        source: '/llms-en.txt',
+        headers: [
+          { key: 'Content-Type', value: 'text/markdown; charset=utf-8' },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      {
+        source: '/admin/:path*',
+        headers: [noindex],
+      },
+      {
+        source: '/dashboard',
+        headers: [noindex],
+      },
+      {
+        source: '/profile/:path*',
+        headers: [noindex],
+      },
+      {
+        source: '/settings/:path*',
+        headers: [noindex],
+      },
+      {
+        source: '/token-usage',
+        headers: [noindex],
+      },
+      {
+        source: '/token-purchase',
+        headers: [noindex],
+      },
+      {
+        source: '/agent-repository',
+        headers: [noindex],
+      },
+      {
+        source: '/my-bounties',
+        headers: [noindex],
+      },
+      {
+        source: '/microbiz',
+        headers: [noindex],
+      },
+      {
+        source: '/projects/:path*',
+        headers: [noindex],
+      },
+      {
+        source: '/bounties/create',
+        headers: [noindex],
+      },
+      {
+        source: '/oauth/:path*',
+        headers: [noindex],
+      },
+      {
+        source: '/portal/:path*',
+        headers: [noindex],
+      },
+      {
+        source: '/test-connection',
+        headers: [noindex],
+      },
+      {
+        source: '/test-v22',
+        headers: [noindex],
       },
     ];
   },

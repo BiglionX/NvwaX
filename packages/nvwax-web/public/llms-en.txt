@@ -1,0 +1,47 @@
+# NvwaX
+
+> NvwaX is an AI Virtual Company Factory platform: it assembles AI teams (AiTeams) from conversational requirement analysis, offers 240+ searchable AI Agents, reusable team collaboration templates (Team Skills), and a bounty marketplace (Bounties) — helping individuals and businesses run real work with AI agents.
+
+## About NvwaX
+
+NvwaX (Nüwa X) is named after the Chinese myth of "Nüwa creating humans", symbolizing the creation of your virtual company out of AI agents. Core capabilities:
+
+- **AI Agent Search**: 240+ AI agents across R&D, content, marketing, data analysis, and more
+- **AiTeam Assembly**: describe your needs in natural language and get a full AI team configuration with a leader and members
+- **Team Skills**: reusable team collaboration templates (roles, workflows, collaboration rules) applied to projects in one click
+- **Bounty Marketplace**: post tasks, find skills, and earn rewards
+- **Developer Platform**: REST API, Webhooks, SDK, and desktop integration with ProClaw
+
+## Key Pages
+
+- [Home](https://nvwax.proclaw.cc/en/): NvwaX platform entry with search and creation
+- [Marketplace](https://nvwax.proclaw.cc/en/marketplace): search 240+ AI Agents, browse published AiTeams and Team Skills
+- [Nvwa Agent Factory](https://nvwax.proclaw.cc/en/nvwa): conversational requirement analysis to auto-generate virtual company team configurations
+- [Team Skills Marketplace](https://nvwax.proclaw.cc/en/team-skills): reusable AI team collaboration templates
+- [Bounties](https://nvwax.proclaw.cc/en/bounties): post bounty tasks and complete tasks for rewards
+- [Search](https://nvwax.proclaw.cc/en/search): search AI Agents and AiTeams
+- [FAQ](https://nvwax.proclaw.cc/en/faq): frequently asked questions
+- [Developer Center](https://nvwax.proclaw.cc/en/developer): pricing, tutorials, community, and support
+- [API Reference](https://nvwax.proclaw.cc/en/developer/api-reference): REST API documentation
+
+## Getting Started
+
+1. Create a free account: https://nvwax.proclaw.cc/en/register
+2. Search AI Agents on the Marketplace: https://nvwax.proclaw.cc/en/marketplace
+3. Create your virtual company by chatting with Nvwa: https://nvwax.proclaw.cc/en/nvwa
+4. Apply Team Skills templates to your projects: https://nvwax.proclaw.cc/en/team-skills
+5. Post or claim tasks on the Bounties marketplace: https://nvwax.proclaw.cc/en/bounties
+
+## API & Developers
+
+- Developer Center: https://nvwax.proclaw.cc/en/developer
+- API Reference: https://nvwax.proclaw.cc/en/developer/api-reference
+- Open Source Repository: https://github.com/BigLionX/NvwaX
+
+## Contact & Support
+
+- Sales: sales@nvwax.com
+- Support: support@nvwax.com
+- Partnerships: partnerships@nvwax.com
+
+> This file follows the llmstxt.org specification for LLMs and generative engines; the Chinese version is available at /llms.txt.

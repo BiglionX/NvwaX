@@ -7,6 +7,12 @@ import "./globals.css";
 import MainLayout from "@/components/Layout/MainLayout";
 import Providers from "@/components/Providers";
 import { routing } from '@/src/i18n/routing';
+import {
+  alternatesFor,
+  organizationJsonLd,
+  softwareApplicationJsonLd,
+  webSiteJsonLd,
+} from '@/lib/seo';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -98,34 +104,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     verification: {
       google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || "YOUR_GOOGLE_VERIFICATION_CODE",
     },
-    alternates: {
-      canonical: `https://nvwax.proclaw.cc/${locale}`,
-      languages: {
-        'zh': 'https://nvwax.proclaw.cc/zh',
-        'en': 'https://nvwax.proclaw.cc/en',
-      },
-    },
+    alternates: alternatesFor('/', locale),
   };
 }
-
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "NvwaX",
-  alternateName: "NvwaX 虚拟公司制造工厂",
-  url: "https://nvwax.proclaw.cc",
-  description:
-    "虚拟公司制造工厂 - 轻松创建个性化的 AI 虚拟公司，搜索和管理 AI Agent，组建 AiTeam",
-  inLanguage: "zh-CN",
-  potentialAction: {
-    "@type": "SearchAction",
-    target: {
-      "@type": "EntryPoint",
-      urlTemplate: "https://nvwax.proclaw.cc/search?q={search_term_string}",
-    },
-    "query-input": "required name=search_term_string",
-  },
-};
 
 export default async function LocaleLayout({
   children,
@@ -148,9 +129,18 @@ export default async function LocaleLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        {/* GEO 结构化数据：WebSite（站内搜索）+ Organization + SoftwareApplication */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd()) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd()) }}
         />
       </head>
       <body className="min-h-full">

@@ -1,130 +1,97 @@
 import type { MetadataRoute } from 'next';
+import { absoluteUrl, getApiBaseUrl } from '@/lib/seo';
 
-const BASE_URL = 'https://nvwax.proclaw.cc';
+/**
+ * sitemap.xml（SEO/GEO）
+ *
+ * - 静态公开页面：中英双语（zh 默认语言不带前缀，en 带 /en），
+ *   每项带 hreflang alternates
+ * - 动态页面：已发布的 Team Skill 详情（/marketplace/team-skills/:id）
+ * - 移除用户私有路径（/projects、/dashboard、/admin 等，见 robots.txt）
+ */
+
+// 静态公开页面（path 不含 locale 前缀；home 为 '/'）
+const STATIC_PAGES: Array<{
+  path: string;
+  priority: number;
+  changeFrequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+}> = [
+  { path: '/', priority: 1.0, changeFrequency: 'daily' },
+  { path: '/marketplace', priority: 0.9, changeFrequency: 'daily' },
+  { path: '/nvwa', priority: 0.9, changeFrequency: 'weekly' },
+  { path: '/team-skills', priority: 0.8, changeFrequency: 'weekly' },
+  { path: '/bounties', priority: 0.7, changeFrequency: 'daily' },
+  { path: '/faq', priority: 0.6, changeFrequency: 'weekly' },
+  { path: '/search', priority: 0.7, changeFrequency: 'weekly' },
+  { path: '/developer', priority: 0.8, changeFrequency: 'weekly' },
+  {
+    path: '/developer/api-reference',
+    priority: 0.7,
+    changeFrequency: 'weekly',
+  },
+  { path: '/login', priority: 0.4, changeFrequency: 'monthly' },
+  { path: '/register', priority: 0.4, changeFrequency: 'monthly' },
+  // GEO 资产（LLM 索引文件，llmstxt.org 规范）
+  { path: '/llms.txt', priority: 0.3, changeFrequency: 'yearly' },
+  { path: '/llms-en.txt', priority: 0.3, changeFrequency: 'yearly' },
+];
+
+// 为每个页面生成中英双语 sitemap 条目（带 hreflang alternates）
+function entriesForPage(
+  page: { path: string; priority: number; changeFrequency: 'daily' | 'weekly' | 'monthly' | 'yearly' },
+  lastModified?: Date,
+): MetadataRoute.Sitemap {
+  const { path, priority, changeFrequency } = page;
+  return (['zh', 'en'] as const).map((locale) => ({
+    url: absoluteUrl(path, locale),
+    lastModified: lastModified || new Date(),
+    changeFrequency,
+    priority,
+    alternates: {
+      languages: {
+        zh: absoluteUrl(path, 'zh'),
+        en: absoluteUrl(path, 'en'),
+      },
+    },
+  }));
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticPages: MetadataRoute.Sitemap = [
-    {
-      url: BASE_URL,
-      lastModified: new Date(),
-      changeFrequency: 'daily' as const,
-      priority: 1.0,
-    },
-    {
-      url: `${BASE_URL}/marketplace`,
-      lastModified: new Date(),
-      changeFrequency: 'daily' as const,
-      priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/nvwa`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/faq`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.6,
-    },
-    {
-      url: `${BASE_URL}/login`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
-      priority: 0.5,
-    },
-    {
-      url: `${BASE_URL}/register`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
-      priority: 0.5,
-    },
-    {
-      url: `${BASE_URL}/search`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/developer`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/developer/api-reference`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/projects`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/bounties`,
-      lastModified: new Date(),
-      changeFrequency: 'daily' as const,
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/team-skills`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    },
-  ];
+  const staticEntries: MetadataRoute.Sitemap = STATIC_PAGES.flatMap((page) =>
+    entriesForPage(page),
+  );
 
-  // 动态页面：从 API 获取已发布的 Agent/团队
-  const dynamicPages: MetadataRoute.Sitemap = [];
+  // 动态页面：从公开 API 获取已发布的 Team Skill（市场详情页）
+  const dynamicEntries: MetadataRoute.Sitemap = [];
   try {
-    const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL || 'https://nvwax.proclaw.cc/api';
+    const apiUrl = getApiBaseUrl();
 
-    const [agentsRes, teamsRes] = await Promise.allSettled([
-      fetch(`${apiUrl}/marketplace/agents?limit=50`, {
-        signal: AbortSignal.timeout(5000),
-      }),
-      fetch(`${apiUrl}/aiteams/published?limit=50`, {
-        signal: AbortSignal.timeout(5000),
-      }),
-    ]);
+    const res = await fetch(`${apiUrl}/team-skills/marketplace?limit=50`, {
+      signal: AbortSignal.timeout(5000),
+      next: { revalidate: 3600 },
+    });
 
-    if (agentsRes.status === 'fulfilled') {
-      const data = await agentsRes.value.json();
-      const agents = data?.data?.data || data?.data || [];
-      if (Array.isArray(agents)) {
-        dynamicPages.push(
-          ...agents.map((agent: { id: string | number; updatedAt?: string }) => ({
-            url: `${BASE_URL}/marketplace/agents/${agent.id}`,
-            lastModified: new Date(agent.updatedAt || Date.now()),
-            changeFrequency: 'weekly' as const,
-            priority: 0.7,
-          }))
-        );
-      }
-    }
-
-    if (teamsRes.status === 'fulfilled') {
-      const data = await teamsRes.value.json();
-      const teams = data?.data?.aiteams || data?.data || [];
-      if (Array.isArray(teams)) {
-        dynamicPages.push(
-          ...teams.map((team: { id: string | number; updatedAt?: string }) => ({
-            url: `${BASE_URL}/marketplace/aiteams/${team.id}`,
-            lastModified: new Date(team.updatedAt || Date.now()),
-            changeFrequency: 'daily' as const,
-            priority: 0.8,
-          }))
-        );
+    if (res.ok) {
+      const body = await res.json();
+      const skills = body?.data?.data || body?.data || [];
+      if (Array.isArray(skills)) {
+        for (const skill of skills as Array<{
+          id: string | number;
+          updatedAt?: string;
+        }>) {
+          const path = `/marketplace/team-skills/${skill.id}`;
+          dynamicEntries.push(
+            ...entriesForPage(
+              { path, priority: 0.8, changeFrequency: 'weekly' },
+              new Date(skill.updatedAt || Date.now()),
+            ),
+          );
+        }
       }
     }
   } catch (error) {
     console.error('Failed to fetch dynamic pages for sitemap:', error);
   }
 
-  return [...staticPages, ...dynamicPages];
+  return [...staticEntries, ...dynamicEntries];
 }

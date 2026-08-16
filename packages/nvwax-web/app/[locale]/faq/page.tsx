@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import FAQClient from "./Client";
+import { alternatesFor } from "@/lib/seo";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -16,9 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: t("ogTitle"),
       description: t("ogDesc"),
     },
-    alternates: {
-      canonical: "https://nvwax.proclaw.cc/faq",
-    },
+    alternates: alternatesFor("/faq", locale),
   };
 }
 
