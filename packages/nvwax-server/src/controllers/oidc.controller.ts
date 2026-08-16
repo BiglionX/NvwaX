@@ -19,9 +19,27 @@ import { databaseService } from '../services/database.service.js';
 import { adminService } from '../services/admin.service.js';
 import { config } from '../config/index.js';
 
+/**
+ * RFC 7636 §4.2 — 校验 code_challenge 长度（Sprint 2.12 加固）。
+ * 此前只在 token 端校验 verifier 长度，authorize 签发 code 时不校验，
+ * 导致弱 challenge（如 <43 字符）也能拿到 code。这里在签发时就拦截：
+ *   - S256: base64url(SHA-256(verifier)) 恒为 43 字符（无 padding）
+ *   - plain: 与 code_verifier 同长，43–128 字符
+ * @returns null 表示合法，否则返回错误描述
+ */
+function codeChallengeLengthError(challenge: string, method: string): string | null {
+  if (method === 'S256') {
+    return challenge.length === 43
+      ? null
+      : 'code_challenge must be exactly 43 characters for S256';
+  }
+  // plain
+  if (challenge.length >= 43 && challenge.length <= 128) return null;
+  return 'code_challenge must be 43-128 characters for plain';
+}
+
 class OidcController {
   // ──────────── Discovery ────────────
-
   discovery = async (_req: Request, res: Response): Promise<void> => {
     const issuer = oidcTokenService.getIssuer();
     res.json({
@@ -174,6 +192,16 @@ class OidcController {
     }
     if (!client_id || !redirect_uri || !code_challenge) {
       res.status(400).json({ error: 'invalid_request', error_description: 'missing required parameters' });
+      return;
+    }
+
+    // Sprint 2.12 — 签发 code 前校验 challenge 长度（RFC 7636）
+    const challengeLenErr = codeChallengeLengthError(
+      code_challenge,
+      (code_challenge_method as string) || 'S256',
+    );
+    if (challengeLenErr) {
+      res.status(400).json({ error: 'invalid_request', error_description: challengeLenErr });
       return;
     }
 
@@ -483,6 +511,13 @@ class OidcController {
     }
     if (code_challenge_method !== 'S256' && code_challenge_method !== 'plain') {
       return new OidcError('invalid_request', 'code_challenge_method must be S256 or plain');
+    }
+
+    // Sprint 2.12 — 签发 code 前校验 challenge 长度（RFC 7636），
+    // 避免弱 challenge 拿到 code 后再在 token 端才被拒。
+    const challengeLenErr = codeChallengeLengthError(code_challenge, code_challenge_method);
+    if (challengeLenErr) {
+      return new OidcError('invalid_request', challengeLenErr);
     }
 
     return {

@@ -43,10 +43,10 @@ test.describe('OIDC full flow (Sprint 2)', () => {
     const { email, password } = await provisionUser();
 
     // 1. Authorize via the browser — this exercises the cookie path.
-    const verifier = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG';
-    const challenge = 'challenge-not-validated-by-e2e'; // IdP will validate in real flow; this is a stub
-    // For a proper PKCE flow we'd compute base64url(sha256(verifier)); for the
-    // e2e harness we use plain so the IdP accepts the literal.
+    // Sprint 2.12: code_challenge 需满足 RFC 7636 长度（43-128），否则 authorize 会 400。
+    // 这里用 plain 模式（challenge == verifier），verifier 长度 62 合规。
+    const verifier = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const challenge = verifier;
     const authUrl = `/oauth/authorize?response_type=code&client_id=${CLIENT_ID}` +
       `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
       `&scope=${encodeURIComponent(SCOPE)}&state=xyz` +

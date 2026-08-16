@@ -53,7 +53,8 @@ test.describe('Cookie SSO (Sprint 2 / DoD C9)', () => {
     const authUrl = `/oauth/authorize?response_type=code&client_id=proclaw-web` +
       `&redirect_uri=${encodeURIComponent(RP2_REDIRECT)}` +
       `&scope=openid%20profile%20email&state=ssotest` +
-      `&code_challenge=ignored-e2e&code_challenge_method=plain`;
+      // Sprint 2.12: code_challenge 需满足 RFC 7636 长度（43-128），否则 authorize 会 400
+      `&code_challenge=abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ&code_challenge_method=plain`;
     const res = await api.get(authUrl, { maxRedirects: 0, failOnStatusCode: false });
     expect([302, 303]).toContain(res.status());
     const location = res.headers()['location'] || '';
