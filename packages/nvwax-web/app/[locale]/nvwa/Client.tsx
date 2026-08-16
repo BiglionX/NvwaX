@@ -952,7 +952,7 @@ export default function NvwaClient({ embedded = false }: { embedded?: boolean })
                                                 t('placeholderDefault')
                                               }
                                               aria-label={t('messageInput')}
-                                              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-0 focus:border-blue-400 dark:focus:border-blue-600 outline-none resize-none text-sm leading-relaxed transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:shadow-lg focus:shadow-blue-500/10 disabled:opacity-60"
+                                              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-0 focus:border-blue-400 dark:focus:border-blue-600 outline-none resize-none text-sm leading-relaxed transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:shadow-lg focus:shadow-blue-500/10 disabled:opacity-60"
                                               rows={1}
                                               disabled={isTyping}
                                               style={{ minHeight: '44px' }}
