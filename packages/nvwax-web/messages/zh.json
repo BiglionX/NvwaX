@@ -794,7 +794,7 @@
     "autoPublishDesc": "保存后自动将团队发布到公开市场，其他用户可以发现和使用",
     "successTitle": "🎉 创建成功！",
     "successSubtitle": "选择您的下一步操作",
-    "successSaved": "✅ 太棒了！团队已成功保存到我的Agent仓库！\n\n📦 文档包已生成，请查看右侧弹窗进行下一步操作。",
+    "successSaved": "✅ 太棒了！团队已成功保存到我的Agent仓库！\n\n📦 文档包已生成，请查看弹窗进行下一步操作。",
     "successPublished": "\n\n🎉 已自动发布到 Agent 广场！您现在可以在市场中看到这个团队了。",
     "successPublishFailed": "\n\n⚠️ 自动发布失败，您可以稍后在我的 Agent 仓库中手动发布。",
     "saveFailed": "⚠️ 保存失败，请重试。",

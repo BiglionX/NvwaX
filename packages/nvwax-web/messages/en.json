@@ -572,7 +572,7 @@
     "autoPublishDesc": "After saving, the team will be automatically published to the public marketplace for other users to discover and use",
     "successTitle": "🎉 Created Successfully!",
     "successSubtitle": "Choose your next step",
-    "successSaved": "✅ Great! The team has been saved to your Agent repository!\n\n📦 The document package has been generated. Please check the dialog on the right for the next step.",
+    "successSaved": "✅ Great! The team has been saved to your Agent repository!\n\n📦 The document package has been generated. Please check the popup to continue to the next step.",
     "successPublished": "\n\n🎉 Published to the Agent Marketplace! You can now see this team in the marketplace.",
     "successPublishFailed": "\n\n⚠️ Auto-publish failed. You can manually publish it later from your Agent repository.",
     "saveFailed": "⚠️ Save failed, please try again.",
