@@ -7,16 +7,18 @@ build/
 out/
 
 # 运行期产物 / 部署脚本（不能进构建上下文）
-# account-portal-out 是服务器上的静态导出目录（运行时挂载），
-# 曾因 root 所有权导致 backend 构建上下文遍历时 permission denied
-/account-portal-out
-/portal-out*
+# 服务器 /opt/nvwax 内存在多个 root 所有权的构建产物目录
+# （account-portal-out / portal-new / portal-out 等），
+# Docker 遍历构建上下文时 lstat 会 permission denied，导致构建失败。
+/portal*
+/account-portal*
 /backend-dist*
+/*.zip
+/create-test-client.sql
+/test-results/
 /deploy-*
 /portal-deploy.sh
 /portal-runner.sh
-/*.zip
-/create-test-client.sql
 
 # 环境变量
 .env

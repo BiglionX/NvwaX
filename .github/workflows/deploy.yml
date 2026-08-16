@@ -80,6 +80,8 @@ jobs:
             fi
             echo "🔐 Generating OIDC keys (if missing)..."
             bash /opt/nvwax/scripts/generate-oidc-keys.sh
+            echo "🧹 Fixing ownership of runtime artifact dirs (root-owned files break docker build context + portal static serving)..."
+            sudo chown -R ubuntu:ubuntu /opt/nvwax/account-portal-out /opt/nvwax/portal-new /opt/nvwax/portal-out /opt/nvwax/portal-out-new 2>/dev/null || true
             echo " Stopping old containers..."
             docker-compose down
             echo " Building and starting containers..."
