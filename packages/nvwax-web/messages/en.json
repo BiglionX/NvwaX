@@ -595,7 +595,12 @@
     "restartConfirm": "Are you sure you want to restart?",
     "restartChat": "Restart chat",
     "close": "Close",
-    "viewLater": "💡 You can view and manage this AiTeam later in your Agent repository."
+    "viewLater": "💡 You can view and manage this AiTeam later in your Agent repository.",
+    "guestModeBadge": "Trial Mode",
+    "guestModeHint": "You are in trial mode. Explore the full flow first, then log in to save your AI team.",
+    "loginToSave": "Log in to Save",
+    "guestReply": "Got it! That sounds like a great team direction.\n\n**Please share a bit more:**\n- What are the team's main responsibilities?\n- What outputs do you expect?\n\n(Simulated reply in trial mode; the AI Team Architect will respond in real time after you log in.)",
+    "guestMatchDone": "✅ Team matching complete (trial simulation)\n\n**Recommended roles**\n- 🎯 Team Leader\n- 💼 Business Analyst\n- 🛠️ Execution Specialist\n\nLog in to generate the full configuration and save!"
   },
   "notifications": {
     "title": "Notifications",

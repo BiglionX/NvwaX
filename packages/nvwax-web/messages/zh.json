@@ -862,7 +862,12 @@
     "restartConfirm": "确定要重新开始吗？",
     "restartChat": "重新开始对话",
     "close": "关闭",
-    "viewLater": "💡 您可以稍后在我的 Agent 仓库中查看和管理这个 AiTeam。"
+    "viewLater": "💡 您可以稍后在我的 Agent 仓库中查看和管理这个 AiTeam。",
+    "guestModeBadge": "试用模式",
+    "guestModeHint": "当前为试用模式，可先体验完整流程。登录后即可保存您的 AI 团队。",
+    "loginToSave": "登录后保存",
+    "guestReply": "已收到您的需求！这是一个非常好的团队方向。\n\n**请继续补充以下信息：**\n- 团队的主要职责是什么？\n- 期望产出哪些成果？\n\n（试用模式下为模拟回复，登录后将由 AI 团队架构师实时生成）",
+    "guestMatchDone": "✅ 已为您完成团队匹配（试用模拟）\n\n**推荐角色**\n- 🎯 团队负责人（Leader）\n- 💼 业务分析师\n- 🛠️ 执行专员\n\n登录后即可生成完整配置并保存！"
   },
   "notifications": {
     "title": "通知中心",

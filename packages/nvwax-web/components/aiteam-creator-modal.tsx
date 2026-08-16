@@ -11,7 +11,6 @@ import { authedFetch } from '@/lib/oidc/authed-fetch';
 import StepProgress from '@/components/creation/StepProgress';
 import ChatMessage, { ChatMessageData } from '@/components/creation/ChatMessage';
 import ChatInput from '@/components/creation/ChatInput';
-import LoginPrompt from '@/components/creation/LoginPrompt';
 import CreateSuccessDialog, { SuccessData } from '@/components/creation/CreateSuccessDialog';
 
 interface AiTeamCreatorModalProps {
@@ -70,7 +69,7 @@ interface AiTeamMessage extends ChatMessageData {
 export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage, embedded = false }: AiTeamCreatorModalProps) {
   const t = useTranslations('vcChatModal');
   const locale = useLocale();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, login } = useAuth();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<AiTeamMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -103,10 +102,41 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
 
   const currentProgress = progress || { percentage: 0 };
 
-  // 初始化会话（未登录时不创建，展示登录引导；登录后自动创建）
+  // 初始化会话：
+  // - 未登录 → 游客模式（本地模拟会话，可先体验完整流程）
+  // - 登录后（含游客模式切到登录）→ 创建真实会话；保留游客聊过的需求，自动补发到真实会话
+  const guestRequirementsRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!isLoggedIn) return;
-    createSession();
+    if (!isLoggedIn) {
+      setSessionId('guest');
+      const welcomeMessage: AiTeamMessage = {
+        id: 'welcome',
+        role: 'nvwax_agent',
+        content: t('welcomeMessage'),
+        timestamp: new Date(),
+        phase: 'requirements_gathering'
+      };
+      setMessages([welcomeMessage]);
+
+      // 外部跳转带入的需求，在游客模式也自动发送
+      if (initialMessage) {
+        guestRequirementsRef.current = initialMessage;
+        setTimeout(() => {
+          sendMessageContent(initialMessage);
+        }, 1200);
+      }
+      return;
+    }
+
+    // 游客模式切到登录：保留游客消息展示，真实会话自动补发需求
+    const guestReq = guestRequirementsRef.current;
+    if (guestReq) {
+      guestRequirementsRef.current = null;
+      createSession(guestReq);
+    } else {
+      createSession();
+    }
   }, [isLoggedIn]);
 
   // 自动滚动到底部
@@ -114,7 +144,7 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const createSession = async () => {
+  const createSession = async (initialReq?: string) => {
     try {
       // Sprint 2.2: 走 authedFetch（OIDC cookie 由 /api/auth/proxy 注入 Authorization）
       const response = await authedFetch('/aiteam-creation/sessions', {
@@ -148,13 +178,17 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
         timestamp: new Date(),
         phase: 'requirements_gathering'
       };
+      setMessages((prev) => {
+        // 登录衔接：若保留着游客消息（且未重复），保留之；否则从欢迎消息开始
+        const hasWelcome = prev.some((m) => m.id === 'welcome');
+        return hasWelcome ? prev : [welcomeMessage];
+      });
 
-      setMessages([welcomeMessage]);
-
-      // 如果有外部注入的初始需求，自动发送
-      if (initialMessage) {
+      // 如果有外部注入/游客带入的初始需求，自动发送
+      const req = initialReq || initialMessage;
+      if (req) {
         setTimeout(() => {
-          sendMessageContent(initialMessage);
+          sendMessageContent(req);
         }, 1200);
       }
     } catch (error) {
@@ -183,6 +217,39 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
 
     setMessages(prev => [...prev, userMessage]);
     setIsSending(true);
+
+    // ── 游客模式：本地模拟回复（与 Agent 模式一致的"先玩后登录"体验） ──
+    if (sessionId === 'guest') {
+      setTimeout(() => {
+        const guestReply: AiTeamMessage = {
+          id: `guest-${Date.now()}`,
+          role: 'nvwax_agent',
+          content: t('guestReply'),
+          timestamp: new Date(),
+          phase: 'requirements_gathering',
+          recommendedRoles: [
+            { roleName: '🎯 团队负责人 (Leader)', description: '统筹全局，制定策略并协调团队成员' },
+            { roleName: '💼 业务分析师 (Analyst)', description: '分析需求，拆解任务与交付物' },
+            { roleName: '🛠️ 执行专员 (Specialist)', description: '执行具体任务，产出成果' },
+          ],
+        };
+        setMessages(prev => [...prev, guestReply]);
+        setIsSending(false);
+        // 试用模式下也展示"确认保存"按钮（点击后触发登录）
+        setTimeout(() => {
+          const guestConfirm: AiTeamMessage = {
+            id: `guest-confirm-${Date.now()}`,
+            role: 'nvwax_agent',
+            content: t('matchReadyToSave'),
+            timestamp: new Date(),
+            phase: 'confirming',
+            showConfirmButton: true,
+          };
+          setMessages(prev => [...prev, guestConfirm]);
+        }, 1000);
+      }, 800);
+      return;
+    }
 
     try {
       const response = await authedFetch(`/aiteam-creation/sessions/${sessionId}/message`, {
@@ -224,7 +291,7 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
     } finally {
       setIsSending(false);
     }
-  }, [sessionId, isSending]);
+  }, [sessionId, isSending, t]);
 
   /**
    * 触发 NvwaX 完整匹配流程
@@ -309,9 +376,14 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
 
   /**
    * 确认并保存团队到用户中心
+   * 游客模式下点击确认 → 触发 OIDC 登录（登录后由 useEffect 自动创建真实会话，用户可重新确认保存）
    */
   const handleConfirmAndSave = async () => {
-    if (!sessionId) return;
+    if (!isLoggedIn || !sessionId || sessionId === 'guest') {
+      addSystemMessage(t('loginRequired'));
+      await login('/nvwa');
+      return;
+    }
 
     setIsConfirming(true);
 
@@ -663,63 +735,60 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
 
       {/* 中间：对话区域 */}
       <section className="flex-1 flex flex-col min-h-0 bg-linear-to-b from-white to-gray-50/30 dark:from-gray-900 dark:to-gray-800/30">
-        {/* 未登录：登录引导 */}
-        {!isLoggedIn ? (
-          <div className="flex-1 flex items-center justify-center">
-            <LoginPrompt
-              title={t('loginPromptTitle')}
-              description={t('loginPromptDesc')}
-              loginLabel={t('loginLabel')}
-            />
+        {/* 游客模式提示条（未登录可先玩，保存时才登录） */}
+        {!isLoggedIn && (
+          <div className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-50/80 dark:bg-amber-900/20 border-b border-amber-200/60 dark:border-amber-800/40">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-[11px] font-semibold">
+              {t('guestModeBadge')}
+            </span>
+            <p className="text-xs text-amber-700/90 dark:text-amber-300/90">{t('guestModeHint')}</p>
           </div>
-        ) : (
-          <>
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5 sm:space-y-6 scroll-smooth">
-              {messages.map((message) => (
-                <ChatMessage
-                  key={message.id}
-                  message={message}
-                  extra={renderMessageExtra(message)}
-                />
-              ))}
-
-              {isSending && (
-                <div className="flex gap-3 sm:gap-4 justify-start">
-                  <div className="shrink-0">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
-                      <Bot size={18} className="text-white" />
-                    </div>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-2xl rounded-bl-lg px-5 py-4 shadow-sm">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                      <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:300ms]" />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input Area */}
-            <ChatInput
-              value={inputMessage}
-              onChange={setInputMessage}
-              onSend={sendMessage}
-              placeholder={t('inputPlaceholder')}
-              disabled={isSending || !sessionId}
-              sendLabel={t('sendButton')}
-              showKeyboardHint={false}
-              showFooterHint={false}
-            />
-            <p className="text-xs text-gray-400 dark:text-gray-500 pb-3 text-center bg-white dark:bg-gray-900">
-              💡 {t('inputHint')}
-            </p>
-          </>
         )}
+
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5 sm:space-y-6 scroll-smooth">
+          {messages.map((message) => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+              extra={renderMessageExtra(message)}
+            />
+          ))}
+
+          {isSending && (
+            <div className="flex gap-3 sm:gap-4 justify-start">
+              <div className="shrink-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
+                  <Bot size={18} className="text-white" />
+                </div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-2xl rounded-bl-lg px-5 py-4 shadow-sm">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                  <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                  <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <ChatInput
+          value={inputMessage}
+          onChange={setInputMessage}
+          onSend={sendMessage}
+          placeholder={t('inputPlaceholder')}
+          disabled={isSending || !sessionId}
+          sendLabel={t('sendButton')}
+          showKeyboardHint={false}
+          showFooterHint={false}
+        />
+        <p className="text-xs text-gray-400 dark:text-gray-500 pb-3 text-center bg-white dark:bg-gray-900">
+          💡 {t('inputHint')}
+        </p>
       </section>
     </div>
   );
