@@ -28,7 +28,6 @@ export default function Footer() {
       { label: 'GitHub', href: 'https://github.com/BigLionX/NvwaX', external: true },
       { label: 'Issues', href: 'https://github.com/BigLionX/NvwaX/issues', external: true },
       { label: 'Discussions', href: 'https://github.com/BigLionX/NvwaX/discussions', external: true },
-      { label: t('common.back'), href: 'mailto:1055603323@qq.com', external: true, icon: Mail },
     ],
     legal: [
       { label: t('nav.footerPrivacy'), href: '/privacy' },
