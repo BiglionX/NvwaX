@@ -45,9 +45,18 @@ export default async function DeveloperPage({ params }: Props) {
         
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">{t('step1GetKey')}</h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
-          {t.rich('step1Desc', {
-            consoleUrl: (chunks) => <a href="https://console.nvwax.com" className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">{chunks}</a>
-          })}
+          {(() => {
+            const parts = t('step1Desc').split('{consoleUrl}');
+            return (
+              <>
+                {parts[0]}
+                <a href="https://console.nvwax.com" className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  console.nvwax.com
+                </a>
+                {parts[1] ?? ''}
+              </>
+            );
+          })()}
         </p>
 
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">{t('step2InstallSdk')}</h3>
@@ -189,7 +198,10 @@ console.log(response);`}</code>
               </tbody>
             </table>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-500 mt-3">{t.rich('rateLimitDesc', { code: () => <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">429 Too Many Requests</code> })}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mt-3">
+            {t('rateLimitDesc').replace('{code}', '')}
+            <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">429 Too Many Requests</code>
+          </p>
         </div>
 
         <div className="mb-6">

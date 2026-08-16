@@ -36,6 +36,17 @@ const SESSION_COOKIE = 'nvwax_oidc_session';
 // 静态资源 / 系统路径
 const SYSTEM_PREFIXES = ['/_next', '/_vercel', '/api/auth', '/oauth', '/portal'];
 
+// Next.js Metadata 图片路由（无扩展名，会被 next-intl 误当作 locale 路径重写，
+// 导致 /opengraph-image 等被改写成 /zh/opengraph-image 而 404）。
+// 这些路由属于根级（app/opengraph-image.tsx 等），必须绕过 i18n 中间件直接放行。
+const METADATA_IMAGE_ROUTES = [
+  '/opengraph-image',
+  '/twitter-image',
+  '/icon',
+  '/apple-icon',
+  '/favicon',
+];
+
 // 受保护的业务路径前缀（用户私有数据，SEO 上 robots.txt 同步 disallow + noindex 头）
 const PROTECTED_PREFIXES = [
   '/dashboard',
@@ -87,6 +98,11 @@ function isProtected(pathname: string): boolean {
 
 export default function middleware(req: NextRequest): NextResponse {
   const { pathname } = req.nextUrl;
+
+  // ── 0. Metadata 图片路由直接放行（不经过 i18n 重写） ──
+  if (METADATA_IMAGE_ROUTES.some((p) => pathname === p)) {
+    return NextResponse.next();
+  }
 
   // ── 1. 系统/静态路径直接走 i18n（不鉴权） ──
   if (SYSTEM_PREFIXES.some((p) => pathname.startsWith(p)) || isStaticAsset(pathname)) {
