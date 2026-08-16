@@ -1029,5 +1029,29 @@
     "suggestion14": "RAG-based knowledge Q&A",
     "suggestion15": "Automated workflow",
     "suggestion16": "Multi-step reasoning"
+  },
+  "legal": {
+    "aboutTitle": "About Us - NvwaX",
+    "aboutMetaDesc": "Learn about NvwaX — the AI Agent & AiTeam platform",
+    "aboutHeading": "About NvwaX",
+    "aboutP1": "NvwaX is an AI Agent and AiTeam platform that helps developers search, discover, create and publish AI agents and AI teams.",
+    "aboutP2": "It offers an agent marketplace, team collaboration templates, intelligent workflows, and a bounty system — all accessible with one unified ProClaw account across all products.",
+    "aboutP3": "We aim to make building and reusing AI capabilities simple, open and collaborative.",
+    "termsTitle": "Terms of Service - NvwaX",
+    "termsMetaDesc": "NvwaX Terms of Service",
+    "termsHeading": "Terms of Service",
+    "termsUpdated": "Last updated: August 2026",
+    "termsP1": "Welcome to NvwaX. By using this platform you agree to these terms of service.",
+    "termsP2": "You are responsible for all activity under your account and must not use the platform for unlawful, infringing or harmful purposes.",
+    "termsP3": "We may adjust the services and these terms from time to time; material changes will be announced in-app or by email.",
+    "termsP4": "If you have questions about these terms, please contact us.",
+    "privacyTitle": "Privacy Policy - NvwaX",
+    "privacyMetaDesc": "NvwaX Privacy Policy",
+    "privacyHeading": "Privacy Policy",
+    "privacyUpdated": "Last updated: August 2026",
+    "privacyP1": "We collect only the information needed to provide our services, including account details and usage records.",
+    "privacyP2": "We never sell your personal information. It is shared only with trusted providers when required to deliver the service or by law.",
+    "privacyP3": "Sign-in and identity are handled by the unified ProClaw account system; credentials are securely stored by the shared account center.",
+    "privacyP4": "If you have questions about this policy, please contact us."
   }
 }

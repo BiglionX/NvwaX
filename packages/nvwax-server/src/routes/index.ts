@@ -4,11 +4,9 @@ import { searchController } from '../controllers/search.controller.js';
 import { projectController } from '../controllers/project.controller.js';
 import { userController } from '../controllers/user.controller.js';
 import { userAuthController } from '../controllers/user-auth.controller.js';
-import { socialAuthController } from '../controllers/social-auth.controller.js';
 import { bountyController } from '../controllers/bounty.controller.js';
 import { teamSkillController } from '../controllers/team-skill.controller.js';
 import { userAuthMiddleware } from '../middleware/user-auth.middleware.js';
-import { loginRateLimiter } from '../middleware/login-rate-limiter.middleware.js';
 import teamSkillRouter from './team-skill.routes.js';
 import nvwaLeaderRouter from './nvwa-leader.routes.js';
 import nvwaAgentRouter from './nvwa-agent.routes.js';
@@ -110,18 +108,19 @@ router.post('/auth/login', legacyAuthGone);
 router.post('/auth/proclaw-cross-auth', userAuthController.proclawCrossAuth);
 router.get('/auth/profile', userAuthController.getProfile);
 
-// Social login routes (with rate limiting)
-router.post('/auth/facebook/login', loginRateLimiter, socialAuthController.facebookLogin.bind(socialAuthController));
-router.post('/auth/google/login', loginRateLimiter, socialAuthController.googleLogin.bind(socialAuthController));
-router.post('/auth/github/login', loginRateLimiter, socialAuthController.githubLogin.bind(socialAuthController));
-router.post('/auth/wechat/login', loginRateLimiter, socialAuthController.wechatLogin.bind(socialAuthController));
-
-// GitHub OAuth routes
-router.get('/auth/github/authorize', socialAuthController.githubAuthorize.bind(socialAuthController));
-router.get('/auth/github/callback', socialAuthController.githubCallback.bind(socialAuthController));
-router.get('/auth/social/accounts', userAuthMiddleware, socialAuthController.getSocialAccounts.bind(socialAuthController));
-router.post('/auth/social/bind', userAuthMiddleware, socialAuthController.bindSocialAccount.bind(socialAuthController));
-router.post('/auth/social/unbind', userAuthMiddleware, socialAuthController.unbindSocialAccount.bind(socialAuthController));
+// Social login routes — Sprint 2.12 已关闭（410 Gone）。
+// 社交登录统一走 account-portal（/api/portal/social/*）→ OIDC；
+// 旧 /auth/facebook|google|github|wechat/login 签发 HS256 JWT 绕过统一会话，
+// 且站点内绑定功能已下线（profile 页社交绑定区块已移除）。
+router.post('/auth/facebook/login', legacyAuthGone);
+router.post('/auth/google/login', legacyAuthGone);
+router.post('/auth/github/login', legacyAuthGone);
+router.post('/auth/wechat/login', legacyAuthGone);
+router.get('/auth/github/authorize', legacyAuthGone);
+router.get('/auth/github/callback', legacyAuthGone);
+router.get('/auth/social/accounts', legacyAuthGone);
+router.post('/auth/social/bind', legacyAuthGone);
+router.post('/auth/social/unbind', legacyAuthGone);
 
 // Bounty routes
 router.post('/bounties', userAuthMiddleware, bountyController.createBounty);

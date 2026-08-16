@@ -1389,5 +1389,29 @@
     "suggestion14": "基于 RAG 的知识问答",
     "suggestion15": "自动化工作流",
     "suggestion16": "多步推理"
+  },
+  "legal": {
+    "aboutTitle": "关于我们 - NvwaX",
+    "aboutMetaDesc": "了解 NvwaX —— AI Agent 与 AiTeam 平台",
+    "aboutHeading": "关于 NvwaX",
+    "aboutP1": "NvwaX 是一个 AI Agent 与 AiTeam 平台，帮助开发者搜索、发现、创建和发布 AI 智能体与 AI 团队。",
+    "aboutP2": "平台提供智能体市场、团队协作模板、智能工作流、悬赏任务系统等能力，并支持通过统一的 ProClaw 账号体系登录全部产品。",
+    "aboutP3": "我们致力于让 AI 能力的构建与复用变得简单、开放、可协作。",
+    "termsTitle": "服务条款 - NvwaX",
+    "termsMetaDesc": "NvwaX 服务条款",
+    "termsHeading": "服务条款",
+    "termsUpdated": "更新日期：2026 年 8 月",
+    "termsP1": "欢迎使用 NvwaX。使用本平台即表示你同意本服务条款。",
+    "termsP2": "你应对账号下的所有行为负责，不得利用平台从事违法、侵权或损害他人权益的活动。",
+    "termsP3": "平台可能随时调整服务内容与条款，重大变更将通过站内通知或邮件告知。",
+    "termsP4": "如对条款有疑问，请联系我们。",
+    "privacyTitle": "隐私政策 - NvwaX",
+    "privacyMetaDesc": "NvwaX 隐私政策",
+    "privacyHeading": "隐私政策",
+    "privacyUpdated": "更新日期：2026 年 8 月",
+    "privacyP1": "我们收集为提供服务所必需的信息，包括账号资料、使用记录等。",
+    "privacyP2": "我们不会出售你的个人信息。仅在法律要求或为提供服务所必需时，与受信任的服务商共享。",
+    "privacyP3": "登录与身份认证由 ProClaw 统一账号体系负责，密码等凭据由共享账号中心安全存储。",
+    "privacyP4": "如对隐私政策有疑问，请联系我们。"
   }
 }
