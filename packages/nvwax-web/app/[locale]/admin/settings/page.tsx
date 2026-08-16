@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
 import { RefreshCw, Shield, Key, Activity, Database, Trash2, Download, CheckCircle, AlertCircle, Loader2, Server, Cpu, HardDrive } from 'lucide-react';
 
 export default function SettingsPage() {
+  const t = useTranslations('admin');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showBackupConfirm, setShowBackupConfirm] = useState(false);
   const [showCacheConfirm, setShowCacheConfirm] = useState(false);
@@ -20,11 +22,11 @@ export default function SettingsPage() {
     onSuccess: () => {
       setShowPasswordModal(false);
       setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
-      alert('密码修改成功');
+      alert(t('passwordChanged'));
     },
     onError: (err: unknown) => {
       const error = err as { response?: { data?: { error?: string } } };
-      alert(error.response?.data?.error || '密码修改失败');
+      alert(error.response?.data?.error || t('changeFailed'));
     }
   });
 
@@ -32,12 +34,12 @@ export default function SettingsPage() {
     e.preventDefault();
     
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('两次输入的密码不一致');
+      alert(t('passwordNotMatch'));
       return;
     }
 
     if (passwordForm.newPassword.length < 6) {
-      alert('密码长度至少为6位');
+      alert(t('passwordTooShort'));
       return;
     }
 
@@ -55,11 +57,11 @@ export default function SettingsPage() {
   const clearCacheMutation = useMutation({
     mutationFn: () => adminApi.clearCache(),
     onSuccess: () => {
-      alert('缓存已清理');
+      alert(t('cacheCleared'));
       setShowCacheConfirm(false);
     },
     onError: (error: Error) => {
-      alert('清理失败: ' + error.message);
+      alert(t('clearFailed') + error.message);
     }
   });
 
@@ -68,11 +70,11 @@ export default function SettingsPage() {
     mutationFn: () => adminApi.backupDatabase(),
     onSuccess: (data) => {
       const result = data as { data?: { backupFile?: string } };
-      alert('备份已启动: ' + result.data?.backupFile);
+      alert(t('backupStarted') + result.data?.backupFile);
       setShowBackupConfirm(false);
     },
     onError: (error: Error) => {
-      alert('备份失败: ' + error.message);
+      alert(t('backupFailed') + error.message);
     }
   });
 
@@ -89,16 +91,16 @@ export default function SettingsPage() {
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     
-    if (days > 0) return `${days}天 ${hours}小时`;
-    if (hours > 0) return `${hours}小时 ${minutes}分钟`;
-    return `${minutes}分钟`;
+    if (days > 0) return t('uptimeDaysHours', { days, hours });
+    if (hours > 0) return t('uptimeHoursMinutes', { hours, minutes });
+    return t('uptimeMinutes', { minutes });
   };
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">系统设置</h1>
-        <p className="text-gray-600 dark:text-gray-300">管理系统配置和个人账户设置</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('settingsTitle')}</h1>
+        <p className="text-gray-600 dark:text-gray-300">{t('settingsDesc')}</p>
       </div>
 
       <div className="space-y-6">
@@ -106,21 +108,21 @@ export default function SettingsPage() {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center gap-3 mb-6">
             <Shield className="text-blue-600 dark:text-blue-400" size={24} />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">安全设置</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('securitySettings')}</h2>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
               <div>
-                <h3 className="font-medium text-gray-900 dark:text-white mb-1">修改密码</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">定期更换密码可以提高账户安全性</p>
+                <h3 className="font-medium text-gray-900 dark:text-white mb-1">{t('changePasswordTitle')}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('changePasswordDesc')}</p>
               </div>
               <button
                 onClick={() => setShowPasswordModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
               >
                 <Key size={18} />
-                修改密码
+                {t('changePasswordBtn')}
               </button>
             </div>
           </div>
@@ -130,24 +132,24 @@ export default function SettingsPage() {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center gap-3 mb-6">
             <RefreshCw className="text-blue-600 dark:text-blue-400" size={24} />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">系统信息</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('systemInfoTitle')}</h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">系统版本</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('systemVersion')}</p>
               <p className="text-lg font-semibold text-gray-900 dark:text-white">v1.0.0</p>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">数据库类型</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('dbType')}</p>
               <p className="text-lg font-semibold text-gray-900 dark:text-white">SQLite</p>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">后端框架</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('backendFramework')}</p>
               <p className="text-lg font-semibold text-gray-900 dark:text-white">Express.js</p>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">前端框架</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('frontendFramework')}</p>
               <p className="text-lg font-semibold text-gray-900 dark:text-white">Next.js 16</p>
             </div>
           </div>
@@ -155,9 +157,9 @@ export default function SettingsPage() {
 
         {/* About */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">关于 NvwaX</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('aboutNvwax')}</h2>
           <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-            NvwaX 是一个强大的多 Agent 协作平台，提供智能搜索、项目管理和自动化工作流功能。管理后台用于监控系统运行状态、管理用户和配置系统参数。
+            {t('aboutDesc')}
           </p>
         </div>
 
@@ -166,21 +168,21 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Activity className="text-blue-600 dark:text-blue-400" size={24} />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">系统健康监控</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('systemHealthMonitor')}</h2>
             </div>
             <button
               onClick={() => refetchHealth()}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
             >
               <RefreshCw size={18} />
-              刷新
+              {t('refreshBtn')}
             </button>
           </div>
 
           {loadingHealth ? (
             <div className="text-center py-8 text-gray-500">
               <Loader2 className="animate-spin mx-auto mb-2" size={32} />
-              <p>加载中...</p>
+              <p>{t('loading')}</p>
             </div>
           ) : (
             <>
@@ -193,12 +195,12 @@ export default function SettingsPage() {
                     ) : (
                       <AlertCircle className="text-yellow-500" size={20} />
                     )}
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">系统状态</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('systemStatus')}</span>
                   </div>
                   <p className={`text-lg font-bold ${
                     health?.status === 'healthy' ? 'text-green-600' : 'text-yellow-600'
                   }`}>
-                    {health?.status === 'healthy' ? '正常' : '异常'}
+                    {health?.status === 'healthy' ? t('healthy') : t('abnormal')}
                   </p>
                 </div>
 
@@ -206,7 +208,7 @@ export default function SettingsPage() {
                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <Server className="text-blue-500" size={20} />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">运行时间</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('runtime')}</span>
                   </div>
                   <p className="text-lg font-bold text-gray-900 dark:text-white">
                     {health ? formatUptime(health.uptime) : '-'}
@@ -217,7 +219,7 @@ export default function SettingsPage() {
                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <Cpu className="text-orange-500" size={20} />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">内存使用</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('memoryUsage')}</span>
                   </div>
                   <p className="text-lg font-bold text-gray-900 dark:text-white">
                     {health ? formatBytes(health.memory.rss) : '-'}
@@ -228,12 +230,12 @@ export default function SettingsPage() {
                 <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <Database className="text-blue-500" size={20} />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">数据库</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('databaseStatus')}</span>
                   </div>
                   <p className={`text-lg font-bold ${
                     health?.database?.status === 'healthy' ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {health?.database?.status === 'healthy' ? '正常' : '异常'}
+                    {health?.database?.status === 'healthy' ? t('healthy') : t('abnormal')}
                   </p>
                 </div>
               </div>
@@ -242,18 +244,18 @@ export default function SettingsPage() {
               {health && (
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Node.js 信息</h3>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('nodeInfo')}</h3>
                     <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                      <p>版本: {health.nodeVersion}</p>
-                      <p>平台: {health.platform}</p>
+                      <p>{t('nodeVersion')}: {health.nodeVersion}</p>
+                      <p>{t('platformLabel')}: {health.platform}</p>
                     </div>
                   </div>
                   <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">数据库连接池</h3>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('dbPool')}</h3>
                     <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                      <p>总连接数: {health.database.poolSize}</p>
-                      <p>空闲连接: {health.database.idleCount}</p>
-                      <p>等待队列: {health.database.waitingCount}</p>
+                      <p>{t('totalConn')}: {health.database.poolSize}</p>
+                      <p>{t('idleConn')}: {health.database.idleCount}</p>
+                      <p>{t('waitingQueue')}: {health.database.waitingCount}</p>
                     </div>
                   </div>
                 </div>
@@ -266,7 +268,7 @@ export default function SettingsPage() {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center gap-3 mb-6">
             <HardDrive className="text-green-600 dark:text-green-400" size={24} />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">系统维护</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('maintenanceTitle')}</h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -277,8 +279,8 @@ export default function SettingsPage() {
                   <Trash2 className="text-orange-500" size={20} />
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white">清理系统缓存</h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">清除所有缓存数据，释放内存</p>
+                  <h3 className="font-medium text-gray-900 dark:text-white">{t('clearCacheTitle')}</h3>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{t('clearCacheDesc')}</p>
                 </div>
               </div>
               <button
@@ -289,12 +291,12 @@ export default function SettingsPage() {
                 {clearCacheMutation.isPending ? (
                   <>
                     <Loader2 className="animate-spin" size={16} />
-                    清理中...
+                    {t('clearingCache')}
                   </>
                 ) : (
                   <>
                     <Trash2 size={16} />
-                    立即清理
+                    {t('clearNow')}
                   </>
                 )}
               </button>
@@ -307,8 +309,8 @@ export default function SettingsPage() {
                   <Download className="text-green-500" size={20} />
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white">数据库备份</h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">创建数据库完整备份</p>
+                  <h3 className="font-medium text-gray-900 dark:text-white">{t('dbBackupTitle')}</h3>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{t('dbBackupDesc')}</p>
                 </div>
               </div>
               <button
@@ -319,12 +321,12 @@ export default function SettingsPage() {
                 {backupMutation.isPending ? (
                   <>
                     <Loader2 className="animate-spin" size={16} />
-                    备份中...
+                    {t('backingUp')}
                   </>
                 ) : (
                   <>
                     <Download size={16} />
-                    开始备份
+                    {t('startBackup')}
                   </>
                 )}
               </button>
@@ -337,12 +339,12 @@ export default function SettingsPage() {
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">修改密码</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t('passwordModalTitle')}</h2>
             
             <form onSubmit={handleSubmitPassword} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  当前密码 *
+                  {t('currentPassword')}
                 </label>
                 <input
                   type="password"
@@ -355,7 +357,7 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  新密码 *
+                  {t('newPassword')}
                 </label>
                 <input
                   type="password"
@@ -369,7 +371,7 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  确认新密码 *
+                  {t('confirmNewPassword')}
                 </label>
                 <input
                   type="password"
@@ -387,14 +389,14 @@ export default function SettingsPage() {
                   onClick={() => setShowPasswordModal(false)}
                   className="flex-1 px-4 py-2 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
                 >
-                  取消
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={changePasswordMutation.isPending}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors disabled:opacity-50"
                 >
-                  {changePasswordMutation.isPending ? '修改中...' : '确认修改'}
+                  {changePasswordMutation.isPending ? t('changing') : t('confirmChange')}
                 </button>
               </div>
             </form>
@@ -409,9 +411,9 @@ export default function SettingsPage() {
             <div className="flex items-start gap-3 mb-4">
               <AlertCircle className="text-orange-500 shrink-0" size={24} />
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">确认清理缓存</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('confirmClearCacheTitle')}</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  确定要清理系统缓存吗？此操作可能会暂时影响系统性能。
+                  {t('confirmClearCacheDesc')}
                 </p>
               </div>
             </div>
@@ -421,14 +423,14 @@ export default function SettingsPage() {
                 onClick={() => setShowCacheConfirm(false)}
                 className="flex-1 px-4 py-2 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={() => clearCacheMutation.mutate()}
                 disabled={clearCacheMutation.isPending}
                 className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl transition-colors disabled:opacity-50"
               >
-                {clearCacheMutation.isPending ? '清理中...' : '确认清理'}
+                {clearCacheMutation.isPending ? t('clearingCache') : t('confirmClearBtn')}
               </button>
             </div>
           </div>
@@ -442,9 +444,9 @@ export default function SettingsPage() {
             <div className="flex items-start gap-3 mb-4">
               <Database className="text-green-500 shrink-0" size={24} />
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">确认数据库备份</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('confirmDbBackupTitle')}</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  确定要创建数据库备份吗？这可能需要几分钟时间。
+                  {t('confirmDbBackupDesc')}
                 </p>
               </div>
             </div>
@@ -454,14 +456,14 @@ export default function SettingsPage() {
                 onClick={() => setShowBackupConfirm(false)}
                 className="flex-1 px-4 py-2 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={() => backupMutation.mutate()}
                 disabled={backupMutation.isPending}
                 className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors disabled:opacity-50"
               >
-                {backupMutation.isPending ? '备份中...' : '确认备份'}
+                {backupMutation.isPending ? t('backingUp') : t('confirmBackupBtn')}
               </button>
             </div>
           </div>

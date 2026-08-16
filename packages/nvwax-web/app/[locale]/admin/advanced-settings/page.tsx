@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { adminApi } from '@/lib/api/admin';
 import { 
   Activity, 
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminAdvancedSettingsPage() {
+  const t = useTranslations('admin');
   const [showBackupConfirm, setShowBackupConfirm] = useState(false);
   const [showCacheConfirm, setShowCacheConfirm] = useState(false);
 
@@ -31,11 +33,11 @@ export default function AdminAdvancedSettingsPage() {
   const clearCacheMutation = useMutation({
     mutationFn: () => adminApi.clearCache(),
     onSuccess: () => {
-      alert('缓存已清理');
+      alert(t('cacheCleared'));
       setShowCacheConfirm(false);
     },
     onError: (error: Error) => {
-      alert('清理失败: ' + error.message);
+      alert(t('clearFailed') + error.message);
     }
   });
 
@@ -44,11 +46,11 @@ export default function AdminAdvancedSettingsPage() {
     mutationFn: () => adminApi.backupDatabase(),
     onSuccess: (data) => {
       const result = data as { data?: { backupFile?: string } };
-      alert('备份已启动: ' + result.data?.backupFile);
+      alert(t('backupStarted') + result.data?.backupFile);
       setShowBackupConfirm(false);
     },
     onError: (error: Error) => {
-      alert('备份失败: ' + error.message);
+      alert(t('backupFailed') + error.message);
     }
   });
 
@@ -65,16 +67,16 @@ export default function AdminAdvancedSettingsPage() {
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     
-    if (days > 0) return `${days}天 ${hours}小时`;
-    if (hours > 0) return `${hours}小时 ${minutes}分钟`;
-    return `${minutes}分钟`;
+    if (days > 0) return t('uptimeDaysHours', { days, hours });
+    if (hours > 0) return t('uptimeHoursMinutes', { hours, minutes });
+    return t('uptimeMinutes', { minutes });
   };
 
   if (loadingHealth) {
     return (
       <div className="text-center py-12 text-gray-500">
         <Loader2 className="animate-spin mx-auto mb-4" size={48} />
-        <p>加载中...</p>
+        <p>{t('loading')}</p>
       </div>
     );
   }
@@ -82,8 +84,8 @@ export default function AdminAdvancedSettingsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">高级系统设置</h1>
-        <p className="text-gray-600 dark:text-gray-300">系统维护、监控和配置管理</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('advancedTitle')}</h1>
+        <p className="text-gray-600 dark:text-gray-300">{t('advancedDesc')}</p>
       </div>
 
       {/* 系统健康状态 */}
@@ -91,14 +93,14 @@ export default function AdminAdvancedSettingsPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <Activity className="text-blue-600 dark:text-blue-400" size={24} />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">系统健康状态</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('systemHealthTitle')}</h2>
           </div>
           <button
             onClick={() => refetchHealth()}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
           >
             <RefreshCw size={18} />
-            刷新
+            {t('refreshBtn')}
           </button>
         </div>
 
@@ -111,12 +113,12 @@ export default function AdminAdvancedSettingsPage() {
               ) : (
                 <AlertCircle className="text-yellow-500" size={20} />
               )}
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">状态</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('status')}</span>
             </div>
             <p className={`text-lg font-bold ${
               health?.status === 'healthy' ? 'text-green-600' : 'text-yellow-600'
             }`}>
-              {health?.status === 'healthy' ? '正常' : '异常'}
+              {health?.status === 'healthy' ? t('healthy') : t('abnormal')}
             </p>
           </div>
 
@@ -124,7 +126,7 @@ export default function AdminAdvancedSettingsPage() {
           <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <Server className="text-blue-500" size={20} />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">运行时间</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('runtime')}</span>
             </div>
             <p className="text-lg font-bold text-gray-900 dark:text-white">
               {health ? formatUptime(health.uptime) : '-'}
@@ -135,7 +137,7 @@ export default function AdminAdvancedSettingsPage() {
           <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <Cpu className="text-orange-500" size={20} />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">内存使用</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('memoryUsage')}</span>
             </div>
             <p className="text-lg font-bold text-gray-900 dark:text-white">
               {health ? formatBytes(health.memory.rss) : '-'}
@@ -146,12 +148,12 @@ export default function AdminAdvancedSettingsPage() {
           <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <Database className="text-blue-500" size={20} />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">数据库</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('databaseStatus')}</span>
             </div>
             <p className={`text-lg font-bold ${
               health?.database?.status === 'healthy' ? 'text-green-600' : 'text-red-600'
             }`}>
-              {health?.database?.status === 'healthy' ? '正常' : '异常'}
+              {health?.database?.status === 'healthy' ? t('healthy') : t('abnormal')}
             </p>
           </div>
         </div>
@@ -160,18 +162,18 @@ export default function AdminAdvancedSettingsPage() {
         {health && (
           <div className="mt-6 grid md:grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Node.js 信息</h3>
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('nodeInfo')}</h3>
               <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                <p>版本: {health.nodeVersion}</p>
-                <p>平台: {health.platform}</p>
+                <p>{t('nodeVersion')}: {health.nodeVersion}</p>
+                <p>{t('platformLabel')}: {health.platform}</p>
               </div>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">数据库连接池</h3>
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('dbPool')}</h3>
               <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                <p>总连接数: {health.database.poolSize}</p>
-                <p>空闲连接: {health.database.idleCount}</p>
-                <p>等待队列: {health.database.waitingCount}</p>
+                <p>{t('totalConn')}: {health.database.poolSize}</p>
+                <p>{t('idleConn')}: {health.database.idleCount}</p>
+                <p>{t('waitingQueue')}: {health.database.waitingCount}</p>
               </div>
             </div>
           </div>
@@ -187,8 +189,8 @@ export default function AdminAdvancedSettingsPage() {
               <Trash2 className="text-orange-500" size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">清理系统缓存</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">清除所有缓存数据，释放内存</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('clearCacheTitle')}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('clearCacheDesc')}</p>
             </div>
           </div>
 
@@ -196,7 +198,7 @@ export default function AdminAdvancedSettingsPage() {
             <div className="flex items-start gap-2">
               <AlertCircle className="text-orange-500 shrink-0 mt-0.5" size={16} />
               <p className="text-sm text-orange-800 dark:text-orange-200">
-                注意：清理缓存可能会暂时影响系统性能，建议在低峰期执行。
+                {t('cacheAlert')}
               </p>
             </div>
           </div>
@@ -209,12 +211,12 @@ export default function AdminAdvancedSettingsPage() {
             {clearCacheMutation.isPending ? (
               <>
                 <Loader2 className="animate-spin" size={20} />
-                清理中...
+                {t('clearingCache')}
               </>
             ) : (
               <>
                 <Trash2 size={20} />
-                立即清理
+                {t('clearNow')}
               </>
             )}
           </button>
@@ -227,8 +229,8 @@ export default function AdminAdvancedSettingsPage() {
               <Download className="text-green-500" size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">数据库备份</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">创建数据库完整备份</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('dbBackupTitle')}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('dbBackupDesc')}</p>
             </div>
           </div>
 
@@ -236,7 +238,7 @@ export default function AdminAdvancedSettingsPage() {
             <div className="flex items-start gap-2">
               <CheckCircle className="text-green-500 shrink-0 mt-0.5" size={16} />
               <p className="text-sm text-green-800 dark:text-green-200">
-                建议定期备份数据库，以防止数据丢失。备份文件将保存在服务器指定目录。
+                {t('backupAlert')}
               </p>
             </div>
           </div>
@@ -249,12 +251,12 @@ export default function AdminAdvancedSettingsPage() {
             {backupMutation.isPending ? (
               <>
                 <Loader2 className="animate-spin" size={20} />
-                备份中...
+                {t('backingUp')}
               </>
             ) : (
               <>
                 <Download size={20} />
-                开始备份
+                {t('startBackup')}
               </>
             )}
           </button>
@@ -268,9 +270,9 @@ export default function AdminAdvancedSettingsPage() {
             <div className="flex items-start gap-3 mb-4">
               <AlertCircle className="text-orange-500 shrink-0" size={24} />
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">确认清理缓存</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('confirmClearCacheTitle')}</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  确定要清理系统缓存吗？此操作可能会暂时影响系统性能。
+                  {t('confirmClearCacheDesc')}
                 </p>
               </div>
             </div>
@@ -280,14 +282,14 @@ export default function AdminAdvancedSettingsPage() {
                 onClick={() => setShowCacheConfirm(false)}
                 className="flex-1 px-4 py-2 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={() => clearCacheMutation.mutate()}
                 disabled={clearCacheMutation.isPending}
                 className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl transition-colors disabled:opacity-50"
               >
-                {clearCacheMutation.isPending ? '清理中...' : '确认清理'}
+                {clearCacheMutation.isPending ? t('clearingCache') : t('confirmClearBtn')}
               </button>
             </div>
           </div>
@@ -301,9 +303,9 @@ export default function AdminAdvancedSettingsPage() {
             <div className="flex items-start gap-3 mb-4">
               <Database className="text-green-500 shrink-0" size={24} />
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">确认数据库备份</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('confirmDbBackupTitle')}</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  确定要创建数据库备份吗？这可能需要几分钟时间。
+                  {t('confirmDbBackupDesc')}
                 </p>
               </div>
             </div>
@@ -313,14 +315,14 @@ export default function AdminAdvancedSettingsPage() {
                 onClick={() => setShowBackupConfirm(false)}
                 className="flex-1 px-4 py-2 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={() => backupMutation.mutate()}
                 disabled={backupMutation.isPending}
                 className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors disabled:opacity-50"
               >
-                {backupMutation.isPending ? '备份中...' : '确认备份'}
+                {backupMutation.isPending ? t('backingUp') : t('confirmBackupBtn')}
               </button>
             </div>
           </div>

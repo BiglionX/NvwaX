@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslations, useLocale } from 'next-intl';
 import { adminApi } from '@/lib/api/admin';
 import {
   Code,
@@ -49,6 +50,8 @@ interface DeveloperInfo {
 }
 
 export default function AdminDevelopersPage() {
+  const t = useTranslations('admin');
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -96,7 +99,7 @@ export default function AdminDevelopersPage() {
     return (
       <div className="text-center py-12 text-gray-500">
         <Loader2 className="animate-spin mx-auto mb-4" size={48} />
-        <p>加载中...</p>
+        <p>{t('devLoading')}</p>
       </div>
     );
   }
@@ -106,10 +109,10 @@ export default function AdminDevelopersPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
           <Code className="text-blue-500" size={28} />
-          开发者管理
+          {t('devTitle')}
         </h1>
         <p className="text-gray-600 dark:text-gray-300">
-          管理有 API Key 的开发者账户，查看和配置开发者权限与 Token 配额
+          {t('devDesc')}
         </p>
       </div>
 
@@ -121,7 +124,7 @@ export default function AdminDevelopersPage() {
               <Code className="text-blue-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">开发者总数</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('devTotal')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">{data?.total || 0}</p>
         </div>
 
@@ -131,7 +134,7 @@ export default function AdminDevelopersPage() {
               <Key className="text-green-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">总 API Key 数</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('devTotalKeys')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {developers.reduce((sum, d) => sum + d.api_key_count, 0)}
           </p>
@@ -143,7 +146,7 @@ export default function AdminDevelopersPage() {
               <Shield className="text-purple-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">内部团队</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('devInternalTeam')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {developers.filter(d => d.is_internal_team).length}
           </p>
@@ -155,7 +158,7 @@ export default function AdminDevelopersPage() {
               <Zap className="text-orange-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">本月总消耗</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('devMonthlyUsed')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {formatTokens(developers.reduce((sum, d) => sum + d.used_this_month, 0))}
           </p>
@@ -168,7 +171,7 @@ export default function AdminDevelopersPage() {
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
-            placeholder="搜索开发者邮箱或姓名..."
+            placeholder={t('devSearchPlaceholder')}
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white"
@@ -205,7 +208,7 @@ export default function AdminDevelopersPage() {
                   <div className="flex items-center gap-3">
                     {/* 内部团队开关 */}
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500">内部团队</span>
+                      <span className="text-xs text-gray-500">{t('devInternalTeam')}</span>
                       <button
                         onClick={() => toggleInternalMutation.mutate(dev.user_id)}
                         disabled={toggleInternalMutation.isPending}
@@ -226,9 +229,9 @@ export default function AdminDevelopersPage() {
                       className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                     >
                       {expandedUser === dev.user_id ? (
-                        <><ChevronUp size={16} /> 收起</>
+                        <><ChevronUp size={16} /> {t('devCollapse')}</>
                       ) : (
-                        <><ChevronDown size={16} /> 展开</>
+                        <><ChevronDown size={16} /> {t('devExpand')}</>
                       )}
                     </button>
                   </div>
@@ -245,35 +248,35 @@ export default function AdminDevelopersPage() {
                   </div>
 
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">月配额</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('devQuota')}</p>
                     <p className="font-bold text-gray-900 dark:text-white mt-1">{formatTokens(dev.monthly_limit)}</p>
                   </div>
 
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">本月已用</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('devUsedThisMonth')}</p>
                     <p className="font-bold text-blue-600 dark:text-blue-400 mt-1">{formatTokens(dev.used_this_month)}</p>
                   </div>
 
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">使用率</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('devUsageRate')}</p>
                     <p className={`font-bold mt-1 ${
                       dev.usage_percent > 100 ? 'text-red-500' : dev.usage_percent > 80 ? 'text-orange-500' : 'text-green-500'
                     }`}>{dev.usage_percent}%</p>
                   </div>
 
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">状态</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('status')}</p>
                     {dev.is_internal_team ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 mt-1">
-                        <Shield size={12} /> 内部团队
+                        <Shield size={12} /> {t('devInternalTeam')}
                       </span>
                     ) : dev.usage_percent > 100 ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 mt-1">
-                        <Zap size={12} /> 超额
+                        <Zap size={12} /> {t('devOverage')}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 mt-1">
-                        <Activity size={12} /> 正常
+                        <Activity size={12} /> {t('normal')}
                       </span>
                     )}
                   </div>
@@ -286,7 +289,7 @@ export default function AdminDevelopersPage() {
                   <div className="p-6">
                     <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                       <Key size={18} className="text-blue-500" />
-                      API Key 列表 ({dev.api_key_count})
+                      {t('devListTitle', { count: dev.api_key_count })}
                     </h4>
 
                     {dev.api_keys.length > 0 ? (
@@ -315,32 +318,32 @@ export default function AdminDevelopersPage() {
                                   : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                               }`}>
                                 {apiKey.is_active ? <CheckCircle size={12} /> : <Ban size={12} />}
-                                {apiKey.is_active ? '启用' : '禁用'}
+                                {apiKey.is_active ? t('devEnabled') : t('devDisabled')}
                               </span>
                             </div>
 
                             <div className="grid grid-cols-3 gap-4 text-sm">
                               <div className="flex items-center gap-1.5 text-gray-500">
                                 <Calendar size={14} />
-                                <span>创建: {new Date(apiKey.created_at).toLocaleDateString('zh-CN')}</span>
+                                <span>{t('devCreated', { date: new Date(apiKey.created_at).toLocaleDateString(locale) })}</span>
                               </div>
                               <div className="flex items-center gap-1.5 text-gray-500">
                                 <Clock size={14} />
                                 <span>
-                                  最后使用: {apiKey.last_used_at
-                                    ? new Date(apiKey.last_used_at).toLocaleDateString('zh-CN')
-                                    : '从未使用'}
+                                  {apiKey.last_used_at
+                                    ? t('devLastUsed', { date: new Date(apiKey.last_used_at).toLocaleDateString(locale) })
+                                    : t('devNeverUsed')}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1.5 text-gray-500">
                                 <Cpu size={14} />
-                                <span>速率限制: {apiKey.rate_limit}/分钟</span>
+                                <span>{t('devRateLimit', { rate: apiKey.rate_limit })}</span>
                               </div>
                             </div>
 
                             {apiKey.permissions && apiKey.permissions.length > 0 && (
                               <div className="mt-3 flex items-center gap-2">
-                                <span className="text-xs text-gray-500">权限:</span>
+                                <span className="text-xs text-gray-500">{t('devPermissions')}</span>
                                 <div className="flex gap-1.5 flex-wrap">
                                   {apiKey.permissions.map((perm) => (
                                     <span key={perm} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
@@ -356,7 +359,7 @@ export default function AdminDevelopersPage() {
                     ) : (
                       <div className="text-center py-6 text-gray-500">
                         <Key className="mx-auto mb-2 opacity-50" size={32} />
-                        <p>暂无 API Key 数据</p>
+                        <p>{t('devNoKeys')}</p>
                       </div>
                     )}
                   </div>
@@ -367,8 +370,8 @@ export default function AdminDevelopersPage() {
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-12 text-center">
             <Code className="mx-auto mb-4 opacity-30" size={64} />
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">暂无开发者</h3>
-            <p className="text-gray-500">还没有用户创建 API Key，当有用户创建 API Key 后将在这里显示</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('devNoDevelopers')}</h3>
+            <p className="text-gray-500">{t('devNoDevelopersDesc')}</p>
           </div>
         )}
       </div>
@@ -377,7 +380,7 @@ export default function AdminDevelopersPage() {
       {totalPages > 1 && (
         <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            第 {page} / {totalPages} 页，共 {data?.total || 0} 条
+            {t('pageSummary', { page, totalPages, total: data?.total || 0 })}
           </p>
           <div className="flex gap-2">
             <button
@@ -385,14 +388,14 @@ export default function AdminDevelopersPage() {
               disabled={page === 1}
               className="px-4 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 transition-all"
             >
-              上一页
+              {t('prevPage')}
             </button>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
               className="px-4 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 transition-all"
             >
-              下一页
+              {t('nextPage')}
             </button>
           </div>
         </div>

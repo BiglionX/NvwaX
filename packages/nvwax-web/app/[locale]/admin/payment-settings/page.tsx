@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslations, useLocale } from 'next-intl';
 import { adminApi } from '@/lib/api/admin';
 import { CreditCard, Save, Loader2, CheckCircle, XCircle, Wallet, Smartphone, AlertCircle } from 'lucide-react';
 
 export default function PaymentSettingsPage() {
+  const t = useTranslations('admin');
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [orderPage, setOrderPage] = useState(1);
@@ -71,11 +74,11 @@ export default function PaymentSettingsPage() {
   const statusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <span className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium"><CheckCircle size={12} /> 已付款</span>;
+        return <span className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium"><CheckCircle size={12} /> {t('paid')}</span>;
       case 'pending':
-        return <span className="flex items-center gap-1 px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full text-xs font-medium"><AlertCircle size={12} /> 待付款</span>;
+        return <span className="flex items-center gap-1 px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full text-xs font-medium"><AlertCircle size={12} /> {t('pendingPay')}</span>;
       case 'cancelled':
-        return <span className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 rounded-full text-xs font-medium"><XCircle size={12} /> 已取消</span>;
+        return <span className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 rounded-full text-xs font-medium"><XCircle size={12} /> {t('cancelled')}</span>;
       default:
         return <span className="text-xs">{status}</span>;
     }
@@ -120,7 +123,7 @@ export default function PaymentSettingsPage() {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">名称</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('configName')}</label>
             <input
               type="text"
               value={localForm.provider_label}
@@ -131,49 +134,49 @@ export default function PaymentSettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">收款二维码URL</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('qrCodeUrl')}</label>
             <input
               type="text"
               value={localForm.qr_code_url}
               onChange={(e) => setLocalForm({ ...localForm, qr_code_url: e.target.value })}
               className="w-full px-3 py-2 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-gray-900 dark:text-white text-sm"
-              placeholder="输入二维码图片URL..."
+              placeholder={t('qrCodeUrlPlaceholder')}
             />
             {localForm.qr_code_url && (
               <div className="mt-2 flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={localForm.qr_code_url}
-                  alt={`${localForm.provider_label} 二维码预览`}
+                  alt={`${localForm.provider_label} ${t('qrCodePreview')}`}
                   className="w-20 h-20 object-contain border border-gray-200 dark:border-gray-600 rounded-lg"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
-                <span className="text-xs text-gray-400">二维码预览</span>
+                <span className="text-xs text-gray-400">{t('qrCodePreview')}</span>
               </div>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">账户名称</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('accountName')}</label>
             <input
               type="text"
               value={localForm.account_name}
               onChange={(e) => setLocalForm({ ...localForm, account_name: e.target.value })}
               className="w-full px-3 py-2 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-gray-900 dark:text-white text-sm"
-              placeholder="例如：张三"
+              placeholder={t('accountNamePlaceholder')}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">账户信息（选填）</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('accountInfo')}</label>
             <input
               type="text"
               value={localForm.account_info}
               onChange={(e) => setLocalForm({ ...localForm, account_info: e.target.value })}
               className="w-full px-3 py-2 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-gray-900 dark:text-white text-sm"
-              placeholder="例如：微信号 / 支付宝账号"
+              placeholder={t('accountInfoPlaceholder')}
             />
           </div>
 
@@ -190,9 +193,9 @@ export default function PaymentSettingsPage() {
             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm font-medium"
           >
             {saveConfigMutation.isPending ? (
-              <><Loader2 className="animate-spin" size={16} /> 保存中...</>
+              <><Loader2 className="animate-spin" size={16} /> {t('saving')}</>
             ) : (
-              <><Save size={16} /> 保存配置</>
+              <><Save size={16} /> {t('saveConfig')}</>
             )}
           </button>
         </div>
@@ -204,7 +207,7 @@ export default function PaymentSettingsPage() {
     return (
       <div className="flex items-center justify-center py-20 text-gray-500">
         <Loader2 className="animate-spin mr-2" size={24} />
-        加载中...
+        {t('loading')}
       </div>
     );
   }
@@ -214,12 +217,12 @@ export default function PaymentSettingsPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">支付设置</h1>
-            <p className="text-gray-600 dark:text-gray-300">配置微信/支付宝收款信息</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('paymentTitle')}</h1>
+            <p className="text-gray-600 dark:text-gray-300">{t('paymentDesc')}</p>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <AlertCircle size={16} />
-            <span>定价: ¥10 = 1,000,000 tokens</span>
+            <span>{t('pricingInfo')}</span>
           </div>
         </div>
       </div>
@@ -228,15 +231,15 @@ export default function PaymentSettingsPage() {
       <div className="grid md:grid-cols-2 gap-6 mb-8">
         <ConfigCard
           provider="wechat"
-          label="微信支付"
+          label={t('wechat')}
           icon={<Smartphone className="text-green-500" size={28} />}
-          description="配置微信收款码和账户信息"
+          description={t('wechatDesc')}
         />
         <ConfigCard
           provider="alipay"
-          label="支付宝"
+          label={t('alipay')}
           icon={<Wallet className="text-blue-500" size={28} />}
-          description="配置支付宝收款码和账户信息"
+          description={t('alipayDesc')}
         />
       </div>
 
@@ -245,7 +248,7 @@ export default function PaymentSettingsPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <CreditCard className="text-blue-600 dark:text-blue-400" size={24} />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Token购买订单</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('tokenOrders')}</h2>
           </div>
           <div className="flex items-center gap-2">
             <select
@@ -253,10 +256,10 @@ export default function PaymentSettingsPage() {
               onChange={(e) => { setStatusFilter(e.target.value); setOrderPage(1); }}
               className="px-3 py-2 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500"
             >
-              <option value="">全部状态</option>
-              <option value="pending">待付款</option>
-              <option value="paid">已付款</option>
-              <option value="cancelled">已取消</option>
+              <option value="">{t('allStatus')}</option>
+              <option value="pending">{t('pendingPay')}</option>
+              <option value="paid">{t('paid')}</option>
+              <option value="cancelled">{t('cancelled')}</option>
             </select>
           </div>
         </div>
@@ -264,7 +267,7 @@ export default function PaymentSettingsPage() {
         {loadingOrders ? (
           <div className="text-center py-8 text-gray-500">
             <Loader2 className="animate-spin mx-auto mb-2" size={24} />
-            加载中...
+            {t('loading')}
           </div>
         ) : ordersData?.data && ordersData.data.length > 0 ? (
           <>
@@ -272,14 +275,14 @@ export default function PaymentSettingsPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">订单号</th>
-                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">用户</th>
-                    <th className="text-right py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">金额</th>
-                    <th className="text-right py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Token数</th>
-                    <th className="text-center py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">支付方式</th>
-                    <th className="text-center py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">状态</th>
-                    <th className="text-right py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">时间</th>
-                    <th className="text-center py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">操作</th>
+                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('orderNo')}</th>
+                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('userCol')}</th>
+                    <th className="text-right py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('amount')}</th>
+                    <th className="text-right py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('tokenCount')}</th>
+                    <th className="text-center py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('paymentMethod')}</th>
+                    <th className="text-center py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('status')}</th>
+                    <th className="text-right py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('orderTime')}</th>
+                    <th className="text-center py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -298,13 +301,13 @@ export default function PaymentSettingsPage() {
                         {formatTokens(order.tokens)}
                       </td>
                       <td className="py-3 px-3 text-sm text-center text-gray-600 dark:text-gray-400">
-                        {order.payment_method === 'wechat' ? '微信' : '支付宝'}
+                        {order.payment_method === 'wechat' ? t('wechatPay') : t('alipayPay')}
                       </td>
                       <td className="py-3 px-3 text-center">
                         {statusBadge(order.status)}
                       </td>
                       <td className="py-3 px-3 text-xs text-right text-gray-500">
-                        {new Date(order.created_at).toLocaleDateString('zh-CN')}
+                        {new Date(order.created_at).toLocaleDateString(locale)}
                       </td>
                       <td className="py-3 px-3 text-center">
                         {order.status === 'pending' && (
@@ -314,14 +317,14 @@ export default function PaymentSettingsPage() {
                               disabled={confirmMutation.isPending}
                               className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs disabled:opacity-50 transition-colors"
                             >
-                              确认付款
+                              {t('confirmPay')}
                             </button>
                             <button
                               onClick={() => cancelMutation.mutate(order.id)}
                               disabled={cancelMutation.isPending}
                               className="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-xs disabled:opacity-50 transition-colors"
                             >
-                              取消
+                              {t('cancelOrder')}
                             </button>
                           </div>
                         )}
@@ -336,7 +339,7 @@ export default function PaymentSettingsPage() {
             {ordersData.total > 20 && (
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <span className="text-sm text-gray-500">
-                  共 {ordersData.total} 条记录
+                  {t('totalRecords', { total: ordersData.total })}
                 </span>
                 <div className="flex gap-2">
                   <button
@@ -344,14 +347,14 @@ export default function PaymentSettingsPage() {
                     disabled={orderPage <= 1}
                     className="px-3 py-1 text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 text-gray-700 dark:text-gray-300"
                   >
-                    上一页
+                    {t('prevPage')}
                   </button>
                   <button
                     onClick={() => setOrderPage(p => p + 1)}
                     disabled={orderPage * 20 >= ordersData.total}
                     className="px-3 py-1 text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 text-gray-700 dark:text-gray-300"
                   >
-                    下一页
+                    {t('nextPage')}
                   </button>
                 </div>
               </div>
@@ -360,7 +363,7 @@ export default function PaymentSettingsPage() {
         ) : (
           <div className="text-center py-12 text-gray-500">
             <CreditCard className="mx-auto mb-3" size={40} />
-            <p>暂无订单记录</p>
+            <p>{t('noOrders')}</p>
           </div>
         )}
       </div>

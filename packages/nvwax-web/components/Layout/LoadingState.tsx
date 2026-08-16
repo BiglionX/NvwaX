@@ -1,12 +1,14 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 /**
  * 统一的加载状态组件
- * 用于用户中心各个子页面的加载状态显示
+ * 用于用户中心、admin 后台等各个页面的加载状态显示
  */
 
 interface LoadingStateProps {
-  /** 加载文本，默认"加载中..." */
+  /** 加载文本，默认 "加载中..."（走 i18n） */
   text?: string;
   /** 是否显示为全屏居中，默认 true */
   fullScreen?: boolean;
@@ -15,10 +17,13 @@ interface LoadingStateProps {
 }
 
 export default function LoadingState({
-  text = '加载中...',
+  text,
   fullScreen = true,
   containerClassName,
 }: LoadingStateProps) {
+  const t = useTranslations('common');
+  const resolvedText = text ?? t('loading');
+
   const containerClasses = fullScreen
     ? 'flex items-center justify-center py-12'
     : 'py-8';
@@ -29,7 +34,7 @@ export default function LoadingState({
         {/* 旋转加载动画 */}
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
         {/* 加载文本 */}
-        <p className="text-gray-600 dark:text-gray-400">{text}</p>
+        <p className="text-gray-600 dark:text-gray-400">{resolvedText}</p>
       </div>
     </div>
   );

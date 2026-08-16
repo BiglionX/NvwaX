@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslations, useLocale } from 'next-intl';
 import { adminApi, User } from '@/lib/api/admin';
 import { 
   Search, 
@@ -23,6 +24,7 @@ interface UserListResponse {
 }
 
 export default function AdminUsersPage() {
+  const t = useTranslations('admin');
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -66,10 +68,10 @@ export default function AdminUsersPage() {
       setShowBanModal(false);
       setSelectedUser(null);
       setBanReason('');
-      alert('用户已封禁');
+      alert(t('userBanned'));
     },
     onError: (error: Error) => {
-      alert('封禁失败: ' + error.message);
+      alert(t('banFailed') + error.message);
     }
   });
 
@@ -79,10 +81,10 @@ export default function AdminUsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['admin-user-stats'] });
-      alert('用户已解封');
+      alert(t('userUnbanned'));
     },
     onError: (error: Error) => {
-      alert('解封失败: ' + error.message);
+      alert(t('unbanFailed') + error.message);
     }
   });
 
@@ -98,7 +100,7 @@ export default function AdminUsersPage() {
   };
 
   const handleUnban = (userId: string) => {
-    if (confirm('确定要解封该用户吗？')) {
+    if (confirm(t('confirmUnban'))) {
       unbanMutation.mutate(userId);
     }
   };
@@ -109,7 +111,7 @@ export default function AdminUsersPage() {
     return (
       <div className="text-center py-12 text-gray-500">
         <Loader2 className="animate-spin mx-auto mb-4" size={48} />
-        <p>加载中...</p>
+        <p>{t('loading')}</p>
       </div>
     );
   }
@@ -117,8 +119,8 @@ export default function AdminUsersPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">用户管理</h1>
-        <p className="text-gray-600 dark:text-gray-300">管理系统用户账户和权限</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('usersTitle')}</h1>
+        <p className="text-gray-600 dark:text-gray-300">{t('usersDesc')}</p>
       </div>
 
       {/* 统计卡片 */}
@@ -129,7 +131,7 @@ export default function AdminUsersPage() {
               <UsersIcon className="text-blue-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">总用户数</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('totalUsersCount')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {userStats?.total || 0}
           </p>
@@ -141,7 +143,7 @@ export default function AdminUsersPage() {
               <CheckCircle className="text-green-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">活跃用户</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('activeUsersCount')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {userStats?.active || 0}
           </p>
@@ -153,7 +155,7 @@ export default function AdminUsersPage() {
               <Ban className="text-red-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">被封禁用户</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('bannedUsersCount')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {userStats?.banned || 0}
           </p>
@@ -166,7 +168,7 @@ export default function AdminUsersPage() {
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
-            placeholder="搜索..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white"
@@ -179,11 +181,11 @@ export default function AdminUsersPage() {
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">用户</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">状态</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">社交绑定</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">注册时间</th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">操作</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('userCol')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('status')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('socialBindings')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('registerTimeCol')}</th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">{t('actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -199,7 +201,7 @@ export default function AdminUsersPage() {
                       </div>
                       <div>
                         <p className="font-medium text-gray-900 dark:text-white">
-                          {user.name || '未设置'}
+                          {user.name || t('notBound')}
                         </p>
                         <div className="flex items-center gap-1 text-sm text-gray-500">
                           <Mail size={14} />
@@ -213,7 +215,7 @@ export default function AdminUsersPage() {
                       <div>
                         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
                           <Ban size={14} />
-                          已封禁
+                          {t('userStatusBanned')}
                         </span>
                         {user.banReason && (
                           <p className="text-xs text-gray-500 mt-1">{user.banReason}</p>
@@ -222,7 +224,7 @@ export default function AdminUsersPage() {
                     ) : (
                       <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                         <CheckCircle size={14} />
-                        正常
+                        {t('userStatusNormal')}
                       </span>
                     )}
                   </td>
@@ -232,11 +234,11 @@ export default function AdminUsersPage() {
                         <Globe size={18} className={user.socialAccounts?.some(sa => sa.provider === 'facebook') ? 'text-blue-500' : 'text-gray-300 dark:text-gray-600'} />
                         {user.socialAccounts?.some(sa => sa.provider === 'facebook') ? (
                           <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            {user.socialAccounts?.find(sa => sa.provider === 'facebook')?.displayName || 'Facebook 已绑定'}
+                            {user.socialAccounts?.find(sa => sa.provider === 'facebook')?.displayName || t('facebookBound')}
                           </span>
                         ) : (
                           <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            未绑定
+                            {t('unbound')}
                           </span>
                         )}
                       </div>
@@ -249,11 +251,11 @@ export default function AdminUsersPage() {
                         </svg>
                         {user.socialAccounts?.some(sa => sa.provider === 'google') ? (
                           <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            {user.socialAccounts?.find(sa => sa.provider === 'google')?.displayName || 'Google 已绑定'}
+                            {user.socialAccounts?.find(sa => sa.provider === 'google')?.displayName || t('googleBound')}
                           </span>
                         ) : (
                           <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            未绑定
+                            {t('unbound')}
                           </span>
                         )}
                       </div>
@@ -265,7 +267,7 @@ export default function AdminUsersPage() {
                           <path d="M18.5 11C16.015 11 14 13.015 14 15.5C14 17.985 16.015 20 18.5 20C19.22 20 19.91 19.862 20.54 19.62L22 20.5L21.5 19.15C22.4 18.48 23 17.56 23 16.5C23 15.12 21.68 14 20 13.5C20.34 12.62 20.5 12 20.5 11C18.5 11 18.5 11 18.5 11Z" fill="currentColor" fillOpacity="0.6"/>
                         </svg>
                         <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                          微信登录即将上线
+                          {t('wechatComingSoon')}
                         </span>
                       </div>
                     </div>
@@ -273,7 +275,7 @@ export default function AdminUsersPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <Calendar size={16} />
-                      {new Date(user.createdAt).toLocaleDateString('zh-CN')}
+                      {new Date(user.createdAt).toLocaleDateString(locale)}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -285,7 +287,7 @@ export default function AdminUsersPage() {
                           className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm"
                         >
                           <CheckCircle size={16} />
-                          解封
+                          {t('unbanBtn')}
                         </button>
                       ) : (
                         <button
@@ -293,7 +295,7 @@ export default function AdminUsersPage() {
                           className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors text-sm"
                         >
                           <Ban size={16} />
-                          封禁
+                          {t('banBtn')}
                         </button>
                       )}
                     </div>
@@ -304,7 +306,7 @@ export default function AdminUsersPage() {
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                   <UsersIcon className="mx-auto mb-2 opacity-50" size={48} />
-                  <p>暂无数据</p>
+                  <p>{t('noData')}</p>
                 </td>
               </tr>
             )}
@@ -315,7 +317,7 @@ export default function AdminUsersPage() {
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              第 {page} / {totalPages} 页，共 {usersData?.total || 0} 条
+              {t('pageSummary', { page, totalPages, total: usersData?.total || 0 })}
             </p>
             <div className="flex gap-2">
               <button
@@ -323,14 +325,14 @@ export default function AdminUsersPage() {
                 disabled={page === 1}
                 className="px-4 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 transition-all"
               >
-                上一页
+                {t('prevPage')}
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className="px-4 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 transition-all"
               >
-                下一页
+                {t('nextPage')}
               </button>
             </div>
           </div>
@@ -344,21 +346,21 @@ export default function AdminUsersPage() {
             <div className="flex items-start gap-3 mb-4">
               <AlertTriangle className="text-red-500 shrink-0" size={24} />
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">封禁用户</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('banUserTitle')}</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  确定要封禁用户 {selectedUser.email} 吗？
+                  {t('banUserDesc', { email: selectedUser.email })}
                 </p>
               </div>
             </div>
             
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                封禁原因（可选）
+                {t('banReasonLabel')}
               </label>
               <textarea
                 value={banReason}
                 onChange={(e) => setBanReason(e.target.value)}
-                placeholder="请输入封禁原因..."
+                placeholder={t('banReasonPlaceholder')}
                 rows={3}
                 className="w-full px-4 py-2 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all text-gray-900 dark:text-white"
               />
@@ -373,14 +375,14 @@ export default function AdminUsersPage() {
                 }}
                 className="flex-1 px-4 py-2 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={handleConfirmBan}
                 disabled={banMutation.isPending}
                 className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors disabled:opacity-50"
               >
-                {banMutation.isPending ? '封禁中...' : '确认封禁'}
+                {banMutation.isPending ? t('banning') : t('confirmBan')}
               </button>
             </div>
           </div>

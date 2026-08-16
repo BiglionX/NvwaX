@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
 import { Coins, AlertTriangle, Users, Zap, Search, RefreshCw, BarChart3, PieChart } from 'lucide-react';
@@ -10,6 +11,8 @@ import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip, Legen
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
 export default function AdminTokensPage() {
+  const t = useTranslations('admin');
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -92,8 +95,8 @@ export default function AdminTokensPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Token 管理</h1>
-        <p className="text-gray-600 dark:text-gray-300">管理用户Token配额，监控消耗状况</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('tokenTitle')}</h1>
+        <p className="text-gray-600 dark:text-gray-300">{t('tokenDesc')}</p>
       </div>
 
       {/* 统计卡片 */}
@@ -104,7 +107,7 @@ export default function AdminTokensPage() {
               <Users className="text-blue-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">使用用户数</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('usageUsers')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {overview?.totalUsers || 0}
           </p>
@@ -116,7 +119,7 @@ export default function AdminTokensPage() {
               <Zap className="text-green-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">本月总消耗</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('monthlyConsumption')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {formatTokens(overview?.totalTokensThisMonth || 0)}
           </p>
@@ -128,7 +131,7 @@ export default function AdminTokensPage() {
               <AlertTriangle className="text-orange-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">超额Token数</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('overageTokensTitle')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {formatTokens(overview?.totalOverageTokens || 0)}
           </p>
@@ -140,7 +143,7 @@ export default function AdminTokensPage() {
               <Coins className="text-red-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">超额费用</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('overageCostTitle')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {formatCost(overview?.totalOverageCost || 0)}
           </p>
@@ -154,16 +157,16 @@ export default function AdminTokensPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <PieChart className="text-blue-500" size={20} />
-              消耗来源分布
+              {t('consumptionDistribution')}
             </h2>
             <select
               value={breakdownPeriod}
               onChange={(e) => setBreakdownPeriod(e.target.value as 'day' | 'week' | 'month')}
               className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
             >
-              <option value="day">今天</option>
-              <option value="week">近7天</option>
-              <option value="month">近30天</option>
+              <option value="day">{t('today')}</option>
+              <option value="week">{t('last7Days')}</option>
+              <option value="month">{t('last30Days')}</option>
             </select>
           </div>
           {breakdown && breakdown.length > 0 ? (
@@ -199,7 +202,7 @@ export default function AdminTokensPage() {
           ) : (
             <div className="text-center py-12 text-gray-500">
               <BarChart3 className="mx-auto mb-2 opacity-50" size={48} />
-              <p>暂无消耗数据</p>
+              <p>{t('noConsumptionData')}</p>
             </div>
           )}
         </div>
@@ -208,7 +211,7 @@ export default function AdminTokensPage() {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <BarChart3 className="text-green-500" size={20} />
-            消耗来源对比
+            {t('consumptionComparison')}
           </h2>
           {breakdown && breakdown.length > 0 ? (
             <div className="h-75">
@@ -233,7 +236,7 @@ export default function AdminTokensPage() {
           ) : (
             <div className="text-center py-12 text-gray-500">
               <BarChart3 className="mx-auto mb-2 opacity-50" size={48} />
-              <p>暂无消耗数据</p>
+              <p>{t('noConsumptionData')}</p>
             </div>
           )}
         </div>
@@ -242,12 +245,12 @@ export default function AdminTokensPage() {
       {/* 操作栏 */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">用户 Token 消耗排行</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('userTokenRanking')}</h2>
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="搜索邮箱或姓名..."
+              placeholder={t('searchUserPlaceholder')}
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               className="pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white text-sm w-64"
@@ -260,7 +263,7 @@ export default function AdminTokensPage() {
           className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
         >
           <RefreshCw size={16} className={resetMutation.isPending ? 'animate-spin' : ''} />
-          重置月度配额
+          {t('resetMonthlyQuota')}
         </button>
       </div>
 
@@ -270,15 +273,15 @@ export default function AdminTokensPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">用户</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">月配额</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">本月已用</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">剩余</th>
-                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">使用率</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">超额Token</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">超额费用</th>
-                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">内部团队</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">操作</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('user')}</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('monthlyQuota')}</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('usedThisMonth')}</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('remaining')}</th>
+                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('usageRate')}</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('overageToken')}</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('overageCost')}</th>
+                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('devInternalTeam')}</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -342,7 +345,7 @@ export default function AdminTokensPage() {
                         />
                       </button>
                       {user.is_internal_team && (
-                        <span className="block text-xs text-green-500 mt-1">无限Token</span>
+                        <span className="block text-xs text-green-500 mt-1">{t('unlimitedTokens')}</span>
                       )}
                     </td>
                     <td className="text-right py-3 px-4">
@@ -350,7 +353,7 @@ export default function AdminTokensPage() {
                         onClick={() => setSelectedUser(selectedUser === user.user_id ? null : user.user_id)}
                         className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
                       >
-                        {selectedUser === user.user_id ? '收起' : '详情'}
+                        {selectedUser === user.user_id ? t('collapse') : t('expand')}
                       </button>
                     </td>
                   </tr>
@@ -359,7 +362,7 @@ export default function AdminTokensPage() {
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-gray-500">
                     <Users className="mx-auto mb-2 opacity-50" size={48} />
-                    <p>暂无用户Token数据</p>
+                    <p>{t('noTokenData')}</p>
                   </td>
                 </tr>
               )}
@@ -371,7 +374,7 @@ export default function AdminTokensPage() {
         {usersData && usersData.total > limit && (
           <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {`第 ${page} / ${Math.ceil(usersData.total / limit)} 页，共 ${usersData.total} 条记录`}
+              {t('pageSummary', { page, totalPages: Math.ceil(usersData.total / limit), total: usersData.total })}
             </p>
             <div className="flex gap-2">
               <button
@@ -379,14 +382,14 @@ export default function AdminTokensPage() {
                 disabled={page === 1}
                 className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               >
-                上一页
+                {t('prevPage')}
               </button>
               <button
                 onClick={() => setPage(p => p + 1)}
                 disabled={page >= Math.ceil(usersData.total / limit)}
                 className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               >
-                下一页
+                {t('nextPage')}
               </button>
             </div>
           </div>
@@ -396,7 +399,7 @@ export default function AdminTokensPage() {
       {/* 用户详情面板 */}
       {selectedUser && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">用户消耗明细</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('userDetailTitle')}</h2>
           {isLoadingUserDetail ? (
             <LoadingState />
           ) : userDetail ? (
@@ -405,21 +408,21 @@ export default function AdminTokensPage() {
               {userDetail.quota && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">月配额</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('monthlyQuota')}</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{formatTokens(userDetail.quota.monthlyLimit)}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">本月已用</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('usedThisMonth')}</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{formatTokens(userDetail.quota.usedThisMonth)}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">剩余</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('remaining')}</p>
                     <p className={`text-lg font-bold ${userDetail.quota.remaining <= 0 ? 'text-red-500' : 'text-green-500'}`}>
                       {formatTokens(userDetail.quota.remaining)}
                     </p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">使用率</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('usageRate')}</p>
                     <p className={`text-lg font-bold ${userDetail.quota.usagePercent > 100 ? 'text-red-500' : userDetail.quota.usagePercent > 80 ? 'text-orange-500' : 'text-blue-500'}`}>
                       {userDetail.quota.usagePercent}%
                     </p>
@@ -432,13 +435,13 @@ export default function AdminTokensPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="text-left py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">时间</th>
-                      <th className="text-left py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">来源</th>
-                      <th className="text-left py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">端点</th>
-                      <th className="text-right py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Token数</th>
-                      <th className="text-center py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">超额</th>
-                      <th className="text-right py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">超额费用</th>
-                      <th className="text-left py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">模型</th>
+                      <th className="text-left py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('timeCol')}</th>
+                      <th className="text-left py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('sourceCol')}</th>
+                      <th className="text-left py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('endpointCol')}</th>
+                      <th className="text-right py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('tokenCount')}</th>
+                      <th className="text-center py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('isOverage')}</th>
+                      <th className="text-right py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('overageCost')}</th>
+                      <th className="text-left py-3 px-3 text-sm font-semibold text-gray-600 dark:text-gray-400">{t('modelCol')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -446,7 +449,7 @@ export default function AdminTokensPage() {
                       userDetail.transactions.map((tx: { id: string; created_at: string; source_type: string; endpoint: string; tokens_consumed: number; is_overage: boolean; overage_cost: number; model: string }) => (
                         <tr key={tx.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750">
                           <td className="py-3 px-3 text-sm text-gray-600 dark:text-gray-400">
-                            {new Date(tx.created_at).toLocaleString('zh-CN')}
+                            {new Date(tx.created_at).toLocaleString(locale)}
                           </td>
                           <td className="py-3 px-3">
                             <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium">
@@ -463,9 +466,9 @@ export default function AdminTokensPage() {
                           </td>
                           <td className="text-center py-3 px-3">
                             {tx.is_overage ? (
-                              <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-xs">是</span>
+                              <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-xs">{t('yes')}</span>
                             ) : (
-                              <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-xs">否</span>
+                              <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-xs">{t('no')}</span>
                             )}
                           </td>
                           <td className="text-right py-3 px-3 text-sm text-gray-700 dark:text-gray-300">
@@ -479,7 +482,7 @@ export default function AdminTokensPage() {
                     ) : (
                       <tr>
                         <td colSpan={7} className="py-12 text-center text-gray-500">
-                          <p>暂无消费记录</p>
+                          <p>{t('noRecords')}</p>
                         </td>
                       </tr>
                     )}
@@ -489,7 +492,7 @@ export default function AdminTokensPage() {
             </>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <p>该用户暂无配额数据</p>
+              <p>{t('noQuotaData')}</p>
             </div>
           )}
         </div>

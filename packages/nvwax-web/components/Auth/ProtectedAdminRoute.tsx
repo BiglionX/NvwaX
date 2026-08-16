@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslations } from 'next-intl';
 
 interface ProtectedAdminRouteProps {
   children: React.ReactNode;
@@ -19,6 +20,7 @@ export default function ProtectedAdminRoute({ children }: ProtectedAdminRoutePro
   const router = useRouter();
   const pathname = usePathname();
   const { isLoggedIn, userInfo, loading } = useAuth();
+  const t = useTranslations('admin');
 
   useEffect(() => {
     if (loading) return;
@@ -39,7 +41,7 @@ export default function ProtectedAdminRoute({ children }: ProtectedAdminRoutePro
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">验证管理员权限...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('verifyingAdmin')}</p>
         </div>
       </div>
     );

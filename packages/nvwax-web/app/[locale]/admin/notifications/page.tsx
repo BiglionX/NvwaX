@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { adminApi } from '@/lib/api/admin';
 import { Bell, Send, Loader2, AlertCircle } from 'lucide-react';
 
 export default function AdminNotificationsPage() {
+  const t = useTranslations('admin');
   const [formData, setFormData] = useState({
     title: '',
     message: '',
@@ -16,11 +18,11 @@ export default function AdminNotificationsPage() {
     mutationFn: (data: typeof formData) => adminApi.sendAnnouncement(data),
     onSuccess: (result) => {
       const r = result as { sentCount?: number };
-      alert(`发送成功！已通知 ${r.sentCount} 位用户。`);
+      alert(t('sendSuccess', { count: r.sentCount ?? 0 }));
       setFormData({ title: '', message: '', priority: 'high' });
     },
     onError: (error: Error) => {
-      alert('发送失败: ' + error.message);
+      alert(t('sendFailed') + error.message);
     }
   });
 
@@ -33,8 +35,8 @@ export default function AdminNotificationsPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">通知与公告</h1>
-        <p className="text-gray-600 dark:text-gray-300">向全站用户发送系统公告或重要通知</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('notificationTitle')}</h1>
+        <p className="text-gray-600 dark:text-gray-300">{t('notificationDesc')}</p>
       </div>
 
       {/* 发布公告表单 */}
@@ -44,21 +46,21 @@ export default function AdminNotificationsPage() {
             <Bell className="text-blue-500" size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">发布新公告</h2>
-            <p className="text-sm text-gray-500">公告将作为站内通知发送给所有注册用户</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('publishNotification')}</h2>
+            <p className="text-sm text-gray-500">{t('publishNotificationDesc')}</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              公告标题 *
+              {t('notificationTitleLabel')}
             </label>
             <input
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="例如：系统维护通知"
+              placeholder={t('notificationTitlePlaceholder')}
               className="w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white"
               required
             />
@@ -66,12 +68,12 @@ export default function AdminNotificationsPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              公告内容 *
+              {t('notificationContentLabel')}
             </label>
             <textarea
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              placeholder="请输入公告详细内容..."
+              placeholder={t('notificationContentPlaceholder')}
               rows={6}
               className="w-full px-4 py-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white resize-none"
               required
@@ -80,7 +82,7 @@ export default function AdminNotificationsPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              优先级
+              {t('priorityLabel')}
             </label>
             <div className="grid grid-cols-4 gap-4">
               {['low', 'normal', 'high', 'urgent'].map((p) => (
@@ -94,7 +96,7 @@ export default function AdminNotificationsPage() {
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
                   }`}
                 >
-                  {p === 'urgent' ? '紧急' : p === 'high' ? '高' : p === 'normal' ? '普通' : '低'}
+                  {p === 'urgent' ? t('priorityUrgent') : p === 'high' ? t('priorityHigh') : p === 'normal' ? t('priorityNormal') : t('priorityLow')}
                 </button>
               ))}
             </div>
@@ -104,8 +106,8 @@ export default function AdminNotificationsPage() {
             <div className="flex items-start gap-3">
               <AlertCircle className="text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" size={20} />
               <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                <p className="font-medium mb-1">注意：</p>
-                <p>此操作将向所有 {formData.priority === 'urgent' ? '紧急 ' : ''}推送通知，请确保内容准确无误。</p>
+                <p className="font-medium mb-1">{t('noteTitle')}</p>
+                <p>{t('noteDesc', { priority: formData.priority === 'urgent' ? t('priorityUrgent') : '' })}</p>
               </div>
             </div>
           </div>
@@ -119,11 +121,11 @@ export default function AdminNotificationsPage() {
               {sendMutation.isPending ? (
                 <>
                   <Loader2 className="animate-spin" size={20} />
-                  发送中...                </>
+                  {t('sending')}                </>
               ) : (
                 <>
                   <Send size={20} />
-                  发送公告                </>
+                  {t('sendNotification')}                </>
               )}
             </button>
           </div>

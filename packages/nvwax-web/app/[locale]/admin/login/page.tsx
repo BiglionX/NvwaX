@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { Shield, AlertCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
@@ -21,6 +22,7 @@ import { useRouter } from 'next/navigation';
  */
 
 export default function AdminLoginPage() {
+  const t = useTranslations('admin');
   const { isLoggedIn, userInfo, loading, login } = useAuth();
   const router = useRouter();
 
@@ -47,7 +49,7 @@ export default function AdminLoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-sky-50 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">验证会话...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('verifyingSession')}</p>
         </div>
       </div>
     );
@@ -63,15 +65,15 @@ export default function AdminLoginPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-xl mb-4">
                 <AlertCircle className="text-red-600 dark:text-red-400" size={32} />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">权限不足</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('permissionDenied')}</h1>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                当前账户 <span className="font-mono text-sm">{userInfo?.email}</span> 没有管理员权限。
+                {t('noAdminPermission', { email: userInfo?.email ?? '' })}
               </p>
               <button
                 onClick={() => router.replace('/')}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
               >
-                返回首页
+                {t('backToHome')}
               </button>
             </div>
           </div>
@@ -90,8 +92,8 @@ export default function AdminLoginPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-blue-500 to-blue-700 rounded-xl mb-4">
               <Shield className="text-white" size={32} />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">NvwaX 管理后台</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">请使用管理员账户登录</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('layoutTitle')}</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">{t('loginSubtitle')}</p>
           </div>
 
           {/* OIDC 登录说明 */}
@@ -99,8 +101,8 @@ export default function AdminLoginPage() {
             <div className="flex items-start gap-3">
               <Shield className="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" size={20} />
               <div className="text-sm text-blue-700 dark:text-blue-300">
-                <p className="font-medium mb-1">统一认证中心</p>
-                <p>使用 account.proclaw.cc 的统一认证系统登录，支持邮箱登录和社交账号登录。管理员权限由系统后台按邮箱授权。</p>
+                <p className="font-medium mb-1">{t('oidcCenterTitle')}</p>
+                <p>{t('oidcCenterDesc')}</p>
               </div>
             </div>
           </div>
@@ -111,12 +113,12 @@ export default function AdminLoginPage() {
             className="w-full py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2"
           >
             <Shield size={20} />
-            管理员登录
+            {t('loginTitle')}
           </button>
 
           {/* Footer */}
           <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-            <p>首次使用？请联系系统管理员创建账户</p>
+            <p>{t('loginFirstTime')}</p>
           </div>
         </div>
       </div>

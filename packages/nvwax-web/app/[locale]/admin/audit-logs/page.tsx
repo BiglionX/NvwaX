@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations, useLocale } from 'next-intl';
 import { adminApi } from '@/lib/api/admin';
 import { Search, Eye, Calendar, User as UserIcon, Shield, Loader2 } from 'lucide-react';
 
@@ -16,6 +17,7 @@ interface AuditLog {
 }
 
 export default function AdminAuditLogsPage() {
+  const t = useTranslations('admin');
   const [page, setPage] = useState(1);
   const [actionFilter, setActionFilter] = useState('');
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
@@ -34,7 +36,7 @@ export default function AdminAuditLogsPage() {
     return (
       <div className="text-center py-12 text-gray-500">
         <Loader2 className="animate-spin mx-auto mb-4" size={48} />
-        <p>加载中...</p>
+        <p>{t('loading')}</p>
       </div>
     );
   }
@@ -42,8 +44,8 @@ export default function AdminAuditLogsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">安全审计日志</h1>
-        <p className="text-gray-600 dark:text-gray-300">追踪管理员操作记录与系统安全事件</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('auditTitle')}</h1>
+        <p className="text-gray-600 dark:text-gray-300">{t('auditDesc')}</p>
       </div>
 
       {/* 筛选栏 */}
@@ -52,7 +54,7 @@ export default function AdminAuditLogsPage() {
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
-            placeholder="搜索操作类型 (如: LOGIN, CREATE_ADMIN)..."
+            placeholder={t('auditSearchPlaceholder')}
             value={actionFilter}
             onChange={(e) => {
               setActionFilter(e.target.value);
@@ -68,11 +70,11 @@ export default function AdminAuditLogsPage() {
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">操作类型</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">管理员</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">IP 地址</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">时间</th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">操作</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('actionTypeCol')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('adminCol')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('ipCol')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('timeCol')}</th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">{t('actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -100,7 +102,7 @@ export default function AdminAuditLogsPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <Calendar size={16} />
-                      {new Date(log.createdAt).toLocaleString('zh-CN')}
+                      {new Date(log.createdAt).toLocaleString(locale)}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -119,7 +121,7 @@ export default function AdminAuditLogsPage() {
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                   <Shield className="mx-auto mb-2 opacity-50" size={48} />
-                  <p>暂无日志记录</p>
+                  <p>{t('noLogs')}</p>
                 </td>
               </tr>
             )}
@@ -130,7 +132,7 @@ export default function AdminAuditLogsPage() {
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {`第 ${page} / ${totalPages} 页`}，{`共 ${logsData?.total || 0} 条记录`}
+              {t('pageSummary', { page, totalPages, total: logsData?.total || 0 })}
             </p>
             <div className="flex gap-2">
               <button
@@ -138,14 +140,14 @@ export default function AdminAuditLogsPage() {
                 disabled={page === 1}
                 className="px-4 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 transition-all"
               >
-                上一页
+                {t('prevPage')}
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className="px-4 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 transition-all"
               >
-                下一页
+                {t('nextPage')}
               </button>
             </div>
           </div>
@@ -157,30 +159,30 @@ export default function AdminAuditLogsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">日志详情</h2>
-              <button onClick={() => setSelectedLog(null)} className="text-gray-500 hover:text-gray-700">关闭</button>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('logDetail')}</h2>
+              <button onClick={() => setSelectedLog(null)} className="text-gray-500 hover:text-gray-700">{t('closeBtn')}</button>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-500">操作 ID:</span>
+                  <span className="text-gray-500">{t('operationId')}</span>
                   <p className="font-mono mt-1">{selectedLog.id}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">管理员 ID:</span>
+                  <span className="text-gray-500">{t('adminIdCol')}</span>
                   <p className="font-mono mt-1">{selectedLog.adminId}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">IP 地址:</span>
+                  <span className="text-gray-500">{t('ipAddressCol')}</span>
                   <p className="font-mono mt-1">{selectedLog.ipAddress}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">操作时间:</span>
-                  <p className="mt-1">{new Date(selectedLog.createdAt).toLocaleString('zh-CN')}</p>
+                  <span className="text-gray-500">{t('operationTime')}</span>
+                  <p className="mt-1">{new Date(selectedLog.createdAt).toLocaleString(locale)}</p>
                 </div>
               </div>
               <div>
-                <span className="text-gray-500 text-sm">详细描述:</span>
+                <span className="text-gray-500 text-sm">{t('detailDesc')}</span>
                 <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                   {selectedLog.details}
                 </div>

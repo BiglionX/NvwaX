@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Shield, LayoutDashboard, Users, Settings, Database, Folder, Bot, Building2, Bell, FileText, Coins, CreditCard, Code } from 'lucide-react';
 import ProtectedAdminRoute from '@/components/Auth/ProtectedAdminRoute';
 
@@ -14,24 +15,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 }
 
 function AdminContent({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('admin');
   const pathname = usePathname();
   
   console.log('[AdminLayout] Rendering, pathname:', pathname);
 
   const menuItems = [
-    { label: '数据看板', icon: LayoutDashboard, path: '/admin/dashboard' },
-    { label: '用户管理', icon: Users, path: '/admin/users' },
-    { label: '项目管理', icon: Folder, path: '/admin/projects' },
-    { label: 'Agent 管理', icon: Bot, path: '/admin/agents' },
-    { label: '打包任务', icon: Building2, path: '/admin/virtual-companies' },
-    { label: '通知中心', icon: Bell, path: '/admin/notifications' },
-    { label: '审计日志', icon: FileText, path: '/admin/audit-logs' },
-    { label: '爬虫管理', icon: Database, path: '/admin/crawler' },
-    { label: '管理员管理', icon: Shield, path: '/admin/admins' },
-    { label: '开发者管理', icon: Code, path: '/admin/developers' },
-    { label: 'Token 管理', icon: Coins, path: '/admin/tokens' },
-    { label: '支付设置', icon: CreditCard, path: '/admin/payment-settings' },
-    { label: '系统设置', icon: Settings, path: '/admin/settings' }
+    { label: t('dashboard'), icon: LayoutDashboard, path: '/admin/dashboard' },
+    { label: t('users'), icon: Users, path: '/admin/users' },
+    { label: t('projects'), icon: Folder, path: '/admin/projects' },
+    { label: t('agents'), icon: Bot, path: '/admin/agents' },
+    { label: t('menuVirtualCompanies'), icon: Building2, path: '/admin/virtual-companies' },
+    { label: t('menuNotifications'), icon: Bell, path: '/admin/notifications' },
+    { label: t('auditLogs'), icon: FileText, path: '/admin/audit-logs' },
+    { label: t('crawler'), icon: Database, path: '/admin/crawler' },
+    { label: t('admins'), icon: Shield, path: '/admin/admins' },
+    { label: t('devTitle'), icon: Code, path: '/admin/developers' },
+    { label: t('tokens'), icon: Coins, path: '/admin/tokens' },
+    { label: t('payment'), icon: CreditCard, path: '/admin/payment-settings' },
+    { label: t('settings'), icon: Settings, path: '/admin/settings' }
   ];
 
   if (pathname === '/admin/login') {
@@ -45,7 +47,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Shield className="text-blue-600 dark:text-blue-400" size={28} />
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">NvwaX 管理后台</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t('layoutTitle')}</h1>
           </div>
           
           {/* 用户状态和退出登录功能已在顶部导航栏提供 */}

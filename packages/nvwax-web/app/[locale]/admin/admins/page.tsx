@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslations, useLocale } from 'next-intl';
 import { adminApi } from '@/lib/api/admin';
 import { Plus, Trash2, Edit, Shield, Mail, User as UserIcon } from 'lucide-react';
 
 export default function AdminsPage() {
+  const t = useTranslations('admin');
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -43,22 +45,22 @@ export default function AdminsPage() {
   };
 
   if (isLoading) {
-    return <div className="text-center py-12 text-gray-500">加载中...</div>;
+    return <div className="text-center py-12 text-gray-500">{t('loading')}</div>;
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">管理员管理</h1>
-          <p className="text-gray-600 dark:text-gray-300">管理系统管理员账户</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('adminsTitle')}</h1>
+          <p className="text-gray-600 dark:text-gray-300">{t('adminsDesc')}</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
         >
           <Plus size={20} />
-          添加管理员
+          {t('addAdmin')}
         </button>
       </div>
 
@@ -67,11 +69,11 @@ export default function AdminsPage() {
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">用户</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">邮箱</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">角色</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">最后登录</th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">操作</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('user')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('emailCol')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('roleCol')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('lastLoginCol')}</th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">{t('actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -101,11 +103,11 @@ export default function AdminsPage() {
                       : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
                   }`}>
                     <Shield size={14} />
-                    {admin.role === 'superadmin' ? '超级管理员' : '管理员'}
+                    {admin.role === 'superadmin' ? t('superadmin') : t('adminRole')}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                  {admin.lastLogin ? new Date(admin.lastLogin).toLocaleString('zh-CN') : '从未登录'}
+                  {admin.lastLogin ? new Date(admin.lastLogin).toLocaleString(locale) : t('neverLogin')}
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-end gap-2">
@@ -130,12 +132,12 @@ export default function AdminsPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">添加新管理员</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t('addAdminTitle')}</h2>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  用户名 *
+                  {t('usernameLabel')}
                 </label>
                 <input
                   type="text"
@@ -148,7 +150,7 @@ export default function AdminsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  密码 *
+                  {t('passwordLabel')}
                 </label>
                 <input
                   type="password"
@@ -161,7 +163,7 @@ export default function AdminsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  邮箱 *
+                  {t('emailLabel')}
                 </label>
                 <input
                   type="email"
@@ -174,7 +176,7 @@ export default function AdminsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  姓名
+                  {t('nameLabel')}
                 </label>
                 <input
                   type="text"
@@ -186,15 +188,15 @@ export default function AdminsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  角色
+                  {t('roleLabel')}
                 </label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   className="w-full px-4 py-2 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white"
                 >
-                  <option value="admin">管理员</option>
-                  <option value="superadmin">超级管理员</option>
+                  <option value="admin">{t('adminRole')}</option>
+                  <option value="superadmin">{t('superadmin')}</option>
                 </select>
               </div>
 
@@ -204,14 +206,14 @@ export default function AdminsPage() {
                   onClick={() => setShowCreateModal(false)}
                   className="flex-1 px-4 py-2 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
                 >
-                  取消
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors disabled:opacity-50"
                 >
-                  {createMutation.isPending ? '创建中...' : '创建'}
+                  {createMutation.isPending ? t('creating') : t('createBtn')}
                 </button>
               </div>
             </form>

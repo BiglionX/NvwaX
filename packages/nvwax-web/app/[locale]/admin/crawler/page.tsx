@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslations, useLocale } from 'next-intl';
 import { adminApi } from '@/lib/api/admin';
 import { 
   RefreshCw, 
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminCrawlerPage() {
+  const t = useTranslations('admin');
   const queryClient = useQueryClient();
   const [intervalHours, setIntervalHours] = useState(24);
   const [cleanDays, setCleanDays] = useState(90);
@@ -39,7 +41,7 @@ export default function AdminCrawlerPage() {
   const triggerCrawlerMutation = useMutation({
     mutationFn: () => adminApi.triggerCrawler(),
     onSuccess: () => {
-      alert('爬虫任务已启动！');
+      alert(t('crawlTriggered'));
       // 5秒后刷新状态
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['crawler-status'] });
@@ -47,7 +49,7 @@ export default function AdminCrawlerPage() {
       }, 5000);
     },
     onError: (error: Error) => {
-      alert('触发失败: ' + error.message);
+      alert(t('triggerFailed') + error.message);
     }
   });
 
@@ -55,12 +57,12 @@ export default function AdminCrawlerPage() {
   const updateConfigMutation = useMutation({
     mutationFn: (hours: number) => adminApi.updateCrawlerConfig(hours),
     onSuccess: () => {
-      alert('配置已更新！');
+      alert(t('configUpdated'));
       setShowConfigForm(false);
       queryClient.invalidateQueries({ queryKey: ['crawler-status'] });
     },
     onError: (error: Error) => {
-      alert('更新失败: ' + error.message);
+      alert(t('updateFailed') + error.message);
     }
   });
 
@@ -75,24 +77,24 @@ export default function AdminCrawlerPage() {
       queryClient.invalidateQueries({ queryKey: ['crawler-history'] });
     },
     onError: (error: Error) => {
-      alert('清理失败: ' + error.message);
+      alert(t('clearFailed') + error.message);
     }
   });
 
   const handleTriggerCrawl = () => {
-    if (confirm('确定要手动触发爬虫任务吗？这可能需要几分钟时间。')) {
+    if (confirm(t('confirmCrawl'))) {
       triggerCrawlerMutation.mutate();
     }
   };
 
   const handleUpdateConfig = () => {
-    if (confirm(`确定要将爬虫间隔更新为 ${intervalHours} 小时吗？`)) {
+    if (confirm(t('confirmConfigUpdate', { hours: intervalHours }))) {
       updateConfigMutation.mutate(intervalHours);
     }
   };
 
   const handleCleanData = () => {
-    if (confirm(`确定要删除 ${cleanDays} 天前的旧数据吗？此操作不可恢复！`)) {
+    if (confirm(t('confirmCleanData', { days: cleanDays }))) {
       cleanDataMutation.mutate(cleanDays);
     }
   };
@@ -101,7 +103,7 @@ export default function AdminCrawlerPage() {
     return (
       <div className="text-center py-12 text-gray-500">
         <Loader2 className="animate-spin mx-auto mb-4" size={48} />
-        <p>加载中...</p>
+        <p>{t('loading')}</p>
       </div>
     );
   }
@@ -109,8 +111,8 @@ export default function AdminCrawlerPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">爬虫管理</h1>
-        <p className="text-gray-600 dark:text-gray-300">管理 Agent 元数据的自动爬取和更新</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('crawlerTitle')}</h1>
+        <p className="text-gray-600 dark:text-gray-300">{t('crawlerDesc')}</p>
       </div>
 
       {/* 状态卡片 */}
@@ -126,12 +128,12 @@ export default function AdminCrawlerPage() {
                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                 : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
             }`}>
-              {crawlerStatus?.scheduler?.isRunning ? '运行中' : '已停止'}
+              {crawlerStatus?.scheduler?.isRunning ? t('running') : t('stopped')}
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">调度器状态</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('schedulerStatus')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {crawlerStatus?.scheduler?.isRunning ? '✓ 正常' : '✗ 停止'}
+            {crawlerStatus?.scheduler?.isRunning ? t('schedulerNormal') : t('schedulerStopped')}
           </p>
         </div>
 
@@ -142,7 +144,7 @@ export default function AdminCrawlerPage() {
               <Database className="text-blue-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Agent 总数</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('totalAgentsCount')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {crawlerStatus?.statistics?.totalAgents || 0}
           </p>
@@ -157,7 +159,7 @@ export default function AdminCrawlerPage() {
               </svg>
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">GitHub Agents</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('githubAgents')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {crawlerStatus?.statistics?.githubAgents || 0}
           </p>
@@ -170,7 +172,7 @@ export default function AdminCrawlerPage() {
               <Globe className="text-yellow-600 dark:text-yellow-400" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">HuggingFace Agents</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('huggingfaceAgents')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {crawlerStatus?.statistics?.huggingfaceAgents || 0}
           </p>
@@ -182,8 +184,8 @@ export default function AdminCrawlerPage() {
         <div className="mb-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
           <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
             <Clock size={20} />
-            <span className="font-medium">最后爬取时间:</span>
-            <span>{new Date(crawlerStatus.statistics.lastCrawlTime).toLocaleString('zh-CN')}</span>
+            <span className="font-medium">{t('lastCrawlTime')}</span>
+            <span>{new Date(crawlerStatus.statistics.lastCrawlTime).toLocaleString(locale)}</span>
           </div>
         </div>
       )}
@@ -200,7 +202,7 @@ export default function AdminCrawlerPage() {
           ) : (
             <Play size={20} />
           )}
-          手动触发爬虫
+          {t('triggerCrawl')}
         </button>
 
         <button
@@ -208,7 +210,7 @@ export default function AdminCrawlerPage() {
           className="flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
         >
           <Settings size={20} />
-          更新配置
+          {t('updateConfig')}
         </button>
 
         <button
@@ -216,18 +218,18 @@ export default function AdminCrawlerPage() {
           className="flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium"
         >
           <Trash2 size={20} />
-          清理旧数据
+          {t('cleanOldData')}
         </button>
       </div>
 
       {/* 配置表单 */}
       {showConfigForm && (
         <div className="mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">更新爬虫间隔</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('updateCrawlInterval')}</h3>
           <div className="flex items-end gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                间隔时间（小时）
+                {t('intervalHours')}
               </label>
               <input
                 type="number"
@@ -238,7 +240,7 @@ export default function AdminCrawlerPage() {
                 className="w-full px-4 py-2 bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                范围: 1-168 小时（1小时-7天）
+                {t('intervalHint')}
               </p>
             </div>
             <button
@@ -246,13 +248,13 @@ export default function AdminCrawlerPage() {
               disabled={updateConfigMutation.isPending}
               className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50"
             >
-              {updateConfigMutation.isPending ? '更新中...' : '确认更新'}
+              {updateConfigMutation.isPending ? t('updating') : t('confirmUpdate')}
             </button>
             <button
               onClick={() => setShowConfigForm(false)}
               className="px-6 py-2 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
             >
-              取消
+              {t('cancel')}
             </button>
           </div>
         </div>
@@ -264,16 +266,16 @@ export default function AdminCrawlerPage() {
           <div className="flex items-start gap-3 mb-4">
             <AlertCircle className="text-red-500 shrink-0" size={24} />
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">清理旧数据</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('cleanOldData')}</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                警告：此操作将永久删除指定天数前的所有 Agent 数据，无法恢复！
+                {t('cleanWarningDesc')}
               </p>
             </div>
           </div>
           <div className="flex items-end gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                删除多少天前的数据
+                {t('cleanDaysLabel')}
               </label>
               <input
                 type="number"
@@ -284,7 +286,7 @@ export default function AdminCrawlerPage() {
                 className="w-full px-4 py-2 bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all text-gray-900 dark:text-white"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                范围: 1-365 天
+                {t('cleanDaysHint')}
               </p>
             </div>
             <button
@@ -292,13 +294,13 @@ export default function AdminCrawlerPage() {
               disabled={cleanDataMutation.isPending}
               className="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50"
             >
-              {cleanDataMutation.isPending ? '清理中...' : '确认删除'}
+              {cleanDataMutation.isPending ? t('deleting') : t('confirmDelete')}
             </button>
             <button
               onClick={() => setShowCleanForm(false)}
               className="px-6 py-2 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
             >
-              取消
+              {t('cancel')}
             </button>
           </div>
         </div>
@@ -307,21 +309,21 @@ export default function AdminCrawlerPage() {
       {/* 爬取历史 */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">最近爬取记录</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('crawlHistory')}</h2>
         </div>
         <div className="p-6">
           {loadingHistory ? (
-            <div className="text-center py-8 text-gray-500">加载中...</div>
+            <div className="text-center py-8 text-gray-500">{t('loading')}</div>
           ) : crawlerHistory?.data && crawlerHistory.data.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">名称</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">来源</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Stars</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Downloads</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">爬取时间</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">{t('nameCol')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">{t('sourceCol')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">{t('starsCol')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">{t('downloadsCol')}</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">{t('crawlTimeCol')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -354,7 +356,7 @@ export default function AdminCrawlerPage() {
                       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{agent.stars || 0}</td>
                       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{agent.downloads || 0}</td>
                       <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
-                        {agent.last_crawled_at ? new Date(agent.last_crawled_at).toLocaleString('zh-CN') : '-'}
+                        {agent.last_crawled_at ? new Date(agent.last_crawled_at).toLocaleString(locale) : '-'}
                       </td>
                     </tr>
                   ))}
@@ -364,7 +366,7 @@ export default function AdminCrawlerPage() {
           ) : (
             <div className="text-center py-8 text-gray-500">
               <Database className="mx-auto mb-2 opacity-50" size={48} />
-              <p>暂无爬取记录</p>
+              <p>{t('noCrawlRecords')}</p>
             </div>
           )}
         </div>

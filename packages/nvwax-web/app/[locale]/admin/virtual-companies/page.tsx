@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations, useLocale } from 'next-intl';
 import { adminApi } from '@/lib/api/admin';
 import { Package, Clock, CheckCircle, XCircle, Loader2, Calendar } from 'lucide-react';
 
@@ -17,6 +18,7 @@ interface BuildJob {
 }
 
 export default function AdminVirtualCompaniesPage() {
+  const t = useTranslations('admin');
   // 获取 AiTeam 打包任务列表
   const { data: buildsData, isLoading: loadingBuilds } = useQuery({
     queryKey: ['admin-virtual-companies-builds'],
@@ -30,28 +32,28 @@ export default function AdminVirtualCompaniesPage() {
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
             <CheckCircle size={14} />
-            已完成
+            {t('completed')}
           </span>
         );
       case 'failed':
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
             <XCircle size={14} />
-            失败
+            {t('failed')}
           </span>
         );
       case 'building':
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
             <Loader2 className="animate-spin" size={14} />
-            构建中
+            {t('building')}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
             <Clock size={14} />
-            排队中
+            {t('queued')}
           </span>
         );
     }
@@ -61,7 +63,7 @@ export default function AdminVirtualCompaniesPage() {
     return (
       <div className="text-center py-12 text-gray-500">
         <Loader2 className="animate-spin mx-auto mb-4" size={48} />
-        <p>加载中...</p>
+        <p>{t('loading')}</p>
       </div>
     );
   }
@@ -69,8 +71,8 @@ export default function AdminVirtualCompaniesPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">打包任务监控</h1>
-        <p className="text-gray-600 dark:text-gray-300">监控 Team Skill 异步打包构建任务状态</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('buildsTitle')}</h1>
+        <p className="text-gray-600 dark:text-gray-300">{t('buildsDesc')}</p>
       </div>
 
       {/* 打包任务列表 */}
@@ -78,12 +80,12 @@ export default function AdminVirtualCompaniesPage() {
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">任务 ID</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">目标平台</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">进度</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">状态</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">创建时间</th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">操作</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('taskId')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('targetPlatform')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('progressCol')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('status')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('createTime')}</th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">{t('actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -127,7 +129,7 @@ export default function AdminVirtualCompaniesPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <Calendar size={16} />
-                      {new Date(job.createdAt).toLocaleString('zh-CN')}
+                      {new Date(job.createdAt).toLocaleString(locale)}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -140,7 +142,7 @@ export default function AdminVirtualCompaniesPage() {
                           className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors text-sm flex items-center gap-2"
                         >
                           <Package size={16} />
-                          下载
+                          {t('download')}
                         </a>
                       )}
                     </div>
@@ -151,7 +153,7 @@ export default function AdminVirtualCompaniesPage() {
               <tr>
                 <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                   <Package className="mx-auto mb-2 opacity-50" size={48} />
-                  <p>暂无打包任务记录</p>
+                  <p>{t('noBuildRecords')}</p>
                 </td>
               </tr>
             )}

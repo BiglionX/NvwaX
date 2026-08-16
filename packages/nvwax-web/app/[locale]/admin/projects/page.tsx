@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi, Project } from '@/lib/api/admin';
 import { 
@@ -23,6 +24,8 @@ interface ProjectListResponse {
 }
 
 export default function AdminProjectsPage() {
+  const t = useTranslations('admin');
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -68,10 +71,10 @@ export default function AdminProjectsPage() {
       setShowReviewModal(false);
       setSelectedProject(null);
       setReviewNotes('');
-      alert('审核完成');
+      alert(t('reviewDone'));
     },
     onError: (error: Error) => {
-      alert('审核失败: ' + error.message);
+      alert(t('reviewFailed') + error.message);
     }
   });
 
@@ -82,10 +85,10 @@ export default function AdminProjectsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
       queryClient.invalidateQueries({ queryKey: ['admin-project-stats'] });
-      alert('项目已下架');
+      alert(t('suspendSuccess'));
     },
     onError: (error: Error) => {
-      alert('下架失败: ' + error.message);
+      alert(t('suspendFailed') + error.message);
     }
   });
 
@@ -95,10 +98,10 @@ export default function AdminProjectsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
       queryClient.invalidateQueries({ queryKey: ['admin-project-stats'] });
-      alert('项目已恢复');
+      alert(t('restoreSuccess'));
     },
     onError: (error: Error) => {
-      alert('恢复失败: ' + error.message);
+      alert(t('restoreFailed') + error.message);
     }
   });
 
@@ -119,14 +122,14 @@ export default function AdminProjectsPage() {
   };
 
   const handleSuspend = (project: Project) => {
-    const reason = prompt('请输入下架原因：');
+    const reason = prompt(t('suspendReason'));
     if (reason !== null) {
       suspendMutation.mutate({ projectId: project.id, reason: reason || undefined });
     }
   };
 
   const handleRestore = (projectId: string) => {
-    if (confirm('确定要恢复该项目吗？')) {
+    if (confirm(t('confirmRestore'))) {
       restoreMutation.mutate(projectId);
     }
   };
@@ -139,27 +142,27 @@ export default function AdminProjectsPage() {
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
             <CheckCircle size={14} />
-            正常
+            {t('normal')}
           </span>
         );
       case 'suspended':
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
             <XCircle size={14} />
-            已下架
+            {t('suspended')}
           </span>
         );
       case 'under_review':
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
             <AlertTriangle size={14} />
-            审核中
+            {t('underReview')}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400">
-            未知
+            {t('unknown')}
           </span>
         );
     }
@@ -169,7 +172,7 @@ export default function AdminProjectsPage() {
     return (
       <div className="text-center py-12 text-gray-500">
         <Loader2 className="animate-spin mx-auto mb-4" size={48} />
-        <p>加载中...</p>
+        <p>{t('loading')}</p>
       </div>
     );
   }
@@ -177,8 +180,8 @@ export default function AdminProjectsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">项目管理</h1>
-        <p className="text-gray-600 dark:text-gray-300">审核和管理用户项目</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('projectTitle')}</h1>
+        <p className="text-gray-600 dark:text-gray-300">{t('projectDesc')}</p>
       </div>
 
       {/* 统计卡片 */}
@@ -189,7 +192,7 @@ export default function AdminProjectsPage() {
               <Folder className="text-blue-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">总项目数</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('totalProjectsCount')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {projectStats?.total || 0}
           </p>
@@ -201,7 +204,7 @@ export default function AdminProjectsPage() {
               <CheckCircle className="text-green-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">活跃项目</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('activeProjects')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {projectStats?.active || 0}
           </p>
@@ -213,7 +216,7 @@ export default function AdminProjectsPage() {
               <XCircle className="text-red-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">已下架</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('suspendedProjects')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {projectStats?.suspended || 0}
           </p>
@@ -225,7 +228,7 @@ export default function AdminProjectsPage() {
               <AlertTriangle className="text-yellow-500" size={24} />
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">审核中</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('underReviewProjects')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {projectStats?.underReview || 0}
           </p>
@@ -238,7 +241,7 @@ export default function AdminProjectsPage() {
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
-            placeholder="搜索项目名称、描述或用户邮箱..."
+            placeholder={t('searchProjectPlaceholder')}
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white"
@@ -254,10 +257,10 @@ export default function AdminProjectsPage() {
             }}
             className="pl-10 pr-8 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white appearance-none cursor-pointer"
           >
-            <option value="">全部状态</option>
-            <option value="active">正常</option>
-            <option value="suspended">已下架</option>
-            <option value="under_review">审核中</option>
+            <option value="">{t('allStatusFilter')}</option>
+            <option value="active">{t('normal')}</option>
+            <option value="suspended">{t('suspended')}</option>
+            <option value="under_review">{t('underReview')}</option>
           </select>
         </div>
       </div>
@@ -267,11 +270,11 @@ export default function AdminProjectsPage() {
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">项目</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">所有者</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">状态</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">创建时间</th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">操作</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('projectCol')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('ownerCol')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('status')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('createTime')}</th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">{t('actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -290,7 +293,7 @@ export default function AdminProjectsPage() {
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <UserIcon size={16} />
                       <div>
-                        <p>{project.userName || '暂无描述'}</p>
+                        <p>{project.userName || t('noDescription')}</p>
                         <p className="text-xs text-gray-500">{project.userEmail}</p>
                       </div>
                     </div>
@@ -304,7 +307,7 @@ export default function AdminProjectsPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <Calendar size={16} />
-                      {new Date(project.createdAt).toLocaleDateString('zh-CN')}
+                      {new Date(project.createdAt).toLocaleDateString(locale)}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -316,7 +319,7 @@ export default function AdminProjectsPage() {
                           className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm"
                         >
                           <CheckCircle size={16} />
-                          恢复
+                          {t('restoreBtn')}
                         </button>
                       ) : (
                         <>
@@ -326,7 +329,7 @@ export default function AdminProjectsPage() {
                             className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm"
                           >
                             <CheckCircle size={16} />
-                            通过
+                            {t('approveBtn')}
                           </button>
                           <button
                             onClick={() => handleReviewClick(project, 'reject')}
@@ -334,7 +337,7 @@ export default function AdminProjectsPage() {
                             className="flex items-center gap-2 px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors disabled:opacity-50 text-sm"
                           >
                             <XCircle size={16} />
-                            拒绝
+                            {t('rejectBtn')}
                           </button>
                           <button
                             onClick={() => handleSuspend(project)}
@@ -342,7 +345,7 @@ export default function AdminProjectsPage() {
                             className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors disabled:opacity-50 text-sm"
                           >
                             <XCircle size={16} />
-                            下架
+                            {t('suspendBtn')}
                           </button>
                         </>
                       )}
@@ -354,7 +357,7 @@ export default function AdminProjectsPage() {
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                   <Folder className="mx-auto mb-2 opacity-50" size={48} />
-                  <p>暂无数据</p>
+                  <p>{t('noData')}</p>
                 </td>
               </tr>
             )}
@@ -365,7 +368,7 @@ export default function AdminProjectsPage() {
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {`第 ${page} / ${totalPages} 页`}，{`共 ${projectsData?.total || 0} 条记录`}
+              {t('pageSummary', { page, totalPages, total: projectsData?.total || 0 })}
             </p>
             <div className="flex gap-2">
               <button
@@ -373,14 +376,14 @@ export default function AdminProjectsPage() {
                 disabled={page === 1}
                 className="px-4 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 transition-all"
               >
-                上一页
+                {t('prevPage')}
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className="px-4 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 transition-all"
               >
-                下一页
+                {t('nextPage')}
               </button>
             </div>
           </div>
@@ -399,22 +402,22 @@ export default function AdminProjectsPage() {
               )}
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {reviewAction === 'approve' ? '通过项目' : '拒绝项目'}
+                  {reviewAction === 'approve' ? t('approveProject') : t('rejectProject')}
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  项目名称：<span className="font-medium">{selectedProject.name}</span>
+                  {t('projectName')}<span className="font-medium">{selectedProject.name}</span>
                 </p>
               </div>
             </div>
             
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                审核备注（可选）
+                {t('reviewNotesLabel')}
               </label>
               <textarea
                 value={reviewNotes}
                 onChange={(e) => setReviewNotes(e.target.value)}
-                placeholder="请输入审核备注..."
+                placeholder={t('reviewNotesPlaceholder')}
                 rows={3}
                 className="w-full px-4 py-2 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white"
               />
@@ -429,7 +432,7 @@ export default function AdminProjectsPage() {
                 }}
                 className="flex-1 px-4 py-2 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 onClick={handleConfirmReview}
@@ -440,7 +443,7 @@ export default function AdminProjectsPage() {
                     : 'bg-red-600 hover:bg-red-700'
                 }`}
               >
-                {reviewMutation.isPending ? '处理中...' : (reviewAction === 'approve' ? '确认通过' : '确认拒绝')}
+                {reviewMutation.isPending ? t('processing') : (reviewAction === 'approve' ? t('confirmApprove') : t('confirmReject'))}
               </button>
             </div>
           </div>

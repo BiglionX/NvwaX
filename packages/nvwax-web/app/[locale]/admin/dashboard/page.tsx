@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations, useLocale } from 'next-intl';
 import { adminApi, type AuditLog } from '@/lib/api/admin';
 import { Users, Folder, Shield, Activity, TrendingUp, Clock, Coins } from 'lucide-react';
 import LoadingState from '@/components/Layout/LoadingState';
@@ -9,6 +10,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 // 注意：权限验证已由 ProtectedAdminRoute 在 layout 层面处理，无需在此重复检查
 
 export default function AdminDashboardPage() {
+  const t = useTranslations('admin');
+  const locale = useLocale();
   console.log('[AdminDashboard] Component rendering...');
   
   // Hooks 必须在条件语句之前调用
@@ -44,36 +47,40 @@ export default function AdminDashboardPage() {
 
   const statCards = [
     {
-      label: '管理员总数',
+      label: t('totalAdmins'),
       value: stats?.totalAdmins || 0,
       icon: Shield,
       color: 'bg-blue-500',
       bgColor: 'bg-blue-100 dark:bg-blue-900/30'
     },
     {
-      label: '用户总数',
+      label: t('totalUsers'),
       value: stats?.totalUsers || 0,
       icon: Users,
       color: 'bg-blue-600',
       bgColor: 'bg-blue-100 dark:bg-blue-900/30'
     },
     {
-      label: '项目总数',
+      label: t('totalProjects'),
       value: stats?.totalProjects || 0,
       icon: Folder,
       color: 'bg-green-500',
       bgColor: 'bg-green-100 dark:bg-green-900/30'
     },
     {
-      label: '系统运行时间',
-      value: stats?.systemUptime ? `${Math.floor(stats.systemUptime / 3600)} 小时` : '0 小时',
+      label: t('systemUptime'),
+      value: stats?.systemUptime ? t('hours', { count: Math.floor(stats.systemUptime / 3600) }) : t('hours', { count: 0 }),
       icon: Activity,
       color: 'bg-orange-500',
       bgColor: 'bg-orange-100 dark:bg-orange-900/30'
     },
     {
-      label: '本月Token消耗',
-      value: tokenOverview?.totalTokensThisMonth ? `${(tokenOverview.totalTokensThisMonth / 10000).toFixed(1)}万` : '0',
+      label: t('monthlyTokens'),
+      value: tokenOverview?.totalTokensThisMonth
+        ? locale === 'zh'
+          ? t('wan', { count: (tokenOverview.totalTokensThisMonth / 10000).toFixed(1) })
+          : t('wan', { count: (tokenOverview.totalTokensThisMonth / 1000).toFixed(1) })
+        : '0',
       icon: Coins,
       color: 'bg-purple-500',
       bgColor: 'bg-purple-100 dark:bg-purple-900/30'
@@ -87,8 +94,8 @@ export default function AdminDashboardPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">数据看板</h1>
-        <p className="text-gray-600 dark:text-gray-400">系统运行概况和实时统计</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('dashboard')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('dashboardSubtitle')}</p>
       </div>
 
       {/* Stats Grid */}
@@ -116,7 +123,7 @@ export default function AdminDashboardPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         {/* User Growth Chart */}
         <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">近 7 天用户增长趋势</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t('userGrowthTrend')}</h2>
           <div className="h-75">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats?.userTrend || []}>
@@ -124,7 +131,7 @@ export default function AdminDashboardPage() {
                 <XAxis 
                   dataKey="date" 
                   stroke="#9ca3af"
-                  tickFormatter={(value) => new Date(value).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                  tickFormatter={(value) => new Date(value).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
                 />
                 <YAxis stroke="#9ca3af" />
                 <Tooltip 
@@ -146,24 +153,24 @@ export default function AdminDashboardPage() {
 
         {/* System Info */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">系统信息</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t('systemInfo')}</h2>
           <div className="space-y-6">
             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
               <div className="flex items-center gap-3">
                 <Clock className="text-blue-500" size={20} />
-                <span className="text-gray-600 dark:text-gray-300">运行时间</span>
+                <span className="text-gray-600 dark:text-gray-300">{t('runtime')}</span>
               </div>
               <span className="font-bold text-gray-900 dark:text-white">
-              <p>{`${Math.floor((stats?.systemUptime ?? 0) / 3600)} 小时`}</p>
+              <p>{t('hours', { count: Math.floor((stats?.systemUptime ?? 0) / 3600) })}</p>
               </span>
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
               <div className="flex items-center gap-3">
                 <Activity className="text-green-500" size={20} />
-                <span className="text-gray-600 dark:text-gray-300">系统状态</span>
+                <span className="text-gray-600 dark:text-gray-300">{t('systemStatus')}</span>
               </div>
               <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
-                正常运行
+                {t('runningNormally')}
               </span>
             </div>
           </div>
@@ -173,7 +180,7 @@ export default function AdminDashboardPage() {
       {/* Recent Logs */}
       <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">最近系统日志</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('recentLogs')}</h2>
         </div>
         <div className="p-6">
           {logs?.data && logs.data.length > 0 ? (
@@ -189,7 +196,7 @@ export default function AdminDashboardPage() {
                       <p className="font-medium text-gray-900 dark:text-white">{log.action}</p>
                       <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                         <Clock size={14} />
-                        <span>{new Date(log.createdAt).toLocaleString('zh-CN')}</span>
+                        <span>{new Date(log.createdAt).toLocaleString(locale)}</span>
                       </div>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{log.details}</p>
@@ -200,7 +207,7 @@ export default function AdminDashboardPage() {
           ) : (
             <div className="text-center py-8 text-gray-500">
               <Activity className="mx-auto mb-2 opacity-50" size={48} />
-              <p>暂无日志记录</p>
+              <p>{t('noLogs')}</p>
             </div>
           )}
         </div>

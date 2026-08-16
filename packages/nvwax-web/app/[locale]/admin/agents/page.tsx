@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations, useLocale } from 'next-intl';
 import { adminApi } from '@/lib/api/admin';
 import { Search, Bot, Calendar, User as UserIcon, Loader2 } from 'lucide-react';
 
@@ -15,6 +16,7 @@ interface Agent {
 }
 
 export default function AdminAgentsPage() {
+  const t = useTranslations('admin');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -43,7 +45,7 @@ export default function AdminAgentsPage() {
     return (
       <div className="text-center py-12 text-gray-500">
         <Loader2 className="animate-spin mx-auto mb-4" size={48} />
-        <p>加载中...</p>
+        <p>{t('loading')}</p>
       </div>
     );
   }
@@ -51,8 +53,8 @@ export default function AdminAgentsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Agent 管理</h1>
-        <p className="text-gray-600 dark:text-gray-300">查看和管理用户创建的 AI 智能体</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('agentTitle')}</h1>
+        <p className="text-gray-600 dark:text-gray-300">{t('agentDesc')}</p>
       </div>
 
       {/* 搜索栏 */}
@@ -61,7 +63,7 @@ export default function AdminAgentsPage() {
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
-            placeholder="搜索 Agent 名称或描述..."
+            placeholder={t('searchAgentPlaceholder')}
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white"
@@ -74,10 +76,10 @@ export default function AdminAgentsPage() {
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Agent 信息</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">创建者</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">创建时间</th>
-              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">操作</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('agentInfo')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('creatorCol')}</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('createTime')}</th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900 dark:text-white">{t('actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -91,7 +93,7 @@ export default function AdminAgentsPage() {
                       </div>
                       <div>
                         <p className="font-medium text-gray-900 dark:text-white">{agent.name}</p>
-                        <p className="text-sm text-gray-500 line-clamp-1">{agent.description || '暂无描述'}</p>
+                        <p className="text-sm text-gray-500 line-clamp-1">{agent.description || t('noDescription')}</p>
                       </div>
                     </div>
                   </td>
@@ -104,13 +106,13 @@ export default function AdminAgentsPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                       <Calendar size={16} />
-                      {new Date(agent.createdAt).toLocaleDateString('zh-CN')}
+                      {new Date(agent.createdAt).toLocaleDateString(locale)}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors text-sm">
-                        查看详情
+                        {t('viewDetailBtn')}
                       </button>
                     </div>
                   </td>
@@ -120,7 +122,7 @@ export default function AdminAgentsPage() {
               <tr>
                 <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
                   <Bot className="mx-auto mb-2 opacity-50" size={48} />
-                  <p>暂无 Agent 数据</p>
+                  <p>{t('noAgents')}</p>
                 </td>
               </tr>
             )}
@@ -131,7 +133,7 @@ export default function AdminAgentsPage() {
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              第 {page} / {totalPages} 页，共 {agentsData?.total || 0} 条
+              {t('pageSummary', { page, totalPages, total: agentsData?.total || 0 })}
             </p>
             <div className="flex gap-2">
               <button
@@ -139,14 +141,14 @@ export default function AdminAgentsPage() {
                 disabled={page === 1}
                 className="px-4 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 transition-all"
               >
-                上一页
+                {t('prevPage')}
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className="px-4 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 transition-all"
               >
-                下一页
+                {t('nextPage')}
               </button>
             </div>
           </div>

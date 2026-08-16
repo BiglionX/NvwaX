@@ -50,6 +50,11 @@ vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => mockAuthState,
 }));
 
+// ─────────── mock: next-intl ───────────
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => `__${key}__`,
+}));
+
 import ProtectedAdminRoute from './ProtectedAdminRoute';
 
 interface Harness {
@@ -103,7 +108,7 @@ describe('Case 1: loading state shows spinner', () => {
   it('renders spinner when useAuth.loading is true', () => {
     mockAuthState.loading = true;
     const h = mountHarness();
-    expect(h.container.textContent).toContain('验证管理员权限');
+    expect(h.container.textContent).toContain('__verifyingAdmin__');
     expect(h.container.querySelector('[data-testid="protected-content"]')).toBeNull();
     expect(mockReplace).not.toHaveBeenCalled();
     unmountHarness(h);
