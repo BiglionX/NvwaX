@@ -24,6 +24,7 @@ const STATIC_PAGES: Array<{
   { path: '/faq', priority: 0.6, changeFrequency: 'weekly' },
   { path: '/search', priority: 0.7, changeFrequency: 'weekly' },
   { path: '/developer', priority: 0.8, changeFrequency: 'weekly' },
+  { path: '/dsh', priority: 0.6, changeFrequency: 'monthly' },
   {
     path: '/developer/api-reference',
     priority: 0.7,

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Bot, Users, Star, Layers } from 'lucide-react';
+import { Search, Bot, Users, Star, Layers, Zap, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
@@ -137,6 +137,39 @@ export default function HomeClient() {
               );
             })}
           </div>
+
+          {/* DSH 集成广告横幅 */}
+          <Link
+            href="/dsh"
+            className="group mt-10 block w-full max-w-2xl mx-auto text-left overflow-hidden rounded-2xl border border-violet-500/30 bg-linear-to-r from-violet-600/20 via-blue-600/20 to-sky-500/20 hover:border-violet-400/60 hover:from-violet-600/30 hover:via-blue-600/30 hover:to-sky-500/30 backdrop-blur-xl transition-all duration-300 hover:shadow-2xl hover:shadow-violet-500/20 active:scale-[0.99]"
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5">
+              {/* 左侧图标 */}
+              <div className="shrink-0 flex items-center justify-center w-14 h-14 rounded-xl bg-linear-to-br from-violet-500 to-blue-600 shadow-lg shadow-violet-500/30 ring-1 ring-white/20">
+                <Zap size={28} className="text-white" />
+              </div>
+              {/* 中部文案 */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-violet-500/20 border border-violet-400/40 text-violet-300 text-[11px] font-semibold uppercase tracking-wider">
+                    {t('dshBannerBadge')}
+                  </span>
+                  <span className="text-xs text-slate-400">DeepSeek Harness</span>
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-white leading-snug">
+                  {t('dshBannerTitle')}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300/90 mt-1 leading-relaxed">
+                  {t('dshBannerDesc')}
+                </p>
+              </div>
+              {/* 右侧 CTA */}
+              <div className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-linear-to-r from-violet-600 to-blue-600 group-hover:from-violet-500 group-hover:to-blue-500 text-white text-sm font-semibold transition-colors">
+                {t('dshBannerCta')}
+                <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+              </div>
+            </div>
+          </Link>
         </div>
 
         {/* 底部渐隐过渡 */}
