@@ -663,3 +663,72 @@ iftop
 ---
 
 **祝部署顺利！🚀**
+
+---
+
+## 馃З Phase 2/3 閮ㄧ讲琛ュ厖锛氱紪鎺掓湇鍔?+ 闅旂鎵ц鏈嶅姟
+
+> 鏈妭瑕嗙洊 DSH 杩佺Щ Phase 2锛坰killhub-workflow 缂栨帓鍐呮牳锛変笌 Phase 3锛坣vwax-executor 闅旂鎵ц锛夌殑閮ㄧ讲銆?> 瀹屾暣楠屾敹瑙?[DEPLOYMENT-ACCEPTANCE-REPORT.md](./DEPLOYMENT-ACCEPTANCE-REPORT.md)銆?
+### 鏂板 Dockerfile锛堜粨搴撴牴鐩綍锛?
+| 鏂囦欢 | 鐢ㄩ€?| 绔彛 |
+|---|---|---|
+| `Dockerfile.skillhub` | skillhub-workflow 缂栨帓鏈嶅姟锛坆etter-sqlite3 鍘熺敓缂栬瘧锛?| 3002 |
+| `Dockerfile.executor` | nvwax-executor 闅旂鎵ц worker锛堥浂渚濊禆锛?| 3010 |
+
+### docker-compose.yml 鏂板鏈嶅姟
+
+```yaml
+  # Phase 2 鈥?SkillHub Workflow Engine锛堢紪鎺掑唴鏍?+ YAML 宸ヤ綔娴侊級
+  skillhub:
+    build:
+      context: .
+      dockerfile: Dockerfile.skillhub
+    container_name: nvwax-skillhub
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DATABASE_PATH: /app/data/workflows.db
+    ports:
+      - "3002:3002"
+    volumes:
+      - skillhub_data:/app/data
+
+  # Phase 3 鈥?闅旂鎵ц worker锛坣vwax-executor锛岄浂渚濊禆锛?  executor:
+    build:
+      context: .
+      dockerfile: Dockerfile.executor
+    container_name: nvwax-executor
+    environment:
+      NODE_ENV: production
+      EXECUTOR_PORT: 3010
+      EXECUTOR_TOKEN: ${EXECUTOR_TOKEN:-}
+      EXECUTOR_ALLOWED_ROOTS: /app
+    ports:
+      - "3010:3010"
+```
+
+### backend 鏈嶅姟鏂板濮旀墭鐜鍙橀噺
+
+```yaml
+      # Phase 2/3 鈥?缂栨帓涓庢墽琛屽鎵?      WORKFLOW_API_URL: http://skillhub:3002/api
+      EXECUTOR_URL: http://executor:3010
+      EXECUTOR_TOKEN: ${EXECUTOR_TOKEN:-}
+```
+
+### 蹇呴厤鐜鍙橀噺
+
+| 鍙橀噺 | 璇存槑 |
+|---|---|
+| `DEEPSEEK_API_KEY` | 鏈夋晥 DeepSeek key锛?*妯″瀷宸茬粺涓€涓?`deepseek-v4-flash`**锛屽彲鐢?`LLM_DEFAULT_MODEL` 瑕嗙洊锛?|
+| `EXECUTOR_TOKEN` | nvwax-server 涓?executor **涓や晶涓€鑷寸殑鍏变韩 token**锛涙湭閰嶇疆鏃舵墽琛岃矾鐢?fail-closed 503 |
+| `WORKFLOW_API_URL` | 缂栨帓鏈嶅姟鍦板潃锛坈ompose 鍐?`http://skillhub:3002/api`锛?|
+| `EXECUTOR_URL` | 鎵ц鏈嶅姟鍦板潃锛坈ompose 鍐?`http://executor:3010`锛?|
+
+### 鍚姩涓庨獙璇?
+```bash
+# 鍏ㄦ爤锛? 鏈嶅姟锛歱ostgres + backend + frontend + redis + nginx + mailpit + skillhub + executor锛?docker compose up -d --build
+
+# 楠岃瘉
+curl http://localhost:3002/health          # skillhub 缂栨帓鏈嶅姟
+curl http://localhost:3010/health          # executor锛坱okenConfigured: true锛?curl http://localhost:3001/api/mcp/standard/health   # 鏍囧噯 MCP 绔偣锛? 宸ュ叿锛?```

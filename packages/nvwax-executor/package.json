@@ -1,0 +1,15 @@
+{
+  "name": "nvwax-executor",
+  "version": "1.0.0",
+  "description": "NvwaX isolated execution worker (mirrors dsh-headless + dsh-sandbox): sandboxed JS/shell/python execution over HTTP, zero-dependency.",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

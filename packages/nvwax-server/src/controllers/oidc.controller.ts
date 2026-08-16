@@ -96,6 +96,24 @@ class OidcController {
     // req.sessionUser 由 pcSessionService.middleware() 写入
     const sessionUser = req.sessionUser;
     if (sessionUser && sessionUser.id) {
+      // Sprint 2.12 — 共享账号治理：pc_session 只能代表"登录过"，
+      // 不代表账号仍处于可用状态；未激活（is_active=FALSE）的账号不得签发 code。
+      try {
+        const isActive = await userService.isUserActive(sessionUser.id);
+        if (!isActive) {
+          // 落回 portal 登录页（激活提示由 portal 展示）
+          const returnTo = req.originalUrl || '/oauth/authorize';
+          const loginUrl = `/portal/login/?redirectTo=${encodeURIComponent(returnTo)}`;
+          res.redirect(302, loginUrl);
+          return;
+        }
+      } catch {
+        // DB 异常按未激活处理（fail-closed），落回登录页
+        const returnTo = req.originalUrl || '/oauth/authorize';
+        const loginUrl = `/portal/login/?redirectTo=${encodeURIComponent(returnTo)}`;
+        res.redirect(302, loginUrl);
+        return;
+      }
       try {
         const effectiveScope = oidcService.verifyScope(params.scope || 'openid', client.allowed_scopes);
         const code = await oidcService.issueAuthorizationCode({
@@ -174,6 +192,23 @@ class OidcController {
     const result = await userService.login(email, password);
     if (!result) {
       this.renderLoginError(res, req.body, 'invalid email or password');
+      return;
+    }
+
+    // Sprint 2.12 — 共享账号治理：未激活账号禁止登录（必须走邮箱激活）
+    try {
+      const isActive = await userService.isUserActive(result.user.id);
+      if (!isActive) {
+        this.renderLoginError(
+          res,
+          req.body,
+          'account not activated — please click the activation link in your email',
+        );
+        return;
+      }
+    } catch {
+      // DB 异常 fail-closed：拒绝签发 code
+      this.renderLoginError(res, req.body, 'account status check failed — please try again later');
       return;
     }
 

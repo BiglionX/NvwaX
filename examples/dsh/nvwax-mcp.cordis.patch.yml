@@ -1,0 +1,71 @@
+# ============================================================
+# NvwaX MCP Server → DSH 接入配置示例（DSH 侧 patch 层）
+# ============================================================
+#
+# 用途：
+#   让 DeepSeek Harness（DSH）的 Agent 通过 MCP 客户端直接调用 NvwaX 的
+#   6 个能力工具（nvwax_search_agents / nvwax_design_team / nvwax_match_skills
+#   / nvwax_analyze_requirements / nvwax_get_best_practices / nvwax_register_agent）。
+#
+# 前置条件（重要）：
+#   1. NvwaX 侧必须先暴露【标准 MCP 端点】（见 docs/DSH-MCP-INTEGRATION.md，
+#      当前 packages/nvwax-server/src/mcp/nvwax-mcp-server.ts 的 /api/mcp/* 是
+#      自定义 HTTP JSON 协议，DSH 的标准 MCP 客户端无法直连）。
+#   2. 在目标 dsh profile 中安装 mcp-client 插件（在 DSH 安装目录执行）：
+#        dsh plugin --profile web add @deepseek-ai/dsh-mcp-client
+#
+# 使用方式（二选一）：
+#   A. 追加到 profile 的用户 patch 层：
+#        %DSH_HOME%\profiles\web\cordis.patch.yml   （追加本文件内容）
+#   B. 作为 --patch 覆盖层临时加载（不动 profile 文件）：
+#        dsh --profile web --patch ./examples/dsh/nvwax-mcp.cordis.patch.yml
+#
+# 说明：
+#   - patch 层是顶层 YAML 数组；`insert:` 表示把条目插入组合树（根级）。
+#   - `!!js` 表达式由 DSH 的 loader 求值，可引用 process.env。
+#   - 热更新：保存后 DSH 会自动断开/重连 MCP server，无需重启进程
+#     （前提：`dsh plugin` 安装的 HMR 在运行，且 serverName 不变则工具名不变）。
+# ============================================================
+
+- insert:
+    # ---- 方案一（推荐）：streamable-http 传输，连 NvwaX 的标准 MCP 端点 ----
+    - id: mcp-nvwax
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: nvwax                 # 工具名前缀 → mcp__nvwax__<rawName>
+        transport: streamable-http
+        url: http://localhost:3001/api/mcp/standard   # 与 NvwaX app.ts 挂载路径一致
+        # 鉴权头（可选）：NvwaX 侧如有 API Key 校验则放开下面两行
+        # headers:
+        #   Authorization: !!js '`Bearer ${process.env.NVWAX_MCP_TOKEN}`'
+        toolCallTimeoutMs: 120000         # 团队设计/需求分析可能较慢，放宽超时
+        failOnStartupError: false         # NvwaX 未启动时 DSH 照常启动，工具暂缺
+        reconnect:
+          enabled: true
+          initialDelayMs: 500
+          maxDelayMs: 30000
+          maxAttempts: 10
+
+    # ---- 方案二（备选）：stdio 传输，拉起 NvwaX 标准 MCP 的 stdio 入口 ----
+    # 适用于 NvwaX 与 DSH 部署在同一台机器、且不想开 HTTP 端口的情形。
+    # 需要先构建 NvwaX 标准 MCP stdio 入口（见 docs/DSH-MCP-INTEGRATION.md 的
+    # `mcp-stdio.ts`），并把命令/参数换成实际路径。
+    # - id: mcp-nvwax-stdio
+    #   name: '@deepseek-ai/dsh-mcp-client'
+    #   config:
+    #     serverName: nvwax
+    #     transport: stdio
+    #     command: node
+    #     args:
+    #       - D:/BigLionX/NvwaX/packages/nvwax-server/dist/mcp-stdio.js
+    #     cwd: D:/BigLionX/NvwaX/packages/nvwax-server
+    #     env:
+    #       NVWAX_MCP_TOKEN: !!js process.env.NVWAX_MCP_TOKEN
+    #     toolCallTimeoutMs: 120000
+    #     failOnStartupError: false
+
+# 验证（配置生效后）：
+#   1. NvwaX 标准 MCP 端点健康检查：
+#        curl http://localhost:3001/api/mcp/standard  （应返回 405 或 JSON-RPC 提示，而非 404）
+#   2. 在 DSH Web GUI 发起会话，模型即可看到并使用 mcp__nvwax__search_agents 等工具。
+#   3. 日志中应出现 "mcp-nvwax" 连接成功与工具同步条数（6 个工具）。

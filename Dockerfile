@@ -68,5 +68,5 @@ EXPOSE 3000 3001
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-# 启动命令
-CMD ["sh", "-c", "cd /app/packages/nvwax-server && node dist/index.js & cd /app/packages/nvwax-web && npx next start"]
+# 启动命令（后端入口为 dist/app.js，见 packages/nvwax-server/package.json start 脚本）
+CMD ["sh", "-c", "cd /app/packages/nvwax-server && node dist/app.js & cd /app/packages/nvwax-web && npx next start"]

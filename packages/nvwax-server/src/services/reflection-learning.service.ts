@@ -12,8 +12,8 @@
  */
 
 import { databaseService } from './database.service.js';
-import OpenAI from 'openai';
 import { tokenQuotaService } from './token-quota.service.js';
+import { llmService } from './llm/llm.service.js';
 
 // ============================================================
 // 类型定义
@@ -45,15 +45,9 @@ export interface ReflectionReport {
 // ============================================================
 
 export class ReflectionLearningService {
-  private openai: OpenAI | null = null;
-
   constructor() {
-    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
-    if (apiKey) {
-      this.openai = new OpenAI({
-        apiKey,
-        baseURL: process.env.OPENAI_BASE_URL || 'https://api.deepseek.com/v1'
-      });
+    if (!llmService.isConfigured) {
+      console.warn('⚠️ ReflectionLearning: DEEPSEEK_API_KEY not configured; reflection analysis will fail.');
     }
   }
 
@@ -164,7 +158,7 @@ export class ReflectionLearningService {
    * 使用 LLM 分析失败模式
    */
   private async analyzeFailurePatterns(cases: any[]): Promise<FailurePattern[]> {
-    if (!this.openai || cases.length === 0) {
+    if (!llmService.isConfigured || cases.length === 0) {
       return this.analyzeWithHeuristics(cases);
     }
 
@@ -183,8 +177,8 @@ export class ReflectionLearningService {
     }).join('\n\n');
 
     try {
-      const completion = await this.openai.chat.completions.create({
-        model: 'deepseek-chat',
+      const completion = await llmService.createCompletion({
+        model: 'deepseek-v4-flash',
         messages: [
           {
             role: 'system',
@@ -203,17 +197,18 @@ export class ReflectionLearningService {
           }
         ],
         temperature: 0.3,
-        max_tokens: 1000
+        maxTokens: 1000,
+        purpose: 'reflection'
       });
 
-      const content = completion.choices[0]?.message?.content || '';
-      const tokensUsed = completion.usage?.total_tokens || 0;
+      const content = completion.content;
+      const tokensUsed = completion.usage?.totalTokens || 0;
 
       if (tokensUsed > 0) {
         tokenQuotaService.checkAndDeductTokens('system-reflection', tokensUsed, {
           endpoint: '/reflection/analyze',
           sourceType: 'reflection_learning',
-          model: 'deepseek-chat',
+          model: 'deepseek-v4-flash',
           metadata: { caseCount: cases.length }
         }).catch(err => console.error('[TokenQuota] Failed to deduct tokens:', err));
       }

@@ -1,17 +1,19 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-import { skillhubClient } from './nodes/skillhub-client.js';
 import * as db from './database.js';
-import { ChatOpenAI } from '@langchain/openai';
-import { HumanMessage } from '@langchain/core/messages';
 import { orchestrator } from './agents/orchestrator.js';
 import { AGENT_TYPES } from './agents/agent-definitions.js';
-import { generateReviewPrompt } from './nodes/reviewer-prompts.js';
+// Phase 2 鈥?鑺傜偣瀹炵幇鎶藉彇鍒?engine/nodes.js锛坈ondition 鑺傜偣宸叉敼瀹夊叏姹傚€硷級
+import { nodeRegistry } from './engine/nodes.js';
+// Phase 2 鈥?缂栨帓鍐呮牳锛堥暅鍍?dsh-workflow锛? YAML 缈昏瘧
+import { runWorkflowScript } from './engine/workflow-engine.js';
+import { yamlWorkflowToScript } from './engine/yaml-to-script.js';
+import { YamlLoader } from './engine/yaml-loader.js';
 
 // Load environment variables
 dotenv.config();
@@ -20,7 +22,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+// Phase 2 鈥?榛樿绔彛瀵归綈 nvwax-server 鐨?WORKFLOW_API_URL锛堥粯璁?3002锛夛紝
+// 閬垮厤涓?nvwax-server 鑷韩榛樿绔彛 3001 鍚屾満鍐茬獊銆?
+const PORT = process.env.PORT || 3002;
 
 // Middleware
 app.use(cors());
@@ -33,7 +37,7 @@ if (!fs.existsSync(dataDir)) {
 }
 
 const dbPath = process.env.DATABASE_PATH || join(dataDir, 'workflows.db');
-console.log('✅ Database initialized at:', dbPath);
+console.log('鉁?Database initialized at:', dbPath);
 
 // ==================== Routes ====================
 
@@ -106,6 +110,71 @@ app.get('/api/workflows/templates/:id', (req, res) => {
     res.json({ success: true, data: { id: req.params.id, ...template } });
   } catch (error) {
     console.error('Error fetching template:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==================== Phase 2: 编排内核路由 ====================
+// 注意：必须注册在 /api/workflows/:id 之前，避免 'yaml' 被 :id 通配捕获。
+
+// 运行一段编排脚本（镜像 dsh-workflow 的 JS 编排入口）
+// POST /api/workflows/run-script  { script: string, args?: object }
+app.post('/api/workflows/run-script', async (req, res) => {
+  try {
+    const { script, args = {} } = req.body || {};
+    if (!script || typeof script !== 'string') {
+      return res.status(400).json({ success: false, error: 'script (string) is required' });
+    }
+    console.log('\n⚙️ Running workflow script (worker-thread isolated)...');
+    const result = await runWorkflowScript(script, args);
+    res.json({ success: true, result });
+  } catch (error) {
+    console.error('Workflow script execution failed:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 列出 YAML 定义的工作流
+// GET /api/workflows/yaml
+const yamlLoader = new YamlLoader(
+  join(__dirname, '..', 'agents'),
+  join(__dirname, '..', 'workflows')
+);
+app.get('/api/workflows/yaml', (req, res) => {
+  try {
+    const { workflows } = yamlLoader.loadAll();
+    res.json({
+      success: true,
+      data: workflows.map((w) => ({
+        id: w.workflow.id,
+        name: w.workflow.name,
+        description: w.workflow.description,
+        nodeCount: w.workflow.nodes.length,
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 执行 YAML 定义的工作流（翻译为编排脚本后在 worker 中运行）
+// POST /api/workflows/yaml/:id/execute  { args?: object }
+app.post('/api/workflows/yaml/:id/execute', async (req, res) => {
+  try {
+    const { workflows, agents } = yamlLoader.loadAll();
+    const definition = workflows.find((w) => w.workflow.id === req.params.id);
+    if (!definition) {
+      return res.status(404).json({ success: false, error: `YAML workflow not found: ${req.params.id}` });
+    }
+
+    const agentDefs = new Map(agents.map((a) => [a.agent.id, a]));
+    const script = yamlWorkflowToScript(definition, agentDefs);
+    console.log(`\n⚙️ Executing YAML workflow ${definition.workflow.id} via orchestration engine...`);
+
+    const result = await runWorkflowScript(script, req.body?.args || {});
+    res.json({ success: true, workflowId: definition.workflow.id, result });
+  } catch (error) {
+    console.error('YAML workflow execution failed:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -202,7 +271,7 @@ app.post('/api/orchestrate', async (req, res) => {
       return res.status(400).json({ error: 'Task description is required' });
     }
     
-    console.log('\n🎯 Received orchestration request:', task);
+    console.log('\n馃幆 Received orchestration request:', task);
     
     const result = await orchestrator.orchestrate(task);
     res.json(result);
@@ -227,7 +296,7 @@ app.post('/api/orchestrate/leader', async (req, res) => {
       });
     }
     
-    console.log('\n👑 Received Leader Agent orchestration request:', requirement);
+    console.log('\n馃憫 Received Leader Agent orchestration request:', requirement);
     
     const result = await orchestrator.orchestrateWithLeader(requirement, {
       workspace
@@ -271,7 +340,7 @@ app.post('/api/skills/analyze', async (req, res) => {
       });
     }
     
-    console.log('\n📊 Received skill analysis request');
+    console.log('\n馃搳 Received skill analysis request');
     console.log('Requirement:', userRequirement);
     console.log('Template:', templateId || 'None');
     
@@ -289,381 +358,6 @@ app.post('/api/skills/analyze', async (req, res) => {
     });
   }
 });
-
-// ==================== Node Types ====================
-
-// SkillHub Search Node (集成真实 API)
-async function skillhubSearchNode(params) {
-  const { query, limit = 10, page = 1 } = params;
-  
-  console.log('🔍 Searching SkillHub for:', query);
-  
-  try {
-    const result = await skillhubClient.searchSkills({ query, limit, page });
-    return result;
-  } catch (error) {
-    console.error('SkillHub search failed:', error.message);
-    return {
-      success: false,
-      error: error.message,
-      skills: []
-    };
-  }
-}
-
-// SkillHub Detail Node
-async function skillhubDetailNode(params) {
-  const { skillId } = params;
-  
-  console.log('📋 Getting skill detail:', skillId);
-  
-  try {
-    const result = await skillhubClient.getSkillDetail(skillId);
-    return result;
-  } catch (error) {
-    console.error('SkillHub detail failed:', error.message);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
-
-// Text Processing Node
-async function textProcessNode(params) {
-  const { text, operation } = params;
-  
-  switch (operation) {
-    case 'uppercase':
-      return { result: text.toUpperCase() };
-    case 'lowercase':
-      return { result: text.toLowerCase() };
-    case 'trim':
-      return { result: text.trim() };
-    default:
-      return { result: text };
-  }
-}
-
-// Condition Node
-async function conditionNode(params) {
-  const { condition, value } = params;
-  
-  // Simple condition evaluation
-  return {
-    passed: eval(condition) // Note: Use safer evaluation in production
-  };
-}
-
-// Semantic Search Node
-async function semanticSearchNode(params) {
-  const { query } = params;
-  
-  console.log('🔍 Semantic searching for:', query);
-  
-  try {
-    const result = await skillhubClient.semanticSearch(query);
-    return result;
-  } catch (error) {
-    console.error('Semantic search failed:', error.message);
-    return {
-      success: false,
-      error: error.message,
-      skills: []
-    };
-  }
-}
-
-// Tool Discovery Node
-async function toolDiscoveryNode(params) {
-  console.log('🛠️ Discovering available tools...');
-  
-  try {
-    const result = await skillhubClient.discoverTools();
-    return result;
-  } catch (error) {
-    console.error('Tool discovery failed:', error.message);
-    return {
-      success: false,
-      error: error.message,
-      tools: []
-    };
-  }
-}
-
-// Related Skills Node
-async function relatedSkillsNode(params) {
-  const { skillSlug, limit = 5 } = params;
-  
-  console.log('🔗 Getting related skills for:', skillSlug);
-  
-  try {
-    const result = await skillhubClient.getRelatedSkills(skillSlug, limit);
-    return result;
-  } catch (error) {
-    console.error('Related skills failed:', error.message);
-    return {
-      success: false,
-      error: error.message,
-      skills: []
-    };
-  }
-}
-
-// LLM Node - DeepSeek V4-Flash Integration
-async function llmNode(params) {
-  const { prompt, model: _model, temperature = 0.7 } = params;
-  
-  // 强制使用 deepseek-v4-flash 模型
-  const model = 'deepseek-v4-flash';
-  
-  console.log('🤖 Calling LLM with model:', model);
-  
-  // Check for DeepSeek API key
-  const hasDeepSeekKey = process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_API_KEY !== 'your_deepseek_api_key_here';
-  
-  if (!hasDeepSeekKey) {
-    console.warn('⚠️ DEEPSEEK_API_KEY not configured, returning mock response');
-    return {
-      response: 'This is a mock LLM response. Please configure DEEPSEEK_API_KEY in .env file.',
-      model: model
-    };
-  }
-  
-  try {
-    const chatModel = new ChatOpenAI({
-      modelName: model,
-      temperature: temperature,
-      openAIApiKey: process.env.DEEPSEEK_API_KEY,
-      configuration: {
-        baseURL: 'https://api.deepseek.com/v1'
-      }
-    });
-    
-    const response = await chatModel.invoke([new HumanMessage(prompt)]);
-    
-    return {
-      response: response.content,
-      model: model
-    };
-  } catch (error) {
-    console.error('LLM call failed:', error.message);
-    return {
-      response: `Error: ${error.message}`,
-      model: model,
-      error: error.message
-    };
-  }
-}
-
-// Agent Router Node
-async function agentRouterNode(params) {
-  const { input, agents = ['frontend', 'backend', 'database'] } = params;
-  
-  console.log('🎯 Routing task to appropriate agent...');
-  
-  // Use LLM to determine which agent should handle this
-  const routerPrompt = `
-    Analyze the following task and determine which specialized agent should handle it:
-    Task: ${input}
-    
-    Available agents: ${agents.join(', ')}
-    
-    Return only the most suitable agent name (one of: ${agents.join(', ')}).
-  `;
-  
-  try {
-    const llmResult = await llmNode({ prompt: routerPrompt });
-    const selectedAgent = llmResult.response.trim().toLowerCase();
-    
-    return {
-      selectedAgent,
-      originalInput: input
-    };
-  } catch (error) {
-    console.error('Agent routing failed:', error.message);
-    return {
-      selectedAgent: agents[0], // Default to first agent
-      originalInput: input,
-      error: error.message
-    };
-  }
-}
-
-// Data Transform Node
-async function dataTransformNode(params) {
-  const { data, operation } = params;
-  
-  console.log('🔄 Transforming data with operation:', operation);
-  
-  try {
-    switch (operation) {
-      case 'json_parse':
-        return { result: typeof data === 'string' ? JSON.parse(data) : data };
-      case 'json_stringify':
-        return { result: typeof data === 'object' ? JSON.stringify(data, null, 2) : data };
-      case 'extract_field':
-        const { field } = params;
-        return { result: data && data[field] !== undefined ? data[field] : null };
-      case 'uppercase':
-        return { result: typeof data === 'string' ? data.toUpperCase() : data };
-      case 'lowercase':
-        return { result: typeof data === 'string' ? data.toLowerCase() : data };
-      case 'trim':
-        return { result: typeof data === 'string' ? data.trim() : data };
-      default:
-        return { result: data };
-    }
-  } catch (error) {
-    console.error('Data transform failed:', error.message);
-    return {
-      result: null,
-      error: error.message
-    };
-  }
-}
-
-// Reviewer Node - Quality Gate
-async function reviewerNode(params) {
-  const { 
-    reviewType,        // 'team_design' | 'agent_match' | 'skill_match' | 'final_config' | 'nvwa_agent_config' | 'skill_dependency_check' | 'template_compatibility'
-    dataToReview,      // 待审查的数据
-    qualityCriteria,   // 质量标准配置
-    context           // 上下文信息
-  } = params;
-  
-  console.log(`🔍 Reviewing ${reviewType}...`);
-  
-  const prompt = generateReviewPrompt(reviewType, dataToReview, qualityCriteria);
-  
-  try {
-    const llmResult = await llmNode({ 
-      prompt, 
-      model: 'deepseek-v4-flash', 
-      temperature: parseFloat(process.env.REVIEWER_TEMPERATURE) || 0.2  // 低温度保证审查一致性
-    });
-    
-    // 尝试解析 JSON 响应
-    let review;
-    try {
-      const jsonMatch = llmResult.response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        review = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error('No valid JSON found in response');
-      }
-    } catch (parseError) {
-      console.error('Failed to parse review response:', parseError);
-      return {
-        reviewPassed: false,
-        issues: ['审查结果解析失败'],
-        suggestions: ['请重试或联系管理员'],
-        confidence: 0.0,
-        reviewDetails: { raw_response: llmResult.response }
-      };
-    }
-    
-    return {
-      reviewPassed: review.passed,
-      issues: review.issues || [],
-      suggestions: review.suggestions || [],
-      confidence: review.confidence || 0.8,
-      reviewDetails: review
-    };
-  } catch (error) {
-    console.error('Review failed:', error.message);
-    return {
-      reviewPassed: false,
-      issues: ['审查过程出错'],
-      suggestions: ['请重试或联系管理员'],
-      confidence: 0.0
-    };
-  }
-}
-
-// Parallel Search Node - Fan-out Pattern
-async function parallelSearchNode(params) {
-  const { 
-    searchTasks,     // 并行搜索任务数组
-    timeout = parseInt(process.env.PARALLEL_SEARCH_TIMEOUT) || 30000  // 超时时间（毫秒）
-  } = params;
-  
-  console.log(`⚡ Starting parallel search with ${searchTasks.length} tasks...`);
-  
-  const promises = searchTasks.map(async (task) => {
-    try {
-      const result = await Promise.race([
-        executeSearchTask(task),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout')), timeout)
-        )
-      ]);
-      
-      return {
-        taskId: task.id,
-        success: true,
-        result
-      };
-    } catch (error) {
-      console.warn(`⚠️ Search task ${task.id} failed:`, error.message);
-      return {
-        taskId: task.id,
-        success: false,
-        error: error.message
-      };
-    }
-  });
-  
-  const results = await Promise.all(promises);
-  
-  return {
-    totalTasks: searchTasks.length,
-    successfulTasks: results.filter(r => r.success).length,
-    failedTasks: results.filter(r => !r.success).length,
-    results: results.reduce((acc, r) => {
-      acc[r.taskId] = r;
-      return acc;
-    }, {})
-  };
-}
-
-// Helper function to execute individual search tasks
-async function executeSearchTask(task) {
-  switch (task.type) {
-    case 'github_search':
-      // TODO: Implement GitHub agent search
-      console.log('Searching GitHub for:', task.query);
-      return { source: 'github', query: task.query, results: [] };
-    case 'huggingface_search':
-      // TODO: Implement HuggingFace agent search
-      console.log('Searching HuggingFace for:', task.query);
-      return { source: 'huggingface', query: task.query, results: [] };
-    case 'skill_search':
-      return await skillhubClient.searchSkills({ 
-        query: task.query,
-        limit: task.limit || 10,
-        page: task.page || 1
-      });
-    default:
-      throw new Error(`Unknown search type: ${task.type}`);
-  }
-}
-
-// Node registry
-const nodeRegistry = {
-  'skillhub_search': skillhubSearchNode,
-  'skillhub_detail': skillhubDetailNode,
-  'semantic_search': semanticSearchNode,
-  'tool_discovery': toolDiscoveryNode,
-  'related_skills': relatedSkillsNode,
-  'llm': llmNode,
-  'text_process': textProcessNode,
-  'condition': conditionNode,
-  'agent_router': agentRouterNode,
-  'data_transform': dataTransformNode,
-  'reviewer': reviewerNode,
-  'parallel_search': parallelSearchNode
-};
 
 // ==================== Workflow Execution ====================
 
@@ -703,9 +397,9 @@ async function executeWorkflow(workflow, input) {
 // ==================== Start Server ====================
 
 app.listen(PORT, () => {
-  console.log(`🚀 SkillHub Workflow Engine running on http://localhost:${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`📝 API docs: http://localhost:${PORT}/api/workflows`);
+  console.log(`馃殌 SkillHub Workflow Engine running on http://localhost:${PORT}`);
+  console.log(`馃搳 Health check: http://localhost:${PORT}/health`);
+  console.log(`馃摑 API docs: http://localhost:${PORT}/api/workflows`);
 });
 
 // Export for use in orchestrator

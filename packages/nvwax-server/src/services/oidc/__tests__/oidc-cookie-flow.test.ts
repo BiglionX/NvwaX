@@ -12,6 +12,9 @@ const mockGetPool = jest.fn() as jest.Mock;
 const mockGetClient = jest.fn() as jest.Mock;
 const mockIssueAuthorizationCode = jest.fn() as jest.Mock;
 const mockVerifyScope = jest.fn() as jest.Mock;
+const mockIsUserActive = jest.fn() as jest.Mock;
+const mockGetUserById = jest.fn() as jest.Mock;
+const mockLogin = jest.fn() as jest.Mock;
 
 jest.unstable_mockModule('../../database.service.js', () => ({
   databaseService: { getPool: mockGetPool },
@@ -22,6 +25,15 @@ jest.unstable_mockModule('../../../services/oidc/oidc.service.js', () => ({
     getClient: mockGetClient,
     issueAuthorizationCode: mockIssueAuthorizationCode,
     verifyScope: mockVerifyScope,
+  },
+}));
+
+// Sprint 2.12 — 共享账号治理：authorizeGet 快路径现在校验 is_active
+jest.unstable_mockModule('../../../services/user.service.js', () => ({
+  userService: {
+    isUserActive: mockIsUserActive,
+    getUserById: mockGetUserById,
+    login: mockLogin,
   },
 }));
 
@@ -101,6 +113,10 @@ describe('oidcController.authorizeGet() — cookie fast-path (Task 2.10)', () =>
     mockGetClient.mockReset();
     mockIssueAuthorizationCode.mockReset();
     mockVerifyScope.mockReset();
+    mockIsUserActive.mockReset();
+    mockIsUserActive.mockImplementation(() => Promise.resolve(true));
+    mockGetUserById.mockReset();
+    mockLogin.mockReset();
     mockGetClient.mockImplementation(() => Promise.resolve({
       redirect_uris: ['https://rp.example.com/callback'],
       allowed_scopes: ['openid', 'profile', 'email'],
@@ -149,7 +165,40 @@ describe('oidcController.authorizeGet() — cookie fast-path (Task 2.10)', () =>
     });
   });
 
-  it('falls back to login form when no cookie is present', async () => {
+  it('302-redirects to account-portal login (NOT issue code) when pc_session user is inactive (Sprint 2.12)', async () => {
+    const issueRes = makeRes();
+    await pcSessionService.issue(issueRes, 'user_cookie_path');
+    const raw = (issueRes.headers['set-cookie'] || '').split(';')[0].split('=')[1];
+
+    const req: any = {
+      sessionUser: undefined,
+      cookies: { pc_session: raw },
+      headers: { cookie: `pc_session=${raw}` },
+      query: {
+        response_type: 'code',
+        client_id: 'proclaw-web',
+        redirect_uri: 'https://rp.example.com/callback',
+        scope: 'openid profile email',
+        state: 'ssostate',
+        code_challenge: 'whatever',
+        code_challenge_method: 'plain',
+        nonce: 'n-1',
+      },
+      secure: false,
+      originalUrl: '/oauth/authorize?response_type=code&client_id=proclaw-web',
+    };
+    const res = makeRes();
+    await pcSessionService.read(req);
+    mockIsUserActive.mockImplementation(() => Promise.resolve(false));
+    await oidcController.authorizeGet(req, res);
+
+    expect(mockIsUserActive).toHaveBeenCalledWith('user_cookie_path');
+    expect(mockIssueAuthorizationCode).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(302);
+    expect(res.headers['location']).toMatch(/^\/portal\/login\/\?redirectTo=/);
+  });
+
+  it('302-redirects to account-portal login page when no cookie is present (Sprint 2.10)', async () => {
     const req: any = {
       sessionUser: undefined,
       cookies: {},
@@ -164,12 +213,13 @@ describe('oidcController.authorizeGet() — cookie fast-path (Task 2.10)', () =>
         code_challenge_method: 'plain',
       },
       secure: false,
+      originalUrl: '/oauth/authorize?response_type=code&client_id=proclaw-web',
     };
     const res = makeRes();
     await oidcController.authorizeGet(req, res);
-    // Login form is HTML 200
-    expect(res.statusCode).toBe(200);
-    expect(typeof res.body === 'string' || Buffer.isBuffer(res.body)).toBe(true);
+    // Sprint 2.10: 未登录 → 302 到 account-portal 登录页（不再内联渲染 200 HTML 表单）
+    expect(res.statusCode).toBe(302);
+    expect(res.headers['location']).toMatch(/^\/portal\/login\/\?redirectTo=/);
     // issueAuthorizationCode should NOT have been called
     expect(mockIssueAuthorizationCode).not.toHaveBeenCalled();
   });

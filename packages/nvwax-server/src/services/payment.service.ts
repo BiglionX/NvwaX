@@ -51,7 +51,8 @@ export class PaymentService {
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (stripeKey) {
       this.stripe = new Stripe(stripeKey, {
-        apiVersion: '2026-05-27.dahlia'
+        // apiVersion 需与已安装 stripe 类型的 ApiVersion 联合对齐（stripe@22.5.0）
+        apiVersion: '2026-07-29.dahlia'
       });
       console.log('✅ Stripe configured');
     } else {

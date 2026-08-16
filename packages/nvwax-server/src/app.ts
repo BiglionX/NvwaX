@@ -16,6 +16,8 @@ import { databaseService } from './services/database.service.js';
 import { crawlerSchedulerService } from './services/crawler-scheduler.service.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.middleware.js';
 import { createMCPRouter } from './mcp/nvwax-mcp-server.js';
+import { createStandardMCPRouter } from './mcp/standard-mcp-server.js';
+import { initBuiltinSkills } from './services/skill/prompt-skills.bootstrap.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +25,9 @@ const PORTAL_STATIC_DIR = process.env.PORTAL_STATIC_DIR
   ?? path.resolve(__dirname, '../../account-portal/out');
 
 const app = express();
+
+// Phase 1 — 注册内置技能/提示词（幂等，幂等初始化）
+initBuiltinSkills();
 
 // Stripe webhook 需要 raw body，必须在 express.json() 之前
 app.use('/api/stripe/webhook', stripeWebhookRouter);
@@ -109,6 +114,8 @@ app.use(oidcRouter);
 app.use('/api/portal', portalRouter);
 // v2.2.0 — MCP (Model Context Protocol) 端点，支持外部 Agent 框架调用
 app.use('/api/mcp', createMCPRouter());
+// DSH 集成 — 标准 MCP streamable-http 端点（供 DeepSeek Harness 等标准 MCP 客户端调用）
+app.use('/api/mcp/standard', createStandardMCPRouter());
 app.use('/api', routes);
 
 // Health check

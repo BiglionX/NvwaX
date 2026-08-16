@@ -176,6 +176,22 @@ class PortalController {
       return;
     }
 
+    // Sprint 2.12 — 共享账号治理：未激活账号不允许登录/签发 pc_session
+    try {
+      const isActive = await userService.isUserActive(result.user.id);
+      if (!isActive) {
+        res.status(403).json({
+          code: 'inactive_account',
+          message: 'Please activate your account first — check your inbox for the activation email.',
+        });
+        return;
+      }
+    } catch {
+      // DB 异常 fail-closed
+      res.status(500).json({ code: 'server_error', message: 'Could not verify account status.' });
+      return;
+    }
+
     await pcSessionService.issue(res, result.user.id);
 
     // redirectTo must be a relative path to defend against open-redirect

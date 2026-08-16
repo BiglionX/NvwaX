@@ -5,7 +5,7 @@
   "description": "NvwaX - AI Agent Platform Monorepo",
   "scripts": {
     "dev": "pnpm --parallel dev",
-    "build": "pnpm --recursive --filter './packages/**' build || true",
+    "build": "pnpm --recursive --filter './packages/*' build || true",
     "build:web": "pnpm --filter nvwax-web build",
     "build:server": "pnpm --filter nvwax-server build",
     "build:portal": "pnpm --filter account-portal build",

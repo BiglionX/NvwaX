@@ -1,6 +1,6 @@
-import OpenAI from 'openai';
 import type { Agent } from './agent-search.service.js';
 import { tokenQuotaService } from './token-quota.service.js';
+import { llmService } from './llm/llm.service.js';
 
 // 用户ID常量 - 翻译服务作为系统级操作，使用内部服务账户
 const SYSTEM_USER_ID_FOR_TRANSLATION = 'system-translation-service';
@@ -12,8 +12,6 @@ const SYSTEM_USER_ID_FOR_TRANSLATION = 'system-translation-service';
  * 使用 DeepSeek API 批量翻译，带内存缓存避免重复翻译
  */
 class AgentTranslationService {
-  private openai: OpenAI | null = null;
-  
   /** 翻译缓存: key = agentId:field, value = translatedText */
   private translationCache = new Map<string, string>();
   
@@ -21,13 +19,8 @@ class AgentTranslationService {
   private pendingRequests = new Map<string, Promise<(string | null)[]>>();
 
   constructor() {
-    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
-    if (apiKey) {
-      this.openai = new OpenAI({
-        apiKey,
-        baseURL: 'https://api.deepseek.com/v1'
-      });
-      console.log('✅ Agent Translation: DeepSeek API configured');
+    if (llmService.isConfigured) {
+      console.log('✅ Agent Translation: DeepSeek API configured (via LlmService)');
     } else {
       console.warn('⚠️ Agent Translation: DEEPSEEK_API_KEY not configured. Translations disabled.');
     }
@@ -39,7 +32,7 @@ class AgentTranslationService {
    * @param locale 目标语言 ('zh')
    */
   async translateAgents(agents: Agent[], locale: string): Promise<void> {
-    if (locale !== 'zh' || !this.openai || agents.length === 0) {
+    if (locale !== 'zh' || !llmService.isConfigured || agents.length === 0) {
       return;
     }
 
@@ -116,7 +109,7 @@ class AgentTranslationService {
     items: Array<{ agentIndex: number; text: string; tagIndex?: number }>,
     fieldType: 'name' | 'description' | 'tag'
   ): Promise<void> {
-    if (!this.openai) return;
+    if (!llmService.isConfigured) return;
 
     // 构建翻译对
     const pairs = items.map((item, idx) => ({
@@ -177,7 +170,7 @@ class AgentTranslationService {
     pairs: Array<{ id: string; text: string }>,
     fieldType: 'name' | 'description' | 'tag'
   ): Promise<(string | null)[]> {
-    if (!this.openai) return pairs.map(() => null);
+    if (!llmService.isConfigured) return pairs.map(() => null);
 
     try {
       const textsJson = JSON.stringify(pairs.map(p => ({ id: p.id, text: p.text })), null, 2);
@@ -188,7 +181,7 @@ class AgentTranslationService {
         tag: `这些是 AI Agent 的标签(tags)，请翻译为简洁的中文标签（不超过8个字）。`,
       };
 
-      const response = await this.openai.chat.completions.create({
+      const completion = await llmService.createCompletion({
         model: 'deepseek-v4-flash',
         messages: [
           {
@@ -207,11 +200,12 @@ class AgentTranslationService {
           }
         ],
         temperature: 0.3,
-        max_tokens: 2000
+        maxTokens: 2000,
+        purpose: 'translation'
       });
 
       // 记录Token消耗
-      const totalTokens = response.usage?.total_tokens || 0;
+      const totalTokens = completion.usage?.totalTokens || 0;
       if (totalTokens > 0) {
         tokenQuotaService.checkAndDeductTokens(SYSTEM_USER_ID_FOR_TRANSLATION, totalTokens, {
           endpoint: '/api/agent-translation/batch',
@@ -221,13 +215,13 @@ class AgentTranslationService {
           metadata: {
             batchSize: pairs.length,
             fieldType,
-            prompt_tokens: response.usage?.prompt_tokens || 0,
-            completion_tokens: response.usage?.completion_tokens || 0
+            prompt_tokens: completion.usage?.promptTokens || 0,
+            completion_tokens: completion.usage?.completionTokens || 0
           }
         }).catch(err => console.error('[TokenQuota] Failed to record translation tokens:', err));
       }
 
-      const content = response.choices[0]?.message?.content;
+      const content = completion.content;
       if (!content) return pairs.map(() => null);
 
       // 解析 JSON 响应，兼容各种格式

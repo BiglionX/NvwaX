@@ -79,13 +79,19 @@ export interface SocialLoginResponse {
 }
 
 export const authApi = {
-  // 注册
+  /**
+   * @deprecated Sprint 2.12 — 站内注册已下线（统一走 account-portal /portal/register/）。
+   * 后端 /api/auth/register 已返回 410 Gone。保留定义仅为避免遗留调用点编译错误。
+   */
   register: async (email: string, password: string, name?: string): Promise<AuthResponse> => {
     const response = await api.post('/auth/register', { email, password, name });
     return response.data;
   },
 
-  // 登录
+  /**
+   * @deprecated Sprint 2.12 — 站内密码登录已下线（统一走 OIDC）。
+   * 后端 /api/auth/login 已返回 410 Gone。
+   */
   login: async (email: string, password: string): Promise<AuthResponse> => {
     const response = await api.post('/auth/login', { email, password });
     return response.data;

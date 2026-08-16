@@ -32,7 +32,8 @@ interface MCPToolResult {
 // Tool 执行器
 // ============================================================
 
-class MCPToolExecutor {
+// export：供 standard-mcp-server.ts（标准 MCP 适配层）复用
+export class MCPToolExecutor {
   
   /**
    * 执行 MCP Tool 调用

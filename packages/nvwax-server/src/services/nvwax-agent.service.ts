@@ -1,10 +1,3 @@
-import OpenAI from 'openai';
-import { 
-  NVWAX_SYSTEM_PROMPT,
-  REQUIREMENT_ANALYSIS_PROMPT,
-  TEAM_DESIGN_PROMPT,
-  AGENT_MATCHING_PROMPT
-} from '../prompts/nvwax-agent-prompt.js';
 import { agentCompatibilityService } from './agent-compatibility.service.js';
 import { skillMatchingService } from './skill-matching.service.js';
 import { ceoAgentGenerator, CEOConfig, TeamContext } from './ceo-agent-generator.service.js';
@@ -15,6 +8,8 @@ import {
   REQUIREMENT_ANALYSIS_SCHEMA,
   TEAM_DESIGN_SCHEMA
 } from './structured-output.service.js';
+import { llmService } from './llm/llm.service.js';
+import { skillRegistry } from './skill/skill-registry.service.js';
 
 /**
  * NvwaX 需求分析结果
@@ -127,17 +122,10 @@ export interface NvwaXResponse {
  * - 配置文档生成
  */
 export class NvwaXAgentService {
-  private openai: OpenAI | null = null;
-
   constructor() {
-    // 初始化 DeepSeek 客户端
-    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
-    if (apiKey) {
-      this.openai = new OpenAI({ 
-        apiKey,
-        baseURL: 'https://api.deepseek.com/v1'
-      });
-      console.log('✅ NvwaX: DeepSeek API configured');
+    // LLM 客户端统一走 LlmService
+    if (llmService.isConfigured) {
+      console.log('✅ NvwaX: DeepSeek API configured (via LlmService)');
     } else {
       console.warn('⚠️ NvwaX: DEEPSEEK_API_KEY not configured. Using mock responses.');
     }
@@ -148,7 +136,7 @@ export class NvwaXAgentService {
    */
   async analyzeRequirements(userInput: string, userId?: string): Promise<RequirementAnalysis> {
     try {
-      if (this.openai) {
+      if (llmService.isConfigured) {
         return await this.analyzeWithLLM(userInput, userId);
       } else {
         return this.getMockAnalysis(userInput);
@@ -163,15 +151,15 @@ export class NvwaXAgentService {
    * 使用 LLM 进行需求分析（Structured Output 模式）
    */
   private async analyzeWithLLM(userInput: string, userId?: string): Promise<RequirementAnalysis> {
-    if (!this.openai) {
-      throw new Error('OpenAI client not initialized');
+    if (!llmService.isConfigured) {
+      throw new Error('LLM client not initialized');
     }
 
-    const prompt = REQUIREMENT_ANALYSIS_PROMPT.replace('{{userInput}}', userInput);
+    const prompt = (await skillRegistry.resolve('nvwax.requirement-analysis')).replace('{{userInput}}', userInput);
 
     try {
       const result = await structuredOutputService.callWithSchema<RequirementAnalysis>({
-        model: 'deepseek-chat',
+        model: 'deepseek-v4-flash',
         temperature: 0.3,
         maxTokens: 500,
         systemPrompt: '你是一个专业的需求分析师，擅长从用户描述中提取关键信息。请严格按照 JSON Schema 格式输出分析结果。',
@@ -216,27 +204,28 @@ export class NvwaXAgentService {
    * 需求分析的 LLM 降级方案（当 structured output 完全失败时使用）
    */
   private async analyzeWithLLMFallback(userInput: string, userId?: string): Promise<RequirementAnalysis> {
-    if (!this.openai) {
+    if (!llmService.isConfigured) {
       return this.getMockAnalysis(userInput);
     }
 
-    const prompt = REQUIREMENT_ANALYSIS_PROMPT.replace('{{userInput}}', userInput);
+    const prompt = (await skillRegistry.resolve('nvwax.requirement-analysis')).replace('{{userInput}}', userInput);
 
     try {
-      const completion = await this.openai.chat.completions.create({
+      const completion = await llmService.createCompletion({
         model: 'deepseek-v4-flash',
         messages: [
           { role: 'system', content: '你是一个专业的需求分析师，擅长从用户描述中提取关键信息。请以 JSON 格式输出。' },
           { role: 'user', content: prompt }
         ],
         temperature: 0.3,
-        max_tokens: 500
+        maxTokens: 500,
+        purpose: 'conversation'
       });
 
-      const response = completion.choices[0]?.message?.content || '';
+      const response = completion.content;
 
-      if (userId && completion.usage?.total_tokens) {
-        tokenQuotaService.checkAndDeductTokens(userId, completion.usage.total_tokens, {
+      if (userId && completion.usage?.totalTokens) {
+        tokenQuotaService.checkAndDeductTokens(userId, completion.usage.totalTokens, {
           endpoint: '/aiteam-creation/analyze',
           sourceType: 'agent_factory',
           description: 'NvwaX 需求分析(fallback)',
@@ -325,7 +314,7 @@ export class NvwaXAgentService {
    */
   async designTeam(requirements: RequirementAnalysis, userId?: string): Promise<TeamDesign> {
     try {
-      if (this.openai) {
+      if (llmService.isConfigured) {
         return await this.designWithLLM(requirements, userId);
       } else {
         return this.getMockTeamDesign(requirements);
@@ -340,11 +329,11 @@ export class NvwaXAgentService {
    * 使用 LLM 设计团队（Structured Output 模式）
    */
   private async designWithLLM(requirements: RequirementAnalysis, userId?: string): Promise<TeamDesign> {
-    if (!this.openai) {
-      throw new Error('OpenAI client not initialized');
+    if (!llmService.isConfigured) {
+      throw new Error('LLM client not initialized');
     }
 
-    const prompt = TEAM_DESIGN_PROMPT
+    const prompt = (await skillRegistry.resolve('nvwax.team-design'))
       .replace('{{companyType}}', requirements.companyType)
       .replace('{{industry}}', requirements.industry || '未指定')
       .replace('{{responsibilities}}', requirements.responsibilities.join(', '))
@@ -354,7 +343,7 @@ export class NvwaXAgentService {
 
     try {
       const result = await structuredOutputService.callWithSchema<TeamDesign>({
-        model: 'deepseek-chat',
+        model: 'deepseek-v4-flash',
         temperature: 0.5,
         maxTokens: 1000,
         systemPrompt: '你是一个专业的团队架构师，擅长设计高效的AI团队结构。请严格按照 JSON Schema 格式输出设计方案。',

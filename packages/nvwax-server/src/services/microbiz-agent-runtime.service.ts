@@ -6,10 +6,10 @@
  */
 
 import { Pool } from 'pg';
-import OpenAI from 'openai';
 import { databaseService } from './database.service.js';
 import { microbizApiAdapter, PlatformCredentials, PublishContent } from './microbiz-api-adapter.service.js';
 import { tokenQuotaService } from './token-quota.service.js';
+import { llmService } from './llm/llm.service.js';
 
 // 系统级用户ID
 const SYSTEM_USER_ID_FOR_MICROBIZ = 'system-microbiz-agent';
@@ -41,24 +41,9 @@ export interface AgentExecutionResult {
 
 export class MicroBizAgentRuntime {
   private pool: Pool;
-  private openai: OpenAI | null = null;
 
   constructor(pool?: Pool) {
     this.pool = pool || databaseService.getPool();
-    this.initOpenAI();
-  }
-
-  /**
-   * 初始化 OpenAI 客户端
-   */
-  private initOpenAI() {
-    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
-    if (apiKey) {
-      this.openai = new OpenAI({
-        apiKey: apiKey,
-        baseURL: process.env.OPENAI_BASE_URL || 'https://api.deepseek.com'
-      });
-    }
   }
 
   /**
@@ -124,9 +109,9 @@ export class MicroBizAgentRuntime {
     let tokensUsed = 0;
 
     // 使用 LLM 生成内容
-    if (this.openai) {
+    if (llmService.isConfigured) {
       try {
-        const completion = await this.openai.chat.completions.create({
+        const completion = await llmService.createCompletion({
           model: 'deepseek-v4-flash',
           messages: [
             {
@@ -145,11 +130,12 @@ export class MicroBizAgentRuntime {
             }
           ],
           temperature: 0.8,
-          max_tokens: 1500
+          maxTokens: 1500,
+          purpose: 'conversation'
         });
 
-        const response = completion.choices[0]?.message?.content || '';
-        tokensUsed = completion.usage?.total_tokens || 0;
+        const response = completion.content;
+        tokensUsed = completion.usage?.totalTokens || 0;
 
         // 解析 JSON 响应
         try {
@@ -253,9 +239,9 @@ export class MicroBizAgentRuntime {
 
     if (autoReplyEnabled) {
       // 使用 LLM 生成回复
-      if (this.openai) {
+      if (llmService.isConfigured) {
         try {
-          const completion = await this.openai.chat.completions.create({
+          const completion = await llmService.createCompletion({
             model: 'deepseek-v4-flash',
             messages: [
               {
@@ -275,11 +261,12 @@ export class MicroBizAgentRuntime {
               }
             ],
             temperature: 0.6,
-            max_tokens: 500
+            maxTokens: 500,
+            purpose: 'conversation'
           });
 
-          reply = completion.choices[0]?.message?.content || null;
-          tokensUsed = completion.usage?.total_tokens || 0;
+          reply = completion.content || null;
+          tokensUsed = completion.usage?.totalTokens || 0;
         } catch (error: any) {
           console.error('[MicroBiz] Customer interaction LLM failed:', error.message);
           reply = `感谢您的留言！关于"${content?.substring(0, 20)}..."的问题，我们已经收到。我们的客服团队会尽快为您解答。`;

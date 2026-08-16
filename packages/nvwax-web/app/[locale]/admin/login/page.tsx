@@ -1,29 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Shield, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
+import { useEffect } from 'react';
+import { Shield, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
 /**
- * Sprint 2.11 — Admin 登录页面（OIDC 集成版）
- * 
- * 变更说明：
- * 1. 移除传统登录表单（username/password），直接走 OIDC
- * 2. 检查 OIDC session，已登录则重定向到 dashboard
- * 3. 未登录则显示 OIDC 登录按钮，点击后跳转到 account.proclaw.cc
- * 4. 支持 Social Login（Google、GitHub、Discord）
- * 
- * OIDC 流程：
- * - 点击"管理员登录" → 跳转到 OIDC 授权端点
- * - 后端回调时检查 userInfo.is_admin === true
- * - 通过后在 /api/auth/session 中返回 admin 权限
+ * Sprint 2.12 — Admin 登录页面（OIDC 集成版，修复版）
+ *
+ * 变更说明（相对 Sprint 2.11 手拼授权 URL 的实现）：
+ * 1. 删除手拼 /oidc/auth URL（该端点不存在，且未带 PKCE code_challenge，
+ *    导致授权必然失败）。现在直接复用 useAuth().login() → lib/oidc/login.startLogin，
+ *    与主站登录走同一套 PKCE + state 校验流程。
+ * 2. 管理员身份不依赖单独 client：回调后 IdP userinfo 会带 is_admin claim，
+ *    本页根据 userInfo.is_admin 决定放行 /admin/dashboard 还是提示权限不足。
+ * 3. 未登录时点击按钮 → OIDC 登录 → 回跳 /admin/dashboard。
+ *
+ * 注意：/admin/login 已在 middleware ALWAYS_PUBLIC 白名单，避免未登录访问时
+ * 被中间件先弹去 /login（那样按钮就永远到不了）。
  */
 
 export default function AdminLoginPage() {
-  const { isLoggedIn, userInfo, loading } = useAuth();
+  const { isLoggedIn, userInfo, loading, login } = useAuth();
   const router = useRouter();
-  const [redirecting, setRedirecting] = useState(false);
 
   // 已登录且是管理员 → 重定向到 dashboard
   useEffect(() => {
@@ -33,30 +32,13 @@ export default function AdminLoginPage() {
     }
   }, [loading, isLoggedIn, userInfo, router]);
 
-  // 跳转到 OIDC 授权端点
-  const handleOidcLogin = () => {
-    setRedirecting(true);
-    
-    // 构建 OIDC 授权 URL
-    const issuer = process.env.NEXT_PUBLIC_OIDC_ISSUER || 'https://account.proclaw.cc';
-    const clientId = process.env.NEXT_PUBLIC_OIDC_ADMIN_CLIENT_ID || 'nvwax-admin'; // 使用 admin 专用客户端
-    const redirectUri = encodeURIComponent(`${window.location.origin}/oauth/callback`); // 修正回调路径
-    const responseType = 'code';
-    const scope = 'openid profile email';
-    const state = Math.random().toString(36).substring(2, 15);
-    
-    // 存储 state 用于 CSRF 防护
-    sessionStorage.setItem('oidc_state', state);
-    
-    const authUrl = `${issuer}/oidc/auth?` +
-      `client_id=${clientId}` +
-      `&redirect_uri=${redirectUri}` +
-      `&response_type=${responseType}` +
-      `&scope=${encodeURIComponent(scope)}` +
-      `&state=${state}` +
-      `&prompt=login`; // 强制重新登录，确保管理员身份
-    
-    window.location.href = authUrl;
+  // 触发标准 OIDC 登录（PKCE + state），成功后回跳 /admin/dashboard
+  const handleOidcLogin = async () => {
+    try {
+      await login('/admin/dashboard');
+    } catch (err) {
+      console.error('[admin/login] OIDC login failed:', err);
+    }
   };
 
   // 加载中
@@ -115,10 +97,10 @@ export default function AdminLoginPage() {
           {/* OIDC 登录说明 */}
           <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <div className="flex items-start gap-3">
-              <CheckCircle className="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" size={20} />
+              <Shield className="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" size={20} />
               <div className="text-sm text-blue-700 dark:text-blue-300">
                 <p className="font-medium mb-1">统一认证中心</p>
-                <p>使用 account.proclaw.cc 的统一认证系统登录，支持邮箱登录和社交账号登录。</p>
+                <p>使用 account.proclaw.cc 的统一认证系统登录，支持邮箱登录和社交账号登录。管理员权限由系统后台按邮箱授权。</p>
               </div>
             </div>
           </div>
@@ -126,35 +108,11 @@ export default function AdminLoginPage() {
           {/* OIDC 登录按钮 */}
           <button
             onClick={handleOidcLogin}
-            disabled={redirecting}
-            className="w-full py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2"
           >
-            {redirecting ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                跳转中...
-              </>
-            ) : (
-              <>
-                <Shield size={20} />
-                管理员登录
-              </>
-            )}
+            <Shield size={20} />
+            管理员登录
           </button>
-
-          {/* 社交登录链接 */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">或使用社交账号登录</p>
-            <div className="flex justify-center gap-4">
-              <a
-                href={`${process.env.NEXT_PUBLIC_OIDC_ISSUER || 'https://account.proclaw.cc'}/portal/login?mode=login&redirectTo=${encodeURIComponent('/admin/dashboard')}`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors text-sm"
-              >
-                <ExternalLink size={16} />
-                社交登录
-              </a>
-            </div>
-          </div>
 
           {/* Footer */}
           <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">

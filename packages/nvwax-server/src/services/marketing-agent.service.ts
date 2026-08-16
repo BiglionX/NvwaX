@@ -1,8 +1,8 @@
 import { Pool } from 'pg';
-import OpenAI from 'openai';
 import { databaseService } from './database.service.js';
 import { apiKeyService } from './api-key.service.js';
 import { tokenQuotaService } from './token-quota.service.js';
+import { llmService } from './llm/llm.service.js';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -43,18 +43,10 @@ export interface ChatCompletionResponse {
 
 export class MarketingAgentService {
   private pool: Pool;
-  private openai: OpenAI | null;
 
   constructor() {
     this.pool = databaseService.getPool();
-    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY || '';
-    if (apiKey) {
-      this.openai = new OpenAI({
-        apiKey,
-        baseURL: 'https://api.deepseek.com/v1'
-      });
-    } else {
-      this.openai = null;
+    if (!llmService.isConfigured) {
       console.log('⚠️ No DeepSeek/OpenAI API key configured. Marketing agent will use mock responses.');
     }
   }
@@ -341,21 +333,22 @@ Provide:
     ];
 
     try {
-      if (!this.openai) {
-        throw new Error('OpenAI client not configured - no API key available');
+      if (!llmService.isConfigured) {
+        throw new Error('LLM client not configured - no API key available');
       }
       // 强制使用 deepseek-v4-flash 模型，禁止切换
-      const completion = await this.openai.chat.completions.create({
+      const completion = await llmService.createCompletion({
         model: 'deepseek-v4-flash',
         messages,
         temperature: request.temperature ?? 0.7,
-        max_tokens: request.max_tokens ?? 2000
+        maxTokens: request.max_tokens ?? 2000,
+        purpose: 'conversation'
       });
 
-      const response = completion.choices[0]?.message?.content || '';
-      const promptTokens = completion.usage?.prompt_tokens || 0;
-      const completionTokens = completion.usage?.completion_tokens || 0;
-      const totalTokens = completion.usage?.total_tokens || 0;
+      const response = completion.content;
+      const promptTokens = completion.usage?.promptTokens || 0;
+      const completionTokens = completion.usage?.completionTokens || 0;
+      const totalTokens = completion.usage?.totalTokens || 0;
 
       return { response, promptTokens, completionTokens, totalTokens };
     } catch (error) {

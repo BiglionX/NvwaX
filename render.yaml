@@ -2,8 +2,8 @@ services:
   - type: web
     name: nvwax-backend
     env: node
-    buildCommand: cd packages/nvwax-server && npm install && npm run build
-    startCommand: node packages/nvwax-server/dist/index.js
+    buildCommand: cd packages/nvwax-server && pnpm install && pnpm run build
+    startCommand: node packages/nvwax-server/dist/app.js
     rootDir: .
     healthCheckPath: /health
     envVars:

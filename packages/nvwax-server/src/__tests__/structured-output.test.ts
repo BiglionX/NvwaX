@@ -135,7 +135,7 @@ describe('StructuredOutputService', () => {
           schemaName: 'test',
           schema: { type: 'object', properties: {} }
         })
-      ).rejects.toThrow(/OpenAI client not initialized/);
+      ).rejects.toThrow(/LLM client not initialized/);
 
       // 恢复环境变量
       if (originalKey) process.env.DEEPSEEK_API_KEY = originalKey;

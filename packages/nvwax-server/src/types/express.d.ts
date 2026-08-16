@@ -28,6 +28,12 @@ declare global {
       user?: UserAuthInfo;
       admin?: AdminAuthInfo;
       currentUser?: CurrentUserInfo;
+      // Sprint 2 — pc-session middleware 写入；类型增强集中于此，
+      // 避免依赖 pc-session.middleware.ts 内部的 declare module 生效时机。
+      sessionUser?: {
+        id: string;
+        csrf: string;
+      };
     }
   }
 }

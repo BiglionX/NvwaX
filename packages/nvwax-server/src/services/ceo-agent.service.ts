@@ -1,13 +1,11 @@
-import OpenAI from 'openai';
 import { AiTeamCreationService } from './aiteam-creation.service.js';
 import { agentCompatibilityService, RoleRequirement } from './agent-compatibility.service.js';
 import { tokenQuotaService } from './token-quota.service.js';
-import { 
-  CEO_AGENT_SYSTEM_PROMPT,
+import {
   CEO_AGENT_INITIAL_MESSAGE,
-  ROLE_RECOMMENDATION_PROMPT,
-  REQUIREMENT_CONFIRMATION_PROMPT
 } from '../prompts/ceo-agent-prompt.js';
+import { llmService } from './llm/llm.service.js';
+import { skillRegistry } from './skill/skill-registry.service.js';
 
 export interface CEOResponse {
   message: string;
@@ -19,20 +17,14 @@ export interface CEOResponse {
 }
 
 export class CEOAgentService {
-  private openai: OpenAI | null = null;
   private creationService: AiTeamCreationService;
 
   constructor() {
     this.creationService = new AiTeamCreationService();
-    
-    // 初始化 DeepSeek 客户端（使用 OpenAI SDK，兼容 API）
-    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
-    if (apiKey) {
-      this.openai = new OpenAI({ 
-        apiKey,
-        baseURL: 'https://api.deepseek.com/v1' // DeepSeek API 端点
-      });
-      console.log('✅ DeepSeek API configured');
+
+    // LLM 客户端统一走 LlmService
+    if (llmService.isConfigured) {
+      console.log('✅ DeepSeek API configured (via LlmService)');
     } else {
       console.warn('⚠️ DEEPSEEK_API_KEY not configured. Using mock responses.');
     }
@@ -58,7 +50,7 @@ export class CEOAgentService {
       // 调用 LLM 生成回复
       let response: CEOResponse;
       
-      if (this.openai) {
+      if (llmService.isConfigured) {
         response = await this.callLLM(conversationHistory, userMessage, session.status, userId);
       } else {
         // 使用模拟响应（开发测试用）
@@ -87,13 +79,13 @@ export class CEOAgentService {
     currentStatus: string,
     userId?: string
   ): Promise<CEOResponse> {
-    if (!this.openai) {
-      throw new Error('OpenAI client not initialized');
+    if (!llmService.isConfigured) {
+      throw new Error('LLM client not initialized');
     }
 
-    // 构建消息数组
+    // 构建消息数组（系统提示词走 SkillRegistry）
     const messages: any[] = [
-      { role: 'system', content: CEO_AGENT_SYSTEM_PROMPT }
+      { role: 'system', content: await skillRegistry.resolve('ceo.system-prompt') }
     ];
 
     // 添加历史对话（最多保留最近 10 条）
@@ -104,25 +96,26 @@ export class CEOAgentService {
     messages.push({ role: 'user', content: userMessage });
 
     try {
-      const completion = await this.openai.chat.completions.create({
+      const completion = await llmService.createCompletion({
         model: 'deepseek-v4-flash',
         messages,
         temperature: 0.7,
-        max_tokens: 1000
+        maxTokens: 1000,
+        purpose: 'conversation'
       });
 
-      const assistantMessage = completion.choices[0]?.message?.content || '';
+      const assistantMessage = completion.content;
 
-      // 从 DeepSeek 响应中获取真实 Token 消耗并记录
-      if (userId && completion.usage?.total_tokens) {
-        tokenQuotaService.checkAndDeductTokens(userId, completion.usage.total_tokens, {
+      // 从响应中获取真实 Token 消耗并记录
+      if (userId && completion.usage?.totalTokens) {
+        tokenQuotaService.checkAndDeductTokens(userId, completion.usage.totalTokens, {
           endpoint: '/aiteam-creation/ceo-agent',
           sourceType: 'ceo_agent',
           description: 'CEO Agent 对话',
           model: 'deepseek-v4-flash',
           metadata: {
-            prompt_tokens: completion.usage.prompt_tokens,
-            completion_tokens: completion.usage.completion_tokens
+            prompt_tokens: completion.usage.promptTokens,
+            completion_tokens: completion.usage.completionTokens
           }
         }).catch(err => console.error('[TokenQuota] Failed to deduct tokens for CEO Agent:', err));
       }

@@ -11,6 +11,12 @@
  *   - 标记: HttpOnly, SameSite=Lax, Path=/
  *   - Secure: 仅生产环境
  *   - Max-Age: 24 小时
+ *
+ * Sprint 2.12 变更：
+ *   - SameSite 由 None 改回 Lax：该 cookie 只被同源前端消费（fetch /api/auth/*），
+ *     不需要跨站发送；None 反而要求 Secure，在 http 开发环境会被浏览器拒绝。
+ *   - POST 增加服务端校验：用 access_token 调 IdP userinfo 验证 token 真实性，
+ *     并把服务端拉取的 userInfo 作为权威数据写入 cookie（不再信任客户端提交的 userInfo）。
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -46,7 +52,7 @@ function buildCookieOptions() {
   return {
     httpOnly: true,
     secure: isProd(),
-    sameSite: 'none' as const,  // Sprint 2.10: 跨域 SSO（skillhub-web 等外部 RP）需要 SameSite=None
+    sameSite: 'lax' as const,  // Sprint 2.12: 同源消费，无需 None（None 在 http dev 会被浏览器拒绝）
     path: '/',
     maxAge: COOKIE_MAX_AGE,
   };
@@ -56,7 +62,7 @@ function buildClearCookieOptions() {
   return {
     httpOnly: true,
     secure: isProd(),
-    sameSite: 'none' as const,  // Sprint 2.10: 跨域 SSO（skillhub-web 等外部 RP）需要 SameSite=None
+    sameSite: 'lax' as const,
     path: '/',
     maxAge: 0,
   };
@@ -77,6 +83,29 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 400 },
     );
   }
+
+  // ── Sprint 2.12：服务端校验 access_token 真实性 ──
+  // 浏览器在回调里直接拿 code 换了 token，再 POST 到这里；若不做校验，
+  // 任何人都能伪造 accessToken + userInfo（含 is_admin）写入 cookie。
+  // 这里用 access_token 调 IdP userinfo 验证，并把服务端拉取的 userInfo
+  // 作为权威数据覆盖客户端提交的值。
+  let verifiedUserInfo: OidcUserInfo;
+  try {
+    verifiedUserInfo = await fetchUserInfo(body.accessToken);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json(
+      { error: 'invalid_grant', error_description: `access_token verification failed: ${msg}` },
+      { status: 401 },
+    );
+  }
+  if (verifiedUserInfo.sub !== body.userInfo?.sub) {
+    return NextResponse.json(
+      { error: 'invalid_grant', error_description: 'userinfo sub mismatch with client-supplied userInfo' },
+      { status: 401 },
+    );
+  }
+  body.userInfo = verifiedUserInfo;
 
   try {
     const encrypted = await encryptForCookie(JSON.stringify(body));

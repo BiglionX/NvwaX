@@ -10,7 +10,7 @@
  * 3. fallback mode - 兼容，正则提取 + 重试
  */
 
-import OpenAI from 'openai';
+import { llmService } from './llm/llm.service.js';
 
 // ============================================================
 // JSON Schema 定义
@@ -165,15 +165,11 @@ export interface StructuredCallResult<T> {
  * 封装 LLM 调用 + JSON Schema 约束 + 自动重试逻辑
  */
 export class StructuredOutputService {
-  private openai: OpenAI | null = null;
-
   constructor() {
-    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
-    if (apiKey) {
-      this.openai = new OpenAI({
-        apiKey,
-        baseURL: process.env.OPENAI_BASE_URL || 'https://api.deepseek.com/v1'
-      });
+    if (llmService.isConfigured) {
+      console.log('✅ StructuredOutput: DeepSeek API configured (via LlmService)');
+    } else {
+      console.warn('⚠️ StructuredOutput: DEEPSEEK_API_KEY not configured. Structured output disabled.');
     }
   }
 
@@ -186,12 +182,12 @@ export class StructuredOutputService {
    * 3. fallback（正则提取 + 重试）
    */
   async callWithSchema<T>(options: StructuredCallOptions): Promise<StructuredCallResult<T>> {
-    if (!this.openai) {
-      throw new Error('OpenAI client not initialized. Check DEEPSEEK_API_KEY or OPENAI_API_KEY.');
+    if (!llmService.isConfigured) {
+      throw new Error('LLM client not initialized. Check DEEPSEEK_API_KEY or OPENAI_API_KEY.');
     }
 
     const {
-      model = 'deepseek-chat',
+      model = 'deepseek-v4-flash',
       temperature = 0.3,
       maxTokens = 2000,
       systemPrompt = '你是一个专业的 AI 助手，请严格按照要求的 JSON 格式输出。',
@@ -241,26 +237,27 @@ export class StructuredOutputService {
     schemaName: string;
     schema: Record<string, unknown>;
   }): Promise<StructuredCallResult<T>> {
-    const completion = await this.openai!.chat.completions.create({
+    const result = await llmService.createCompletion({
       model: opts.model,
       messages: [
         { role: 'system', content: opts.systemPrompt },
         { role: 'user', content: opts.userPrompt }
       ],
       temperature: opts.temperature,
-      max_tokens: opts.maxTokens,
-      response_format: {
+      maxTokens: opts.maxTokens,
+      responseFormat: {
         type: 'json_schema',
         json_schema: {
           name: opts.schemaName,
           schema: opts.schema,
           strict: true
         }
-      }
-    } as any);  // DeepSeek 可能不完全匹配 OpenAI 类型
+      },
+      purpose: 'structured'
+    });
 
-    const content = completion.choices[0]?.message?.content || '';
-    const tokensUsed = completion.usage?.total_tokens || 0;
+    const content = result.content;
+    const tokensUsed = result.usage?.totalTokens || 0;
 
     if (!content) {
       throw new Error('Empty response from json_schema mode');
@@ -285,19 +282,20 @@ export class StructuredOutputService {
     // 在 system prompt 中注入 schema 描述，引导 LLM 输出正确结构
     const schemaHint = `\n\n请严格按照以下 JSON 结构输出，不要包含任何额外文字：\n${JSON.stringify(opts.schema, null, 2)}`;
 
-    const completion = await this.openai!.chat.completions.create({
+    const result = await llmService.createCompletion({
       model: opts.model,
       messages: [
         { role: 'system', content: opts.systemPrompt + schemaHint },
         { role: 'user', content: opts.userPrompt }
       ],
       temperature: opts.temperature,
-      max_tokens: opts.maxTokens,
-      response_format: { type: 'json_object' }
+      maxTokens: opts.maxTokens,
+      responseFormat: { type: 'json_object' },
+      purpose: 'structured'
     });
 
-    const content = completion.choices[0]?.message?.content || '';
-    const tokensUsed = completion.usage?.total_tokens || 0;
+    const content = result.content;
+    const tokensUsed = result.usage?.totalTokens || 0;
 
     if (!content) {
       throw new Error('Empty response from json_object mode');
@@ -331,15 +329,16 @@ export class StructuredOutputService {
 
     for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
       try {
-        const completion = await this.openai!.chat.completions.create({
+        const result = await llmService.createCompletion({
           model: opts.model,
           messages,
           temperature: opts.temperature,
-          max_tokens: opts.maxTokens
+          maxTokens: opts.maxTokens,
+          purpose: 'structured'
         });
 
-        const content = completion.choices[0]?.message?.content || '';
-        const tokensUsed = completion.usage?.total_tokens || 0;
+        const content = result.content;
+        const tokensUsed = result.usage?.totalTokens || 0;
 
         if (!content) {
           throw new Error('Empty response');

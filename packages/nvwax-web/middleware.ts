@@ -59,6 +59,9 @@ const ALWAYS_PUBLIC = new Set([
   '/terms',
   '/privacy',
   '/about',
+  // Sprint 2.12: admin 登录页本身必须公开——否则未登录访问 /admin/login 会先被
+  // 中间件弹去 /login，admin 登录按钮永远到不了（管理员登录走同一套 OIDC 流程）。
+  '/admin/login',
 ]);
 
 function isStaticAsset(pathname: string): boolean {

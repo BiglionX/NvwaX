@@ -34,6 +34,28 @@ ENV NEXT_PUBLIC_GITHUB_CLIENT_ID=${NEXT_PUBLIC_GITHUB_CLIENT_ID}
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
 
+# OIDC / SSO 环境变量（浏览器侧需要，必须 NEXT_PUBLIC_ 前缀并在构建期烤进 bundle）
+ARG NEXT_PUBLIC_OIDC_ISSUER=https://account.proclaw.cc
+ENV NEXT_PUBLIC_OIDC_ISSUER=${NEXT_PUBLIC_OIDC_ISSUER}
+
+ARG NEXT_PUBLIC_OIDC_CLIENT_ID=proclaw-web
+ENV NEXT_PUBLIC_OIDC_CLIENT_ID=${NEXT_PUBLIC_OIDC_CLIENT_ID}
+
+ARG NEXT_PUBLIC_OIDC_REDIRECT_URI=https://nvwax.proclaw.cc/oauth/callback
+ENV NEXT_PUBLIC_OIDC_REDIRECT_URI=${NEXT_PUBLIC_OIDC_REDIRECT_URI}
+
+ARG NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI=https://nvwax.proclaw.cc
+ENV NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI=${NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI}
+
+ARG NEXT_PUBLIC_OIDC_SCOPE=openid profile email
+ENV NEXT_PUBLIC_OIDC_SCOPE=${NEXT_PUBLIC_OIDC_SCOPE}
+
+ARG NEXT_PUBLIC_OIDC_ADMIN_CLIENT_ID=nvwax-admin
+ENV NEXT_PUBLIC_OIDC_ADMIN_CLIENT_ID=${NEXT_PUBLIC_OIDC_ADMIN_CLIENT_ID}
+
+ARG NEXT_PUBLIC_SITE_URL=https://nvwax.proclaw.cc
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+
 RUN pnpm build
 
 # Production stage for frontend
@@ -71,6 +93,18 @@ EXPOSE 3000
 
 ENV NODE_ENV=production
 ENV PORT=3000
+
+# OIDC 运行期配置（服务端路由读 process.env；docker-compose environment 会覆盖这些默认值）
+# OIDC_SESSION_SECRET 是 session cookie 加密密钥，绝不能烤进镜像，必须运行期注入：
+#   openssl rand -base64 32
+ENV OIDC_SESSION_SECRET=
+ENV NEXT_PUBLIC_OIDC_ISSUER=https://account.proclaw.cc
+ENV NEXT_PUBLIC_OIDC_CLIENT_ID=proclaw-web
+ENV NEXT_PUBLIC_OIDC_REDIRECT_URI=https://nvwax.proclaw.cc/oauth/callback
+ENV NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI=https://nvwax.proclaw.cc
+ENV NEXT_PUBLIC_OIDC_SCOPE=openid profile email
+ENV NEXT_PUBLIC_OIDC_ADMIN_CLIENT_ID=nvwax-admin
+ENV NEXT_PUBLIC_SITE_URL=https://nvwax.proclaw.cc
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1

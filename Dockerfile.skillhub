@@ -1,0 +1,39 @@
+# SkillHub Workflow Engine (Phase 2) — 编排内核 + YAML 工作流
+# 依赖 better-sqlite3（需原生编译）与 LangChain/DeepSeek
+
+FROM node:20-alpine AS skillhub-builder
+
+WORKDIR /app/packages/skillhub-workflow
+
+# 原生模块编译工具（better-sqlite3）
+RUN apk add --no-cache python3 py3-pip make g++
+
+# 先装依赖（利用层缓存）
+COPY packages/skillhub-workflow/package.json ./
+RUN npm install --omit=dev --no-audit --no-fund
+
+FROM node:20-alpine
+
+WORKDIR /app/packages/skillhub-workflow
+
+ENV NODE_ENV=production
+ENV PORT=3002
+
+# 运行时同样需要编译工具（better-sqlite3 的 prebuilt 兜底）
+RUN apk add --no-cache python3 make g++
+
+COPY --from=skillhub-builder /app/packages/skillhub-workflow/node_modules ./node_modules
+COPY packages/skillhub-workflow/src ./src
+COPY packages/skillhub-workflow/agents ./agents
+COPY packages/skillhub-workflow/workflows ./workflows
+COPY packages/skillhub-workflow/package.json ./
+
+# 数据目录（better-sqlite3 数据库文件）
+RUN mkdir -p /app/data && chmod -R 777 /app/data
+
+EXPOSE 3002
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3002/health || exit 1
+
+CMD ["node", "src/server.js"]

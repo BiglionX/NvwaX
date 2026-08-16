@@ -10,7 +10,7 @@ import { useTranslations, useLocale } from 'next-intl';
 export default function BountyDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const id = (params?.id ?? '') as string;
   const t = useTranslations('bountyDetail');
   const locale = useLocale();
 

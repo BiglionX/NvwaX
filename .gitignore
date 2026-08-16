@@ -157,3 +157,11 @@ PASSWORD_RECORD.md
 # Playwright / test runners leave behind result directories at any depth.
 /test-results/
 /packages/*/test-results/
+
+# 部署/验证用的一次性产物（不入库）
+/backend-dist-new.zip
+/portal-out-new.zip
+/portal-deploy.sh
+/portal-runner.sh
+/create-test-client.sql
+/*.zip

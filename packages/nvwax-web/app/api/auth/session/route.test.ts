@@ -167,6 +167,9 @@ beforeEach(() => {
   fetchUserInfoMock.mockReset();
 
   encryptForCookieMock.mockImplementation(async (plain: string) => `encrypted:${plain.length}`);
+  // Sprint 2.12: POST 现在会服务端校验 access_token（fetchUserInfo），
+  // 默认让它通过（sub 与 makeSession() 的 userInfo.sub 一致）。
+  fetchUserInfoMock.mockResolvedValue({ sub: 'u-1', email: 'u@test.com', name: 'Test' });
 });
 
 afterEach(() => {
@@ -225,9 +228,38 @@ describe('POST /api/auth/session', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect((body as Record<string, boolean>).ok).toBe(true);
+    expect(fetchUserInfoMock).toHaveBeenCalledWith('at-secret'); // 服务端校验 access_token
     expect(encryptForCookieMock).toHaveBeenCalledTimes(1);
     const cookies = getCookies(res);
     expect(cookies._has(COOKIE_NAME)).toBe(true);
+  });
+
+  it('服务端 userinfo 校验失败（token 无效）→ 401 invalid_grant，不写 cookie', async () => {
+    fetchUserInfoMock.mockRejectedValue(new OidcClientError('invalid_grant', 'invalid or expired access_token'));
+    const payload = makeSession();
+    const req = fakeNextRequest({
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    const res = await POST(req as never);
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect((body as Record<string, string>).error).toBe('invalid_grant');
+    expect(encryptForCookieMock).not.toHaveBeenCalled();
+    const cookies = getCookies(res);
+    expect(cookies._has(COOKIE_NAME)).toBe(false);
+  });
+
+  it('userinfo sub 与客户端提交不一致 → 401 invalid_grant', async () => {
+    fetchUserInfoMock.mockResolvedValue({ sub: 'other-user', email: 'x@test.com' });
+    const payload = makeSession();
+    const req = fakeNextRequest({
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    const res = await POST(req as never);
+    expect(res.status).toBe(401);
+    expect(encryptForCookieMock).not.toHaveBeenCalled();
   });
 
   it('cookie options 含 httpOnly / sameSite / path / maxAge', async () => {

@@ -1,0 +1,22 @@
+# NvwaX 隔离执行 worker (Phase 3) — 零依赖 node:http
+# 不执行任何 npm install；仅拷贝源码运行
+
+FROM node:20-alpine
+
+WORKDIR /app/packages/nvwax-executor
+
+ENV NODE_ENV=production
+ENV EXECUTOR_PORT=3010
+
+COPY packages/nvwax-executor/package.json ./
+COPY packages/nvwax-executor/src ./src
+
+# 允许执行的工作区根（容器内工作目录；默认已含 cwd 及其上两级）
+ENV EXECUTOR_ALLOWED_ROOTS=/app
+
+EXPOSE 3010
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3010/health || exit 1
+
+CMD ["node", "src/server.js"]

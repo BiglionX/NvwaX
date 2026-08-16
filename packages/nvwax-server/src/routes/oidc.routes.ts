@@ -35,8 +35,13 @@ router.post(
   oidcController.authorizePost,
 );
 
-// Token 端点（防爆破）
-router.post('/oauth/token', loginRateLimiter, oidcController.token);
+// Token 端点
+// Sprint 2.12：不再挂 loginRateLimiter（5 次/5 分钟/IP）。
+// 该限流本意是防密码爆破，但每次 OIDC 登录都要打一次 /oauth/token，
+// 同 IP 下多人登录就会误伤全体（e2e 曾因此 429 锁死）。
+// authorization_code 单次有效 + 短 TTL + PKCE 绑定、refresh_token 轮换，
+// 已足以防滥用；密码爆破防护保留在 /oauth/authorize POST 与 /api/portal/login 等登录端点。
+router.post('/oauth/token', oidcController.token);
 
 // UserInfo 端点（Bearer 鉴权）
 router.get('/oauth/userinfo', oidcController.userinfo);

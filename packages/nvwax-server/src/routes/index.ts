@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { Request, Response } from 'express';
 import { searchController } from '../controllers/search.controller.js';
 import { projectController } from '../controllers/project.controller.js';
 import { userController } from '../controllers/user.controller.js';
@@ -28,11 +29,26 @@ import downloadRouter from './download.routes.js';
 import aiSearchRouter from './ai-search.routes.js';
 import microbizRouter from './microbiz.routes.js';
 import capabilitiesRouter from './capabilities.routes.js';
+import executionRouter from './execution.routes.js';
 import actionRouter from './action.routes.js';
 import recommendationRouter from './recommendation.routes.js';
 import oidcAdminRouter from './oidc-admin.routes.js';
 
 const router = Router();
+
+/**
+ * Sprint 2.12 — 共享账号治理：遗留 JWT 密码入口已关闭。
+ * 注册/登录统一走 account-portal（/api/portal/*）→ OIDC（/oauth/*）。
+ * 旧入口问题：弱密码策略、不校验 is_active、签发 HS256 JWT 绕过统一会话，
+ * 会在共享 users 表里产生规则外的账号。
+ */
+function legacyAuthGone(_req: Request, res: Response): void {
+  res.status(410).json({
+    error: 'gone',
+    message:
+      'This legacy auth endpoint is closed. Please use the account portal (/portal/register, /portal/login) and OIDC instead.',
+  });
+}
 
 // Search routes
 router.get('/search/agents', searchController.searchAgents);
@@ -87,8 +103,10 @@ router.post('/user/token/create-stripe-session', userController.createStripeChec
 router.get('/user/token/payment-configs', userController.getPaymentConfigs);
 
 // User authentication routes (with rate limiting)
-router.post('/auth/register', loginRateLimiter, userAuthController.register);
-router.post('/auth/login', loginRateLimiter, userAuthController.login);
+// Sprint 2.12: /auth/register 与 /auth/login 已关闭（410 Gone）——
+// 注册/登录统一走 account-portal + OIDC。保留 /auth/profile（读当前用户）。
+router.post('/auth/register', legacyAuthGone);
+router.post('/auth/login', legacyAuthGone);
 router.post('/auth/proclaw-cross-auth', userAuthController.proclawCrossAuth);
 router.get('/auth/profile', userAuthController.getProfile);
 
@@ -175,6 +193,9 @@ router.use('/microbiz', microbizRouter);
 
 // V2 Capabilities routes (行业插件能力注册)
 router.use('/v2/capabilities', capabilitiesRouter);
+
+// Phase 3 — 执行委托（仅管理员，委托给隔离的 nvwax-executor）
+router.use('/execution', executionRouter);
 
 // V2 Agent Action routes (Agent Action 验证)
 router.use('/v2/agents', actionRouter);

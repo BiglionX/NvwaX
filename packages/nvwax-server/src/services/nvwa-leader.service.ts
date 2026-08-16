@@ -1,8 +1,8 @@
 import { Pool } from 'pg';
 import { v4 as uuidv4 } from 'uuid';
-import OpenAI from 'openai';
 import { tokenQuotaService } from './token-quota.service.js';
 import { structuredOutputService, TEAM_GENERATION_SCHEMA } from './structured-output.service.js';
+import { llmService } from './llm/llm.service.js';
 
 // 系统级用户ID用于LLM生成成本
 const SYSTEM_USER_ID_FOR_LLM = 'system-nvwa-leader';
@@ -15,24 +15,9 @@ const SYSTEM_USER_ID_FOR_LLM = 'system-nvwa-leader';
  */
 export class NvwaLeaderService {
   private pool: Pool;
-  private openai: OpenAI | null = null;
 
   constructor(pool: Pool) {
     this.pool = pool;
-    this.initOpenAI();
-  }
-
-  /**
-   * 初始化 OpenAI 客户端
-   */
-  private initOpenAI() {
-    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
-    if (apiKey) {
-      this.openai = new OpenAI({
-        apiKey: apiKey,
-        baseURL: process.env.OPENAI_BASE_URL || 'https://api.deepseek.com'
-      });
-    }
   }
 
   /**
@@ -51,7 +36,7 @@ export class NvwaLeaderService {
     console.log(`🤖 Generating ${isAiTeam ? 'AiTeam' : 'team'} configuration from Nvwa data...`);
     
     // 使用 LLM 生成配置
-    if (this.openai) {
+    if (llmService.isConfigured) {
       console.log('🤖 Using LLM to generate team configuration...');
       return await this.generateWithLLM(nvwaData, isAiTeam);
     }
@@ -81,7 +66,7 @@ export class NvwaLeaderService {
     
     try {
       const result = await structuredOutputService.callWithSchema<any>({
-        model: 'deepseek-chat',
+        model: 'deepseek-v4-flash',
         temperature: 0.7,
         maxTokens: 2000,
         systemPrompt: `你是一个专业的虚拟团队配置生成专家。根据用户需求，生成最优的团队配置方案。

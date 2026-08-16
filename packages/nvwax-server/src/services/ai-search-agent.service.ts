@@ -1,8 +1,9 @@
-import OpenAI from 'openai';
 import { v4 as uuidv4 } from 'uuid';
 import { agentSearchService, Agent } from './agent-search.service.js';
 import { AiTeam, aiteamService } from './aiteam.service.js';
 import { tokenQuotaService } from './token-quota.service.js';
+import { llmService } from './llm/llm.service.js';
+import { sessionStore, type SessionSnapshot } from './session/session-store.service.js';
 
 /**
  * AI 搜索会话
@@ -76,20 +77,97 @@ interface IntentAnalysis {
  * 支持多轮对话细化需求
  */
 class AiSearchAgentService {
+  /** 内存缓存：SessionStore（JSONL 持久化）是持久层，缓存加速热路径 */
   private sessions: Map<string, SearchSession> = new Map();
-  private openai: OpenAI | null = null;
 
   constructor() {
-    const apiKey = process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY;
-    if (apiKey) {
-      this.openai = new OpenAI({
-        apiKey,
-        baseURL: 'https://api.deepseek.com/v1'
-      });
-      console.log('✅ AI Search Agent: DeepSeek API configured');
+    if (llmService.isConfigured) {
+      console.log('✅ AI Search Agent: DeepSeek API configured (via LlmService)');
     } else {
       console.warn('⚠️ AI Search Agent: DEEPSEEK_API_KEY not configured. Using mock responses.');
     }
+  }
+
+  // ============================================================
+  // 会话持久化（SessionStore，JSONL 事件溯源）
+  // ============================================================
+
+  /** 加载会话：缓存优先，未命中则从 store 重建并回填缓存 */
+  private async loadSession(sessionId: string): Promise<SearchSession | null> {
+    const cached = this.sessions.get(sessionId);
+    if (cached) return cached;
+    const snap = await sessionStore.read(sessionId);
+    if (!snap) return null;
+    const session = this.rebuildFromSnapshot(sessionId, snap);
+    this.sessions.set(sessionId, session);
+    return session;
+  }
+
+  /** 从 store 快照重建 SearchSession（message 事件 + meta 事件） */
+  private rebuildFromSnapshot(sessionId: string, snap: SessionSnapshot): SearchSession {
+    const messages: SearchMessage[] = [];
+    const context: SearchContext = {
+      originalQuery: '',
+      refinedQueries: [],
+      searchedKeywords: [],
+      totalResults: 0,
+    };
+    for (const ev of snap.events) {
+      if (ev.type === 'message') {
+        const data = ev.data ?? {};
+        messages.push({
+          id: (data.messageId as string) ?? uuidv4(),
+          role: ev.role,
+          content: ev.content,
+          results: data.results as Agent[] | undefined,
+          aiteamResults: data.aiteamResults as AiTeam[] | undefined,
+          suggestions: data.suggestions as string[] | undefined,
+          canGenerate: data.canGenerate as boolean | undefined,
+          timestamp: new Date(ev.timestamp),
+        });
+      } else if (ev.type === 'meta') {
+        if (typeof ev.patch.originalQuery === 'string') context.originalQuery = ev.patch.originalQuery;
+        if (Array.isArray(ev.patch.refinedQueries)) context.refinedQueries = ev.patch.refinedQueries as string[];
+        if (Array.isArray(ev.patch.searchedKeywords)) context.searchedKeywords = ev.patch.searchedKeywords as string[];
+        if (typeof ev.patch.totalResults === 'number') context.totalResults = ev.patch.totalResults;
+      }
+    }
+    return {
+      id: sessionId,
+      messages,
+      context,
+      createdAt: new Date(snap.createdAt),
+      updatedAt: new Date(snap.updatedAt),
+    };
+  }
+
+  /** 持久化一条消息 */
+  private async persistMessage(sessionId: string, msg: SearchMessage): Promise<void> {
+    await sessionStore.append(sessionId, {
+      type: 'message',
+      role: msg.role,
+      content: msg.content,
+      data: {
+        messageId: msg.id,
+        ...(msg.results ? { results: msg.results } : {}),
+        ...(msg.aiteamResults ? { aiteamResults: msg.aiteamResults } : {}),
+        ...(msg.suggestions ? { suggestions: msg.suggestions } : {}),
+        ...(msg.canGenerate !== undefined ? { canGenerate: msg.canGenerate } : {}),
+      },
+    });
+  }
+
+  /** 持久化搜索上下文 */
+  private async persistContext(sessionId: string, context: SearchContext): Promise<void> {
+    await sessionStore.append(sessionId, {
+      type: 'meta',
+      patch: {
+        originalQuery: context.originalQuery,
+        refinedQueries: context.refinedQueries,
+        searchedKeywords: context.searchedKeywords,
+        totalResults: context.totalResults,
+      },
+    });
   }
 
   /**
@@ -97,6 +175,7 @@ class AiSearchAgentService {
    */
   async createSession(): Promise<string> {
     const sessionId = `search-${uuidv4()}`;
+    await sessionStore.append(sessionId, { type: 'session-created', meta: { kind: 'ai-search' } });
     this.sessions.set(sessionId, {
       id: sessionId,
       messages: [],
@@ -117,7 +196,7 @@ class AiSearchAgentService {
    * 处理用户消息
    */
   async chat(sessionId: string, message: string, userId?: string): Promise<ChatResponse> {
-    const session = this.sessions.get(sessionId);
+    const session = await this.loadSession(sessionId);
     if (!session) {
       throw new Error(`Session not found: ${sessionId}`);
     }
@@ -130,10 +209,12 @@ class AiSearchAgentService {
       timestamp: new Date()
     };
     session.messages.push(userMessage);
+    await this.persistMessage(sessionId, userMessage);
 
     // 更新首次查询
     if (!session.context.originalQuery) {
       session.context.originalQuery = message;
+      await this.persistContext(sessionId, session.context);
     }
 
     // 第一步：AI 分析意图
@@ -153,6 +234,7 @@ class AiSearchAgentService {
       };
       session.messages.push(assistantMessage);
       session.updatedAt = new Date();
+      await this.persistMessage(sessionId, assistantMessage);
       return {
         reply,
         suggestions: intentAnalysis.clarificationQuestions,
@@ -174,6 +256,7 @@ class AiSearchAgentService {
       };
       session.messages.push(assistantMessage);
       session.updatedAt = new Date();
+      await this.persistMessage(sessionId, assistantMessage);
       return {
         reply,
         results: [],
@@ -197,6 +280,7 @@ class AiSearchAgentService {
       };
       session.messages.push(assistantMessage);
       session.updatedAt = new Date();
+      await this.persistMessage(sessionId, assistantMessage);
 
       return {
         reply,
@@ -231,6 +315,7 @@ class AiSearchAgentService {
     const agents = searchResult.data || [];
     const aiteams = aiteamSearchResult.aiteams || [];
     session.context.totalResults = agents.length + aiteams.length;
+    await this.persistContext(sessionId, session.context);
 
     // 第三步：AI 整理结果（传入完整对话上下文，包含 AiTeam 数据）
     const chatResponse = await this.generateSearchReply(
@@ -254,26 +339,35 @@ class AiSearchAgentService {
     };
     session.messages.push(assistantMessage);
     session.updatedAt = new Date();
+    await this.persistMessage(sessionId, assistantMessage);
 
     return chatResponse;
   }
 
   /**
-   * 获取会话信息
+   * 获取会话信息（缓存优先；未命中时从持久化 store 同步重建，保证重启后仍可读）
    */
   getSession(sessionId: string): SearchSession | null {
-    return this.sessions.get(sessionId) || null;
+    const cached = this.sessions.get(sessionId);
+    if (cached) return cached;
+    const snap = sessionStore.readSync(sessionId);
+    if (!snap) return null;
+    const session = this.rebuildFromSnapshot(sessionId, snap);
+    this.sessions.set(sessionId, session);
+    return session;
   }
 
   /**
-   * 清理过期会话（超过1小时）
+   * 清理过期会话（超过1小时）— 同时清理持久化 store
    */
-  cleanExpiredSessions(): void {
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    for (const [id, session] of this.sessions) {
-      if (session.updatedAt < oneHourAgo) {
-        this.sessions.delete(id);
-        console.log(`AI Search Agent: Cleaned expired session ${id}`);
+  async cleanExpiredSessions(): Promise<void> {
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    const summaries = await sessionStore.list();
+    for (const summary of summaries) {
+      if (summary.meta.kind === 'ai-search' && new Date(summary.updatedAt).getTime() < oneHourAgo) {
+        this.sessions.delete(summary.id);
+        await sessionStore.delete(summary.id);
+        console.log(`AI Search Agent: Cleaned expired session ${summary.id}`);
       }
     }
   }
@@ -313,8 +407,8 @@ class AiSearchAgentService {
     }));
 
     try {
-      if (this.openai) {
-        const completion = await this.openai.chat.completions.create({
+      if (llmService.isConfigured) {
+        const completion = await llmService.createCompletion({
           model: 'deepseek-v4-flash',
           messages: [
             { role: 'system', content: systemPrompt },
@@ -322,21 +416,22 @@ class AiSearchAgentService {
             { role: 'user', content: `用户的搜索需求: ${message}` }
           ],
           temperature: 0.3,
-          max_tokens: 500
+          maxTokens: 500,
+          purpose: 'search'
         });
 
-        const response = completion.choices[0]?.message?.content || '';
+        const response = completion.content;
 
-        // 从 DeepSeek 响应中获取真实 Token 消耗并记录
-        if (userId && completion.usage?.total_tokens) {
-          tokenQuotaService.checkAndDeductTokens(userId, completion.usage.total_tokens, {
+        // 从响应中获取真实 Token 消耗并记录
+        if (userId && completion.usage?.totalTokens) {
+          tokenQuotaService.checkAndDeductTokens(userId, completion.usage.totalTokens, {
             endpoint: '/api/ai-search/chat',
             sourceType: 'ai_search',
             description: 'AI 搜索 - 意图分析',
             model: 'deepseek-v4-flash',
             metadata: {
-              prompt_tokens: completion.usage.prompt_tokens,
-              completion_tokens: completion.usage.completion_tokens
+              prompt_tokens: completion.usage.promptTokens,
+              completion_tokens: completion.usage.completionTokens
             }
           }).catch(err => console.error('[TokenQuota] Failed to deduct tokens for AI Search intent analysis:', err));
         }
@@ -598,28 +693,29 @@ ${conversationContext}` : ''}
 4. 回复要热情、有实质性内容，不要只说"找到X个结果"这种机械的统计
 5. 最后询问是否需要进一步细化`;
 
-    if (this.openai && (totalCount > 0 || hasAiteams)) {
+    if (llmService.isConfigured && (totalCount > 0 || hasAiteams)) {
       try {
-        const completion = await this.openai.chat.completions.create({
+        const completion = await llmService.createCompletion({
           model: 'deepseek-v4-flash',
           messages: [
             { role: 'system', content: systemPrompt }
           ],
           temperature: 0.6,
-          max_tokens: 1000
+          maxTokens: 1000,
+          purpose: 'search'
         });
-        reply = completion.choices[0]?.message?.content || this.getDefaultResultsReply(results, analysis);
+        reply = completion.content || this.getDefaultResultsReply(results, analysis);
 
-        // 从 DeepSeek 响应中获取真实 Token 消耗并记录
-        if (userId && completion.usage?.total_tokens) {
-          tokenQuotaService.checkAndDeductTokens(userId, completion.usage.total_tokens, {
+        // 从响应中获取真实 Token 消耗并记录
+        if (userId && completion.usage?.totalTokens) {
+          tokenQuotaService.checkAndDeductTokens(userId, completion.usage.totalTokens, {
             endpoint: '/api/ai-search/chat',
             sourceType: 'ai_search',
             description: 'AI 搜索 - 结果整理',
             model: 'deepseek-v4-flash',
             metadata: {
-              prompt_tokens: completion.usage.prompt_tokens,
-              completion_tokens: completion.usage.completion_tokens
+              prompt_tokens: completion.usage.promptTokens,
+              completion_tokens: completion.usage.completionTokens
             }
           }).catch(err => console.error('[TokenQuota] Failed to deduct tokens for AI Search result formatting:', err));
         }
@@ -677,8 +773,10 @@ ${conversationContext}` : ''}
   /**
    * 清理会话
    */
-  deleteSession(sessionId: string): boolean {
-    return this.sessions.delete(sessionId);
+  async deleteSession(sessionId: string): Promise<boolean> {
+    const removed = this.sessions.delete(sessionId);
+    const removedFromStore = await sessionStore.delete(sessionId);
+    return removed || removedFromStore;
   }
 }
 

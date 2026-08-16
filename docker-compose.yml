@@ -70,6 +70,10 @@ services:
       SMTP_FROM: ${SMTP_FROM:-ProClaw 团队 <noreply@account.proclaw.cc>}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
+      # Phase 2/3 — 编排与执行委托
+      WORKFLOW_API_URL: http://skillhub:3002/api
+      EXECUTOR_URL: http://executor:3010
+      EXECUTOR_TOKEN: ${EXECUTOR_TOKEN:-}
     ports:
       - "${BACKEND_PORT:-3001}:3001"
     depends_on:
@@ -77,6 +81,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      skillhub:
+        condition: service_started
+      executor:
+        condition: service_started
     volumes:
       - ./uploads:/app/uploads
       # Sprint 1 — OIDC IdP RSA-2048 keypair (mounted from /opt/nvwax/secrets/oidc/)
@@ -97,6 +105,14 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://nvwax.proclaw.cc/api}
         NEXT_PUBLIC_GITHUB_CLIENT_ID: ${NEXT_PUBLIC_GITHUB_CLIENT_ID}
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+        # OIDC / SSO（Sprint 2.12：浏览器侧 OIDC 流程必需，构建期烤进 bundle）
+        NEXT_PUBLIC_OIDC_ISSUER: ${NEXT_PUBLIC_OIDC_ISSUER:-https://account.proclaw.cc}
+        NEXT_PUBLIC_OIDC_CLIENT_ID: ${NEXT_PUBLIC_OIDC_CLIENT_ID:-proclaw-web}
+        NEXT_PUBLIC_OIDC_REDIRECT_URI: ${NEXT_PUBLIC_OIDC_REDIRECT_URI:-https://nvwax.proclaw.cc/oauth/callback}
+        NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI: ${NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI:-https://nvwax.proclaw.cc}
+        NEXT_PUBLIC_OIDC_SCOPE: ${NEXT_PUBLIC_OIDC_SCOPE:-openid profile email}
+        NEXT_PUBLIC_OIDC_ADMIN_CLIENT_ID: ${NEXT_PUBLIC_OIDC_ADMIN_CLIENT_ID:-nvwax-admin}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://nvwax.proclaw.cc}
     container_name: nvwax-frontend
     restart: unless-stopped
     environment:
@@ -104,6 +120,15 @@ services:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://nvwax.proclaw.cc/api}
       NEXT_PUBLIC_GITHUB_CLIENT_ID: ${NEXT_PUBLIC_GITHUB_CLIENT_ID}
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+      # OIDC 运行期配置（服务端 API Route 读 process.env）
+      OIDC_SESSION_SECRET: ${OIDC_SESSION_SECRET:?OIDC_SESSION_SECRET must be set in .env (openssl rand -base64 32)}
+      NEXT_PUBLIC_OIDC_ISSUER: ${NEXT_PUBLIC_OIDC_ISSUER:-https://account.proclaw.cc}
+      NEXT_PUBLIC_OIDC_CLIENT_ID: ${NEXT_PUBLIC_OIDC_CLIENT_ID:-proclaw-web}
+      NEXT_PUBLIC_OIDC_REDIRECT_URI: ${NEXT_PUBLIC_OIDC_REDIRECT_URI:-https://nvwax.proclaw.cc/oauth/callback}
+      NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI: ${NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI:-https://nvwax.proclaw.cc}
+      NEXT_PUBLIC_OIDC_SCOPE: ${NEXT_PUBLIC_OIDC_SCOPE:-openid profile email}
+      NEXT_PUBLIC_OIDC_ADMIN_CLIENT_ID: ${NEXT_PUBLIC_OIDC_ADMIN_CLIENT_ID:-nvwax-admin}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://nvwax.proclaw.cc}
       PORT: 3000
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
@@ -164,10 +189,48 @@ services:
     networks:
       - nvwax-network
 
+  # Phase 2 — SkillHub Workflow Engine（编排内核 + YAML 工作流）
+  skillhub:
+    build:
+      context: .
+      dockerfile: Dockerfile.skillhub
+    container_name: nvwax-skillhub
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DATABASE_PATH: /app/data/workflows.db
+    ports:
+      - "3002:3002"
+    volumes:
+      - skillhub_data:/app/data
+    networks:
+      - nvwax-network
+
+  # Phase 3 — 隔离执行 worker（nvwax-executor，零依赖）
+  executor:
+    build:
+      context: .
+      dockerfile: Dockerfile.executor
+    container_name: nvwax-executor
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      EXECUTOR_PORT: 3010
+      EXECUTOR_TOKEN: ${EXECUTOR_TOKEN:-}
+      EXECUTOR_ALLOWED_ROOTS: /app
+    ports:
+      - "3010:3010"
+    networks:
+      - nvwax-network
+
 volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  skillhub_data:
     driver: local
 
 networks:
