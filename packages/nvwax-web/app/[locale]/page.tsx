@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import NvwaClient from "./nvwa/Client";
+import DshBanner from "@/components/DshBanner";
 import { alternatesFor } from "@/lib/seo";
 
 type Props = {
@@ -31,6 +32,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default function HomePage() {
-  // 首页即产品：直接渲染 Nvwa 创建工作台（embedded 模式隐藏重复 Logo），用户一进来即可使用
-  return <NvwaClient embedded />;
+  // 首页即产品：直接渲染 Nvwa 创建工作台（embedded 模式隐藏重复 Logo），用户一进来即可使用；
+  // 工作台下方保留 DSH 集成广告横幅（原营销落地页内容，避免丢失）。
+  return (
+    <>
+      <NvwaClient embedded />
+      <div className="px-4 sm:px-6 py-6 bg-gray-50 dark:bg-gray-900">
+        <DshBanner />
+      </div>
+    </>
+  );
 }
