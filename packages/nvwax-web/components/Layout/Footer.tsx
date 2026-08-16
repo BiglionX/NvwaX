@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { Link } from '@/src/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { Heart, Mail } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -14,8 +14,6 @@ export default function Footer() {
 
   const footerLinks = {
     product: [
-      { label: t('nav.search'), href: '/search' },
-      { label: t('nav.marketplace'), href: '/marketplace' },
       { label: t('nav.projects'), href: '/projects' },
       { label: t('nav.profile'), href: '/profile' },
       { label: 'SkillHub', href: 'https://skillhub.proclaw.cc', external: true },
@@ -221,9 +219,7 @@ export default function Footer() {
             <div className={`flex items-center gap-2 text-sm ${
               isHome ? 'text-slate-400' : 'text-gray-600 dark:text-gray-400'
             }`}>
-              <span>{t('nav.footerMadeWith')}</span>
-              <Heart size={16} className="text-red-500 fill-current" />
-              <span>{t('nav.footerByCommunity')}</span>
+              <span>{t('nav.footerMadeBy')}</span>
             </div>
           </div>
         </div>
