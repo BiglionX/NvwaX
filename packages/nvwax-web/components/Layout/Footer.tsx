@@ -23,7 +23,6 @@ export default function Footer() {
       { label: 'Docs', href: 'https://github.com/BigLionX/NvwaX#readme', external: true },
       { label: 'FAQ', href: '/faq', external: false },
       { label: t('common.more'), href: 'https://github.com/BigLionX/NvwaX/tree/main/examples', external: true },
-      { label: 'Changelog', href: 'https://github.com/BigLionX/NvwaX/releases', external: true },
     ],
     community: [
       { label: 'GitHub', href: 'https://github.com/BigLionX/NvwaX', external: true },
