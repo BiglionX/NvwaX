@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Bot, Sparkles, Loader, RotateCcw, Lightbulb, Zap, Database, FileText, Cpu, Check, AlertCircle, CornerDownLeft, ArrowUp } from 'lucide-react';
+import { Send, Bot, Sparkles, Loader, RotateCcw, Lightbulb, Zap, Check, ArrowUp, CornerDownLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import AiTeamCreatorModal from '@/components/aiteam-creator-modal';
 import { useTranslations } from 'next-intl';
 import { AiteamStateGraphView } from '@/components/UI';
+import StepProgress from '@/components/creation/StepProgress';
+import ChatMessage from '@/components/creation/ChatMessage';
 
 interface Message {
   id: string;
@@ -51,18 +53,7 @@ const SUGGESTION_KEYS: Record<number, string[]> = {
   3: ['suggestion13', 'suggestion14', 'suggestion15', 'suggestion16'],
 };
 
-/** 步骤配置 */
-const STEP_CONFIG_META = [
-  { icon: Lightbulb, stepKey: 'stepAnalysis', color: 'from-amber-500 to-orange-500', bgColor: 'bg-amber-100 dark:bg-amber-900/20', textColor: 'text-amber-600 dark:text-amber-400' },
-  { icon: Database, stepKey: 'stepDataSource', color: 'from-emerald-500 to-teal-500', bgColor: 'bg-emerald-100 dark:bg-emerald-900/20', textColor: 'text-emerald-600 dark:text-emerald-400' },
-  { icon: FileText, stepKey: 'stepOutput', color: 'from-blue-500 to-blue-600', bgColor: 'bg-blue-100 dark:bg-blue-900/20', textColor: 'text-blue-600 dark:text-blue-400' },
-  { icon: Cpu, stepKey: 'stepImpl', color: 'from-blue-500 to-cyan-500', bgColor: 'bg-blue-100 dark:bg-blue-900/20', textColor: 'text-blue-600 dark:text-blue-400' },
-  { icon: Zap, stepKey: 'stepTemplate', color: 'from-pink-500 to-rose-500', bgColor: 'bg-pink-100 dark:bg-pink-900/20', textColor: 'text-pink-600 dark:text-pink-400' },
-  { icon: Sparkles, stepKey: 'stepReview', color: 'from-indigo-500 to-blue-500', bgColor: 'bg-indigo-100 dark:bg-indigo-900/20', textColor: 'text-indigo-600 dark:text-indigo-400' },
-  { icon: Check, stepKey: 'stepSave', color: 'from-green-500 to-emerald-500', bgColor: 'bg-green-100 dark:bg-green-900/20', textColor: 'text-green-600 dark:text-green-400' },
-];
-
-export default function NvwaClient() {
+export default function NvwaClient({ embedded = false }: { embedded?: boolean }) {
   const t = useTranslations('nvwa');
   const { isLoggedIn, userInfo, login, loading: authLoading } = useAuth();
 
@@ -173,7 +164,6 @@ export default function NvwaClient() {
     skills: [],
   });
   const [activeMode, setActiveMode] = useState<'agent' | 'aiteam'>('agent');
-  const [showAiTeamModal, setShowAiTeamModal] = useState(false);
   const [progress, setProgress] = useState<CreationProgress>({
     currentStep: 0,
     totalSteps: 7,
@@ -223,13 +213,12 @@ export default function NvwaClient() {
     setMessages([welcomeMessage]);
   }, []);
 
-  // 从 ProClaw 等外部来源跳转时，自动打开 AiTeam 创建弹窗（等待跨服务认证完成）
+  // 从 ProClaw 等外部来源跳转时，自动切换到 AiTeam 创建模式（等待跨服务认证完成）
   useEffect(() => {
     if (externalRequirements) {
-      // 延迟打开，确保页面已完全渲染
+      // 延迟切换，确保页面已完全渲染
       const timer = setTimeout(() => {
         setActiveMode('aiteam');
-        setShowAiTeamModal(true);
       }, 800);
       return () => clearTimeout(timer);
     }
@@ -410,7 +399,7 @@ export default function NvwaClient() {
       addAssistantMessage(
         t('aiTeamRequestRedirect')
       );
-      setTimeout(() => setShowAiTeamModal(true), 1500);
+      setTimeout(() => setActiveMode('aiteam'), 1500);
       return;
     }
 
@@ -583,73 +572,6 @@ export default function NvwaClient() {
     }
   };
 
-  /** 渲染消息内容 */
-  const renderMessageContent = (content: string, isUser: boolean) => {
-    return content.split('\n').map((line, idx) => {
-      // 粗体标题
-      if (line.match(/^\*\*.*\*\*$/)) {
-        return (
-          <strong key={idx} className={`block font-bold mb-1 ${isUser ? '' : 'text-gray-900 dark:text-white'}`}>
-            {line.slice(2, -2)}
-          </strong>
-        );
-      }
-      // 粗体 + 内容
-      if (line.includes('**')) {
-        const parts = line.split(/(\*\*.*?\*\*)/g);
-        return (
-          <div key={idx} className="leading-relaxed">
-            {parts.map((part, pi) =>
-              part.startsWith('**') && part.endsWith('**') ? (
-                <strong key={pi} className="font-semibold">{part.slice(2, -2)}</strong>
-              ) : (
-                <span key={pi}>{part}</span>
-              )
-            )}
-          </div>
-        );
-      }
-      // 列表项
-      if (line.match(/^[-•]\s/)) {
-        return <div key={idx} className="ml-2 flex gap-1.5"><span className="shrink-0">•</span><span>{line.slice(2)}</span></div>;
-      }
-      // 编号列表
-      if (line.match(/^\d+[.)]\s/)) {
-        return <div key={idx} className="ml-2">{line}</div>;
-      }
-      // 链接渲染
-      if (line.includes('[/') && line.includes('](')) {
-        const linkMatch = line.match(/\[(.+?)\]\((.+?)\)/g);
-        if (linkMatch) {
-          let lastIndex = 0;
-          const elements: React.ReactNode[] = [];
-          linkMatch.forEach((match, mi) => {
-            const startIdx = line.indexOf(match, lastIndex);
-            if (startIdx > lastIndex) {
-              elements.push(<span key={`t-${mi}`}>{line.slice(lastIndex, startIdx)}</span>);
-            }
-            const m = match.match(/\[(.+?)\]\((.+?)\)/);
-            if (m) {
-              elements.push(
-                <a key={`a-${mi}`} href={m[2]} className="text-blue-500 hover:text-blue-600 dark:text-blue-400 underline underline-offset-2">
-                  {m[1]}
-                </a>
-              );
-            }
-            lastIndex = startIdx + match.length;
-          });
-          if (lastIndex < line.length) {
-            elements.push(<span key="tail">{line.slice(lastIndex)}</span>);
-          }
-          return <div key={idx} className="leading-relaxed">{elements}</div>;
-        }
-      }
-      // 空行
-      if (line.trim() === '') return <div key={idx} className="h-1.5" />;
-      return <div key={idx} className="leading-relaxed">{line}</div>;
-    });
-  };
-
   return (
     <div className="flex flex-col min-h-[calc(100vh-60px)]">
       {/* ====== Hero Header ====== */}
@@ -661,7 +583,8 @@ export default function NvwaClient() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center gap-4">
-            {/* Logo */}
+            {/* Logo（embedded 首页模式隐藏，避免与全局 Navbar 双 Logo） */}
+            {!embedded && (
             <div className="flex items-center gap-3 shrink-0">
               <div className="relative group">
                 <div className="absolute inset-0 bg-linear-to-r from-blue-500 to-blue-700 rounded-2xl blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
@@ -670,13 +593,14 @@ export default function NvwaClient() {
                 </div>
               </div>
             </div>
+            )}
 
             {/* 居中：模式切换器 */}
             <div className="flex-1 flex justify-center">
               <div className="inline-flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl shadow-inner">
                 {/* Nvwa Agent */}
                 <button
-                  onClick={() => { setActiveMode('agent'); setShowAiTeamModal(false); }}
+                  onClick={() => { setActiveMode('agent'); }}
                   className={`relative flex items-center gap-2 px-4 sm:px-5 py-2 text-sm font-semibold rounded-xl transition-all duration-300 ${
                     activeMode === 'agent'
                       ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md'
@@ -696,7 +620,7 @@ export default function NvwaClient() {
 
                 {/* NvwaX Aiteam */}
                 <button
-                  onClick={() => { setActiveMode('aiteam'); setShowAiTeamModal(true); }}
+                  onClick={() => { setActiveMode('aiteam'); }}
                   className={`relative flex items-center gap-2 px-4 sm:px-5 py-2 text-sm font-semibold rounded-xl transition-all duration-300 ${
                     activeMode === 'aiteam'
                       ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-md'
@@ -739,6 +663,20 @@ export default function NvwaClient() {
 
       {/* ====== 主内容区域 ====== */}
       <main className="flex-1 flex overflow-hidden">
+        {/* AiTeam 模式：页内渲染（与 Agent 同页面骨架，不再弹窗） */}
+        {activeMode === 'aiteam' ? (
+          <AiTeamCreatorModal
+            embedded
+            initialMessage={initialAiTeamMessage}
+            onClose={() => setActiveMode('agent')}
+            onSuccess={(teamSkillId) => {
+              setActiveMode('agent');
+              addAssistantMessage(
+                t('aiTeamSuccess', { teamId: teamSkillId })
+              );
+            }}
+          />
+        ) : (
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 max-w-7xl mx-auto w-full gap-0 lg:gap-6 px-0 sm:px-4 lg:px-6 py-0 sm:py-4 lg:py-6">
           {/* 左侧面板 - 桌面端侧边栏 */}
           <aside className="hidden lg:flex lg:col-span-4 xl:col-span-3 flex-col gap-4 overflow-y-auto pr-1 max-h-[calc(100vh-140px)] sticky top-0">
@@ -870,81 +808,14 @@ export default function NvwaClient() {
 
               {/* 进度条和步骤列表（仅对话式模式） */}
               {!useStateMachine && (
-                <>
-              {/* 进度条 */}
-              <div className="mb-5">
-                <div className="w-full h-2 bg-gray-100 dark:bg-gray-700/50 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-linear-to-r from-indigo-500 via-blue-500 to-blue-600 rounded-full transition-all duration-700 ease-out shadow-sm shadow-indigo-500/25"
-                    style={{ width: `${progress.percentage}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* 步骤列表 */}
-              <div className="space-y-1.5">
-                {progress.steps.map((step, idx) => {
-                  const meta = STEP_CONFIG_META[idx];
-                  const StepIcon = meta.icon;
-                  const isActive = step.status === 'in_progress';
-                  const isDone = step.status === 'completed';
-                  const isFailed = step.status === 'failed';
-
-                  return (
-                    <div key={step.stepNumber} className={`relative flex items-center gap-3 p-2.5 rounded-xl transition-all duration-300 ${
-                      isActive ? 'bg-indigo-50/80 dark:bg-indigo-900/20 scale-[1.02]' :
-                      isDone ? '' : ''
-                    }`}>
-                      {/* 步骤连线装饰 */}
-                      {idx < progress.steps.length - 1 && (
-                        <div className={`absolute left-5 top-10 bottom-0 w-0.5 -mb-1.5 transition-colors duration-500 ${
-                          isDone ? 'bg-green-300 dark:bg-green-700' :
-                          isActive ? 'bg-indigo-200 dark:bg-indigo-800' :
-                          'bg-gray-200 dark:bg-gray-700'
-                        }`} />
-                      )}
-
-                      {/* 状态图标 */}
-                      <div className={`relative z-10 shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                        isDone ? 'bg-green-500 text-white shadow-sm shadow-green-500/30' :
-                        isActive ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30 scale-110 animate-pulse' :
-                        isFailed ? 'bg-red-500 text-white shadow-sm shadow-red-500/30' :
-                        `bg-gray-100 dark:bg-gray-700 text-gray-400 ${meta.textColor} group-hover:bg-gray-200 dark:group-hover:bg-gray-600`
-                      }`}>
-                        {isDone ? <Check size={12} strokeWidth={3} /> :
-                         isFailed ? <AlertCircle size={12} /> :
-                         <StepIcon size={13} className={isActive ? 'text-white' : ''} />}
-                      </div>
-
-                      {/* 步骤信息 */}
-                      <div className="flex-1 min-w-0">
-                        <span className={`text-xs font-semibold transition-colors ${
-                          isDone ? 'text-green-600 dark:text-green-400' :
-                          isActive ? 'text-indigo-600 dark:text-indigo-400' :
-                          isFailed ? 'text-red-600 dark:text-red-400' :
-                          'text-gray-400 dark:text-gray-500'
-                        }`}>
-                          {step.name}
-                        </span>
-                        {step.message && step.message !== '等待开始' && step.message !== '已完成' && (
-                          <p className={`text-[11px] mt-0.5 truncate ${
-                            isActive ? 'text-indigo-400 dark:text-indigo-500' :
-                            isDone ? 'text-green-400 dark:text-green-600' :
-                            'text-gray-400'
-                          }`}>
-                            {step.message}
-                          </p>
-                        )}
-                      </div>
-
-                      {isActive && (
-                        <Loader size={12} className="text-indigo-500 animate-spin shrink-0" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              </>
+                <StepProgress
+                  steps={progress.steps}
+                  percentage={progress.percentage}
+                  waitingLabel={t('waiting')}
+                  completedLabel={t('completed')}
+                  processingLabel={t('processing')}
+                  overallLabel={t('creationProgress')}
+                />
               )}
 
               {/* v2.2.0 状态机视图 */}
@@ -992,48 +863,11 @@ export default function NvwaClient() {
             >
               <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
                 {messages.map((message) => (
-                  <div
+                  <ChatMessage
                     key={message.id}
-                    className={`flex gap-3 sm:gap-4 ${message.role === 'user' ? 'justify-end' : 'justify-start'} transition-all duration-300 ease-out`}
-                  >
-                    {/* AI 头像 */}
-                    {message.role === 'assistant' && (
-                      <div className="relative shrink-0">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 via-indigo-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
-                          <Bot size={18} className="text-white" />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 消息气泡 */}
-                    <div
-                      className={`max-w-[88%] sm:max-w-[78%] rounded-2xl px-4 sm:px-5 py-3 text-sm leading-relaxed shadow-sm ${
-                        message.role === 'user'
-                          ? 'bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-blue-500/20 rounded-br-lg'
-                          : 'bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-gray-700/50 rounded-bl-lg'
-                      }`}
-                    >
-                      <div className="text-[14px] sm:text-sm">
-                        {renderMessageContent(message.content, message.role === 'user')}
-                      </div>
-                      <div className={`text-[10px] mt-2 ${
-                        message.role === 'user' ? 'text-blue-200' : 'text-gray-400 dark:text-gray-500'
-                      }`}>
-                        {message.timestamp.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-
-                    {/* 用户头像 */}
-                    {message.role === 'user' && (
-                      <div className="shrink-0">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center shadow-sm">
-                          <span className="text-white font-bold text-sm">
-                            {userInfo?.name?.charAt(0).toUpperCase() || 'U'}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    message={message}
+                    userName={userInfo?.name}
+                  />
                 ))}
 
                 {/* 打字指示器 */}
@@ -1167,22 +1001,8 @@ export default function NvwaClient() {
                                     </div>
                                   </section>
                                 </div>
-                              </main>
-                        
-                              {/* AiTeam 创建弹窗 */}
-                              {showAiTeamModal && (
-                                <AiTeamCreatorModal
-                                  initialMessage={initialAiTeamMessage}
-                                  onClose={() => { setShowAiTeamModal(false); setActiveMode('agent'); }}
-                                  onSuccess={(teamSkillId) => {
-                                    setShowAiTeamModal(false);
-                                    setActiveMode('agent');
-                                    addAssistantMessage(
-                                      t('aiTeamSuccess', { teamId: teamSkillId })
-                                    );
-                                  }}
-                                />
-                              )}
+        )}
+      </main>
                             </div>
                           );
                         }

@@ -15,7 +15,6 @@ import LocaleSwitcher from '../LocaleSwitcher';
 const getNavItems = (t: (key: string) => string) => [
   { label: t('nav.home'), icon: Home, path: '/' },
   { label: t('nav.developer'), icon: Code, path: '/developer' },
-  { label: t('nav.nvwa'), icon: Sparkles, path: '/nvwa' },
   { label: t('nav.marketplace'), icon: Store, path: '/marketplace' },
   { label: t('nav.bounties'), icon: Award, path: '/bounties' },
 ];
@@ -28,8 +27,8 @@ export default function Navbar() {
   const { openAiSearch } = useAiSearch();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // 是否在首页（用于切换透明毛玻璃样式）
-  const isHome = pathname === '/' || pathname === '/en';
+  // 首页即产品（Nvwa 工作台），不再有透明星空落地页，Navbar 统一使用普通样式
+  const isHome = false;
   const navItems = getNavItems(t);
 
   // 处理登出

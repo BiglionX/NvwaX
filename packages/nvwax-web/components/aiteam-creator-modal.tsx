@@ -1,26 +1,29 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Send, Sparkles, Loader2, Bot, User, CheckCircle, AlertCircle, Share2 } from 'lucide-react';
+import { X, Sparkles, Loader2, Bot, CheckCircle, AlertCircle, Share2 } from 'lucide-react';
 import { useAiTeamCreationProgress } from '@/hooks/use-aiteam-creation-progress';
 import CEOConfigPreview from './CEOConfigPreview';
 import DocumentPackagePreview from './DocumentPackagePreview';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/hooks/useAuth';
 import { authedFetch } from '@/lib/oidc/authed-fetch';
+import StepProgress from '@/components/creation/StepProgress';
+import ChatMessage, { ChatMessageData } from '@/components/creation/ChatMessage';
+import ChatInput from '@/components/creation/ChatInput';
+import LoginPrompt from '@/components/creation/LoginPrompt';
+import CreateSuccessDialog, { SuccessData } from '@/components/creation/CreateSuccessDialog';
 
 interface AiTeamCreatorModalProps {
   onClose: () => void;
   onSuccess: (teamSkillId: string) => void;
   /** 外部注入的初始需求描述（如从 ProClaw 跳转带入） */
   initialMessage?: string;
+  /** 页内嵌入模式（/nvwa 页面内使用），默认 false 为弹窗模式（agent-repository 使用） */
+  embedded?: boolean;
 }
 
-interface Message {
-  id: string;
-  role: 'user' | 'nvwax_agent'; // 改为 nvwax_agent
-  content: string;
-  timestamp: Date;
+interface AiTeamMessage extends ChatMessageData {
   phase?: string;
   extractedRequirements?: Record<string, unknown>;
   recommendedRoles?: Array<{
@@ -31,10 +34,9 @@ interface Message {
   }>;
   needsClarification?: boolean;
   clarificationQuestions?: string[];
-  nextStep?: string; // 添加下一步提示
-  showConfirmButton?: boolean; // 显示确认按钮
-  showActionButtons?: boolean; // 显示操作按钮（下载 + 集成）
-  downloadUrl?: string; // 下载 URL
+  nextStep?: string;
+  showConfirmButton?: boolean;
+  downloadUrl?: string;
   ceoConfig?: {
     teamType: string;
     templateId: string;
@@ -65,22 +67,19 @@ interface Message {
   };
 }
 
-export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCreatorModalProps) {
+export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage, embedded = false }: AiTeamCreatorModalProps) {
   const t = useTranslations('vcChatModal');
   const locale = useLocale();
   const { isLoggedIn } = useAuth();
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<AiTeamMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareContent, setShareContent] = useState({ title: '', content: '', url: '' });
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successData, setSuccessData] = useState<{
-    downloadUrl: string;
-    documentPackage?: Message['documentPackage'];
-  } | null>(null);
+  const [successData, setSuccessData] = useState<SuccessData | null>(null);
   const [autoPublishToMarketplace, setAutoPublishToMarketplace] = useState(true); // 默认勾选自动发布
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -104,15 +103,9 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
 
   const currentProgress = progress || { percentage: 0 };
 
-  // 初始化会话
+  // 初始化会话（未登录时不创建，展示登录引导；登录后自动创建）
   useEffect(() => {
-    // Sprint 2.2: 用 useAuth().isLoggedIn 判断（不再读 localStorage）
-    if (!isLoggedIn) {
-      addSystemMessage(t('loginRequired'));
-      console.warn('User not logged in, skipping session creation');
-      return;
-    }
-
+    if (!isLoggedIn) return;
     createSession();
   }, [isLoggedIn]);
 
@@ -148,24 +141,10 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
       // session 数据现在通过 SSE hook 自动更新
 
       // 添加 NvwaX Agent 的欢迎消息
-      const welcomeMessage: Message = {
+      const welcomeMessage: AiTeamMessage = {
         id: 'welcome',
         role: 'nvwax_agent',
-        content: `您好！👋 我是您的 AI 团队架构师。
-
-我将帮助您创建一个专属的 AI 团队来协助您的工作。
-
-**请告诉我：您想创建什么样的团队？**
-
-例如：
-- 📝 营销内容创作团队（文案、设计、社交媒体）
-- 💬 客户服务团队（客服、技术支持、用户反馈）
-- 📊 数据分析团队（数据处理、可视化、报告生成）
-- 💻 软件开发团队（前端、后端、测试）
-- 🎨 创意设计团队（UI/UX、平面设计、视频制作）
-- 或其他任何您需要的团队类型
-
-请简单描述一下您的需求，我会为您提供专业的建议！`,
+        content: t('welcomeMessage'),
         timestamp: new Date(),
         phase: 'requirements_gathering'
       };
@@ -195,7 +174,7 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
   const sendMessageContent = useCallback(async (content: string) => {
     if (!sessionId || isSending) return;
 
-    const userMessage: Message = {
+    const userMessage: AiTeamMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
       content: content,
@@ -219,7 +198,7 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
       }
 
       // 添加 NvwaX Agent 回复
-      const nvwaxMessage: Message = {
+      const nvwaxMessage: AiTeamMessage = {
         id: `nvwax-${Date.now()}`,
         role: 'nvwax_agent',
         content: data.data.message,
@@ -239,9 +218,6 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
         console.log('🚀 Auto-triggering NvwaX match...');
         setTimeout(() => triggerNvwaXMatch(), 1000);
       }
-
-      // 更新会话状态
-      fetchSessionStatus();
     } catch (error) {
       console.error('Error sending message:', error);
       addSystemMessage(t('sendError'));
@@ -249,12 +225,6 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
       setIsSending(false);
     }
   }, [sessionId, isSending]);
-
-  const fetchSessionStatus = async () => {
-    // Session 数据现在通过 SSE hook 自动更新，此函数保留用于兼容性
-    if (!sessionId) return;
-    // TODO: 可以移除此函数或用于其他目的
-  };
 
   /**
    * 触发 NvwaX 完整匹配流程
@@ -264,9 +234,9 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
 
     try {
       console.log('🚀 Triggering NvwaX match...');
-      
+
       // 添加系统消息
-      const systemMessage: Message = {
+      const systemMessage: AiTeamMessage = {
         id: `system-match-${Date.now()}`,
         role: 'nvwax_agent',
         content: t('matchSearching'),
@@ -295,16 +265,16 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
       const agentCount = Object.values(agentMatches).flat().length;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const skillCount = Object.values(skillMatches).filter((s: any) => s.status === 'found').length;
-      
+
       let content = t('matchComplete', { agentCount, skillCount });
-            
+
       if (ceoConfig) {
         content += t('matchConfigGenerated', { templateName: ceoConfig.templateName, managementStyle: ceoConfig.managementStyle, skillCount: ceoConfig.skills.length });
       }
-            
+
       content += t('matchReadyToSave');
-      
-      const completeMessage: Message = {
+
+      const completeMessage: AiTeamMessage = {
         id: `system-match-complete-${Date.now()}`,
         role: 'nvwax_agent',
         content,
@@ -317,7 +287,7 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
 
     } catch (error) {
       console.error('Error triggering NvwaX match:', error);
-      const errorMessage: Message = {
+      const errorMessage: AiTeamMessage = {
         id: `system-match-error-${Date.now()}`,
         role: 'nvwax_agent',
         content: t('matchError'),
@@ -328,7 +298,7 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
   };
 
   const addSystemMessage = (content: string) => {
-    const systemMessage: Message = {
+    const systemMessage: AiTeamMessage = {
       id: `system-${Date.now()}`,
       role: 'nvwax_agent',
       content,
@@ -359,7 +329,7 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || '保存失败');
+        throw new Error(data.error || t('saveFailed'));
       }
 
       console.log('✅ Team confirmed and saved:', data.data);
@@ -396,32 +366,28 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
       setShowSuccessModal(true);
 
       // 添加成功消息（包含发布状态）
-      let successContent = `✅ 太棒了！团队已成功保存到我的Agent仓库！\n\n📦 文档包已生成，请查看右侧弹窗进行下一步操作。`;
-      
+      let successContent = t('successSaved');
+
       if (autoPublishToMarketplace && publishResult) {
-        successContent += `\n\n🎉 已自动发布到 Agent 广场！您现在可以在市场中看到这个团队了。`;
+        successContent += t('successPublished');
       } else if (autoPublishToMarketplace && !publishResult) {
-        successContent += `\n\n⚠️ 自动发布失败，您可以稍后在我的 Agent 仓库中手动发布。`;
+        successContent += t('successPublishFailed');
       }
-      
-      const successMessage: Message = {
+
+      const successMessage: AiTeamMessage = {
         id: `system-confirm-success-${Date.now()}`,
         role: 'nvwax_agent',
         content: successContent,
         timestamp: new Date(),
         documentPackage: data.data.documentPackage
-        // 注意：不再设置 showActionButtons 和 downloadUrl
       };
       setMessages(prev => [...prev, successMessage]);
-
-      // 更新进度
-      fetchSessionStatus();
     } catch (error) {
       console.error('Error confirming and saving team:', error);
-      const errorMessage: Message = {
+      const errorMessage: AiTeamMessage = {
         id: `system-confirm-error-${Date.now()}`,
         role: 'nvwax_agent',
-        content: '⚠️ 保存失败，请重试。',
+        content: t('saveFailed'),
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -440,7 +406,7 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
       });
 
       if (!response.ok) {
-        throw new Error('下载失败');
+        throw new Error('Download failed');
       }
 
       // 创建 Blob 并下载
@@ -457,7 +423,7 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
       console.log('✅ Document package downloaded');
     } catch (error) {
       console.error('Error downloading document package:', error);
-      alert('下载失败，请重试');
+      alert(t('downloadFailed'));
     }
   };
 
@@ -476,25 +442,25 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || '集成失败');
+        throw new Error(data.error || t('integrateFailed'));
       }
 
       console.log('✅ Team integrated to ProClaw:', data.data);
 
       // 添加成功消息
-      const successMessage: Message = {
+      const successMessage: AiTeamMessage = {
         id: `system-integrate-success-${Date.now()}`,
         role: 'nvwax_agent',
-        content: `✅ 团队已成功集成到 ProClaw！\n\n现在您可以在 ProClaw 工作流中使用这个 AI 团队。\n\n ProClaw 团队 ID: ${data.data.proclawTeamId || '已创建'}`,
+        content: t('integrateSuccess', { proclawTeamId: data.data.proclawTeamId || t('proclawTeamCreated') }),
         timestamp: new Date()
       };
       setMessages(prev => [...prev, successMessage]);
     } catch (error) {
       console.error('Error integrating to ProClaw:', error);
-      const errorMessage: Message = {
+      const errorMessage: AiTeamMessage = {
         id: `system-integrate-error-${Date.now()}`,
         role: 'nvwax_agent',
-        content: '⚠️ 集成到 ProClaw 失败，请重试。',
+        content: t('integrateFailed'),
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -509,7 +475,7 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
     const lastMessage = messages[messages.length - 1];
     const teamType = lastMessage?.ceoConfig?.teamType || 'AI团队';
     const teamName = `${teamType}团队`;
-    
+
     // 生成营销文案
     const marketingCopy = `🚀 我刚用 NvwaX 创建了一个超棒的「${teamName}」！
 
@@ -543,7 +509,7 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
    */
   const handleCopyShareContent = () => {
     const fullContent = `${shareContent.content}\n\n🔗 查看详情：${shareContent.url}`;
-    
+
     navigator.clipboard.writeText(fullContent).then(() => {
       alert('✅ 已复制到剪贴板！快去分享给朋友吧~');
       setShowShareModal(false);
@@ -553,13 +519,6 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
     });
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
   const renderRecommendedRoles = (roles: Array<{roleName: string; description: string; responsibilities?: string[]}>) => {
     if (!roles || roles.length === 0) return null;
 
@@ -567,7 +526,7 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
       <div className="mt-4 space-y-3">
         <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
           <span className="text-lg">🎯</span>
-          推荐角色配置：
+          {t('recommendedRolesTitle')}：
         </p>
         {roles.map((role, index) => (
           <div key={index} className="bg-linear-to-r from-blue-50 to-blue-50 dark:from-blue-900/20 dark:to-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 hover:shadow-md transition-shadow duration-200">
@@ -591,10 +550,277 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
     );
   };
 
+  /** 渲染消息附加内容（推荐角色 / CEO 配置 / 确认按钮 / 文档包 / 澄清问题） */
+  const renderMessageExtra = (message: AiTeamMessage) => {
+    const isAgent = message.role !== 'user';
+
+    return (
+      <>
+        {isAgent && message.recommendedRoles && (
+          <div className="mt-4 pt-4 border-t border-gray-200/60 dark:border-gray-700/60">
+            {renderRecommendedRoles(message.recommendedRoles)}
+          </div>
+        )}
+
+        {isAgent && message.ceoConfig && (
+          <div className="mt-4 pt-4 border-t border-gray-200/60 dark:border-gray-700/60">
+            <CEOConfigPreview config={message.ceoConfig} />
+          </div>
+        )}
+
+        {isAgent && message.showConfirmButton && (
+          <div className="mt-5 pt-4 border-t border-gray-200/60 dark:border-gray-700/60">
+            {/* 自动发布到市场选项 */}
+            <div className="mb-4 p-3 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoPublishToMarketplace}
+                  onChange={(e) => setAutoPublishToMarketplace(e.target.checked)}
+                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    🚀 {t('autoPublishLabel')}
+                  </span>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    {t('autoPublishDesc')}
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <button
+              onClick={handleConfirmAndSave}
+              disabled={isConfirming}
+              className="w-full px-6 py-3 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-green-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-sm active:scale-[0.98]"
+            >
+              {isConfirming ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>{t('confirmingButton')}</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-5 h-5" />
+                  <span>{t('confirmSave')}</span>
+                </>
+              )}
+            </button>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+              {t('confirmSaveDesc')}
+            </p>
+          </div>
+        )}
+
+        {isAgent && message.documentPackage && (
+          <div className="mt-4 pt-4 border-t border-gray-200/60 dark:border-gray-700/60">
+            <DocumentPackagePreview docPackage={message.documentPackage} />
+          </div>
+        )}
+
+        {isAgent && message.clarificationQuestions && message.clarificationQuestions.length > 0 && (
+          <div className="mt-4 flex items-start gap-2.5 text-sm text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold mb-1">{t('needsMoreInfo')}</p>
+              <ul className="list-disc list-inside space-y-1">
+                {message.clarificationQuestions.map((q, i) => (
+                  <li key={i} className="leading-relaxed">{q}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  };
+
+  // ── 内容主体（左侧进度 + 右侧对话），embedded 与弹窗模式共用 ──
+  const renderWorkspace = () => (
+    <div className="flex-1 flex overflow-hidden">
+      {/* 左侧：可视化进度 - 统一玻璃态卡片风格 */}
+      <aside className="hidden lg:flex w-80 border-r border-gray-200/60 dark:border-gray-700/60 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl p-6 overflow-y-auto shrink-0">
+        <div className="sticky top-0 w-full">
+          <StepProgress
+            steps={progressSteps}
+            percentage={currentProgress?.percentage || 0}
+            title={t('progressTitle')}
+            waitingLabel={t('stepWaiting')}
+            processingLabel={t('processing')}
+            overallLabel={t('progressTitle')}
+            className="w-full"
+          />
+
+          {/* 提示信息 */}
+          <div className="mt-5 p-3.5 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/30">
+            <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
+              💡 <strong className="font-semibold">{t('tipTitle')}</strong>：{t('tipDesc')}
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      {/* 中间：对话区域 */}
+      <section className="flex-1 flex flex-col min-h-0 bg-linear-to-b from-white to-gray-50/30 dark:from-gray-900 dark:to-gray-800/30">
+        {/* 未登录：登录引导 */}
+        {!isLoggedIn ? (
+          <div className="flex-1 flex items-center justify-center">
+            <LoginPrompt
+              title={t('loginPromptTitle')}
+              description={t('loginPromptDesc')}
+              loginLabel={t('loginLabel')}
+            />
+          </div>
+        ) : (
+          <>
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5 sm:space-y-6 scroll-smooth">
+              {messages.map((message) => (
+                <ChatMessage
+                  key={message.id}
+                  message={message}
+                  extra={renderMessageExtra(message)}
+                />
+              ))}
+
+              {isSending && (
+                <div className="flex gap-3 sm:gap-4 justify-start">
+                  <div className="shrink-0">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
+                      <Bot size={18} className="text-white" />
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-2xl rounded-bl-lg px-5 py-4 shadow-sm">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                      <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <ChatInput
+              value={inputMessage}
+              onChange={setInputMessage}
+              onSend={sendMessage}
+              placeholder={t('inputPlaceholder')}
+              disabled={isSending || !sessionId}
+              sendLabel={t('sendButton')}
+              showKeyboardHint={false}
+              showFooterHint={false}
+            />
+            <p className="text-xs text-gray-400 dark:text-gray-500 pb-3 text-center bg-white dark:bg-gray-900">
+              💡 {t('inputHint')}
+            </p>
+          </>
+        )}
+      </section>
+    </div>
+  );
+
+  // ── 页内模式（/nvwa）：与 Agent 模式同一页面骨架，无遮罩、无独立头部 ──
+  if (embedded) {
+    return (
+      <div className="flex-1 flex flex-col min-h-0">
+        {renderWorkspace()}
+
+        {/* 创建成功弹窗 */}
+        {showSuccessModal && successData && (
+          <CreateSuccessDialog
+            open={showSuccessModal}
+            successData={successData}
+            onClose={() => setShowSuccessModal(false)}
+            onDownload={handleDownload}
+            onIntegrate={() => {
+              if (sessionId) handleIntegrateToProClaw(sessionId);
+            }}
+            onShare={handleShare}
+          />
+        )}
+
+        {/* 分享弹窗 */}
+        {showShareModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-60 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b bg-linear-to-r from-orange-50 to-red-50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-linear-to-r from-orange-500 to-red-500 rounded-lg">
+                    <Share2 className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">分享给朋友</h2>
+                    <p className="text-sm text-gray-600">复制以下内容分享到社交媒体</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                  aria-label={t('close')}
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">{shareContent.title}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{shareContent.content}</p>
+                  <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-600 dark:text-blue-400 font-mono break-all">{shareContent.url}</p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-xs text-gray-500 mb-2">📋 即将复制的内容：</p>
+                  <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">
+                    {shareContent.content}
+                    {'\n'}
+                    {'\n'}
+                    🔗 查看详情：{shareContent.url}
+                  </pre>
+                </div>
+
+                <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-700">
+                    💡 点击"复制并关闭"后，内容将自动复制到剪贴板，您可以粘贴到微信、微博、Twitter 等平台分享。
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6 border-t bg-gray-50 flex gap-3">
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleCopyShareContent}
+                  className="flex-1 px-4 py-3 bg-linear-to-r from-orange-500 to-red-500 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-semibold"
+                >
+                  <CheckCircle className="w-5 h-5" />
+                  <span>复制并关闭</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── 弹窗模式（agent-repository 等）：保留全屏遮罩 ──
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-7xl max-h-[92vh] overflow-hidden flex flex-col border border-gray-200/60 dark:border-gray-700/60">
-        {/* Header - 与 Nvwa Agent 页面对齐 */}
+        {/* Header - 与 Nvwa 页面对齐 */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-linear-to-r from-blue-500/5 via-blue-500/5 to-pink-500/5 dark:from-blue-500/10 dark:via-blue-500/10 dark:to-pink-500/10" />
           <div className="relative flex items-center justify-between px-6 sm:px-8 py-4 sm:py-5 border-b border-gray-200/60 dark:border-gray-800">
@@ -608,470 +834,112 @@ export default function AiTeamCreatorModal({ onClose, initialMessage }: AiTeamCr
               <div>
                 <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">
                   <span className="bg-linear-to-r from-blue-600 via-indigo-500 to-blue-700 bg-clip-text text-transparent">
-                    NvwaX
+                    {t('welcomeTitle')}
                   </span>
                   <span className="ml-2 text-xs sm:text-sm font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full align-middle">
-                    AI Team Builder
+                    {t('welcomeBadge')}
                   </span>
                 </h2>
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                  与智能助手对话，构建您的专属 AI 团队
+                  {t('welcomeSubtitle')}
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
               className="p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all duration-200 group"
-              aria-label="关闭"
+              aria-label={t('close')}
             >
               <X className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300" />
             </button>
           </div>
         </div>
 
-        {/* Main Content - 优化的三栏布局 */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* 左侧：可视化进度 - 与主页面玻璃态卡片对齐 */}
-          <aside className="w-80 border-r border-gray-200/60 dark:border-gray-700/60 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl p-6 overflow-y-auto">
-            <div className="sticky top-0">
-              <div className="flex items-center gap-2.5 mb-5">
-                <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
-                  <Loader2 className={`w-4 h-4 text-indigo-600 dark:text-indigo-400 ${(currentProgress?.percentage || 0) > 0 && (currentProgress?.percentage || 0) < 100 ? 'animate-spin' : ''}`} />
-                </div>
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white">{t('progressTitle')}</h3>
-              </div>
-              <div className="space-y-4">
-                {progressSteps.map((step, index) => (
-                  <div key={step.stepNumber} className="flex items-start gap-3 group">
-                    <div className="flex flex-col items-center">
-                      <div className={`
-                        w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-500 shadow-sm
-                        ${step.status === 'completed' ? 'bg-linear-to-br from-green-500 to-emerald-500 text-white scale-110' : 
-                          step.status === 'in_progress' ? 'bg-linear-to-br from-blue-500 to-indigo-600 text-white animate-pulse scale-110' : 
-                          'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'}
-                      `}>
-                        {step.status === 'completed' ? '✓' : step.stepNumber}
-                      </div>
-                      {index < progressSteps.length - 1 && (
-                        <div className={`w-0.5 h-10 transition-all duration-500 ${step.status === 'completed' ? 'bg-linear-to-b from-green-500 to-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
-                      )}
-                    </div>
-                    <div className="flex-1 pt-1.5">
-                      <p className={`text-sm font-semibold transition-colors duration-300 ${
-                        step.status === 'completed' ? 'text-green-600 dark:text-green-400' : 
-                        step.status === 'in_progress' ? 'text-indigo-600 dark:text-indigo-400' : 
-                        'text-gray-500 dark:text-gray-500'
-                      }`}>
-                        {step.name}
-                      </p>
-                      {step.message && step.message !== t('stepWaiting') && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{step.message}</p>
-                      )}
-                      {step.status === 'in_progress' && (
-                        <div className="mt-2 flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400">
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          <span className="font-medium">处理中...</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* 总体进度条 */}
-              <div className="mt-6 pt-5 border-t border-gray-200/60 dark:border-gray-700/60">
-                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
-                  <span className="font-medium">{t('overallProgress')}</span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400 text-base tabular-nums">{currentProgress?.percentage || 0}%</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="bg-linear-to-r from-blue-500 via-indigo-500 to-blue-700 h-2 rounded-full transition-all duration-700 ease-out shadow-sm"
-                    style={{ width: `${currentProgress?.percentage || 0}%` }}
-                  />
-                </div>
-              </div>
-              
-              {/* 提示信息 */}
-              <div className="mt-5 p-3.5 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/30">
-                <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
-                  💡 <strong className="font-semibold">{t('tipTitle')}</strong>：团队创建完成后，将自动保存到您的 Agent 仓库并生成可下载的文档包。
-                </p>
-              </div>
-            </div>
-          </aside>
-          
-          {/* 中间：对话区域 */}
-          <section className="flex-1 flex flex-col min-h-0 bg-linear-to-b from-white to-gray-50/30 dark:from-gray-900 dark:to-gray-800/30">
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5 sm:space-y-6 scroll-smooth">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-3 sm:gap-4 ${message.role === 'user' ? 'justify-end' : 'justify-start'} transition-all duration-300 ease-out`}
-              >
-              {message.role === 'nvwax_agent' && (
-                <div className="shrink-0">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
-                    <Bot size={18} className="text-white" />
-                  </div>
-                </div>
-              )}
-              
-              <div
-                className={`max-w-[80%] rounded-2xl px-5 py-4 sm:px-5 sm:py-4 shadow-sm ${
-                  message.role === 'user'
-                    ? 'bg-linear-to-br from-blue-600 to-indigo-600 text-white rounded-br-lg'
-                    : 'bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-gray-700/50 rounded-bl-lg'
-                }`}
-              >
-                <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {message.content.split('\n').map((line, idx) => {
-                    // 简单 Markdown 渲染
-                    if (line.startsWith('**') && line.endsWith('**')) {
-                      return <strong key={idx} className="font-semibold">{line.slice(2, -2)}</strong>;
-                    }
-                    if (line.startsWith('- ')) {
-                      return <div key={idx} className="ml-4">• {line.slice(2)}</div>;
-                    }
-                    if (line.match(/^\d+\./)) {
-                      return <div key={idx} className="ml-4">{line}</div>;
-                    }
-                    return <div key={idx}>{line}</div>;
-                  })}
-                </div>
-                
-                {/* 显示推荐角色 - 优化样式 */}
-                {message.role === 'nvwax_agent' && message.recommendedRoles && (
-                  <div className="mt-4 pt-4 border-t border-gray-200/60 dark:border-gray-700/60">
-                    {renderRecommendedRoles(message.recommendedRoles)}
-                  </div>
-                )}
+        {renderWorkspace()}
 
-                {/* 显示 CEO 配置预览 */}
-                {message.role === 'nvwax_agent' && message.ceoConfig && (
-                  <div className="mt-4 pt-4 border-t border-gray-200/60 dark:border-gray-700/60">
-                    <CEOConfigPreview config={message.ceoConfig} />
-                  </div>
-                )}
+        {/* 创建成功弹窗 */}
+        {showSuccessModal && successData && (
+          <CreateSuccessDialog
+            open={showSuccessModal}
+            successData={successData}
+            onClose={() => setShowSuccessModal(false)}
+            onDownload={handleDownload}
+            onIntegrate={() => {
+              if (sessionId) handleIntegrateToProClaw(sessionId);
+            }}
+            onShare={handleShare}
+          />
+        )}
 
-                {/* 显示确认按钮 */}
-                {message.role === 'nvwax_agent' && message.showConfirmButton && (
-                  <div className="mt-5 pt-4 border-t border-gray-200/60 dark:border-gray-700/60">
-                    {/* 自动发布到市场选项 */}
-                    <div className="mb-4 p-3 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                      <label className="flex items-start gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={autoPublishToMarketplace}
-                          onChange={(e) => setAutoPublishToMarketplace(e.target.checked)}
-                          className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <div className="flex-1">
-                          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                            🚀 自动发布到 Agent 广场
-                          </span>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                            保存后自动将团队发布到公开市场，其他用户可以发现和使用
-                          </p>
-                        </div>
-                      </label>
-                    </div>
-                    
-                    <button
-                      onClick={handleConfirmAndSave}
-                      disabled={isConfirming}
-                      className="w-full px-6 py-3 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-green-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-sm active:scale-[0.98]"
-                    >
-                      {isConfirming ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          <span>正在保存...</span>
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="w-5 h-5" />
-                          <span>确认并保存到 Agent 仓库</span>
-                        </>
-                      )}
-                    </button>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-                      确认后，团队配置将保存到 Agent 仓库，并生成可下载的文档包
-                    </p>
+        {/* 分享弹窗 */}
+        {showShareModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-60 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b bg-linear-to-r from-orange-50 to-red-50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-linear-to-r from-orange-500 to-red-500 rounded-lg">
+                    <Share2 className="w-6 h-6 text-white" />
                   </div>
-                )}
-
-                {/* 显示文档包预览 */}
-                {message.role === 'nvwax_agent' && message.documentPackage && (
-                  <div className="mt-4 pt-4 border-t border-gray-200/60 dark:border-gray-700/60">
-                    <DocumentPackagePreview docPackage={message.documentPackage} />
-                  </div>
-                )}
-
-                {/* 显示澄清问题 */}
-                {message.role === 'nvwax_agent' && message.clarificationQuestions && message.clarificationQuestions.length > 0 && (
-                  <div className="mt-4 flex items-start gap-2.5 text-sm text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
-                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold mb-1">需要更多信息：</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        {message.clarificationQuestions.map((q, i) => (
-                          <li key={i} className="leading-relaxed">{q}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                )}
-                
-                <div
-                  className={`text-[10px] mt-2 ${
-                    message.role === 'user' ? 'text-blue-200' : 'text-gray-400 dark:text-gray-500'
-                  }`}
-                >
-                  {message.timestamp.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-
-              {message.role === 'user' && (
-                <div className="shrink-0">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center shadow-sm">
-                    <User size={18} className="text-white" />
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">分享给朋友</h2>
+                    <p className="text-sm text-gray-600">复制以下内容分享到社交媒体</p>
                   </div>
                 </div>
-              )}
-            </div>
-            ))}
-            
-            {isSending && (
-            <div className="flex gap-3 sm:gap-4 justify-start">
-              <div className="shrink-0">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
-                  <Bot size={18} className="text-white" />
-                </div>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700/50 rounded-2xl rounded-bl-lg px-5 py-4 shadow-sm">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                  <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                  <span className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:300ms]" />
-                </div>
-              </div>
-            </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input Area - 与主页面输入框对齐 */}
-            <div className="px-6 sm:px-8 py-4 sm:py-5 border-t border-gray-200/60 dark:border-gray-700/60 bg-white dark:bg-gray-900">
-              <div className="flex gap-3">
-                <textarea
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder={t('inputPlaceholder')}
-                  className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 text-sm"
-                  disabled={isSending || !sessionId}
-                  rows={2}
-                />
                 <button
-                  onClick={sendMessage}
-                  disabled={!inputMessage.trim() || isSending || !sessionId}
-                  className="shrink-0 px-5 py-3 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold text-sm active:scale-95"
+                  onClick={() => setShowShareModal(false)}
+                  className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                  aria-label={t('close')}
                 >
-                  <Send size={18} />
-                  <span className="hidden sm:inline">{t('sendButton')}</span>
+                  <X className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-2.5 text-center">
-                💡 {t('inputHint')}
-              </p>
+
+              <div className="p-6 space-y-4">
+                <div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">{shareContent.title}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{shareContent.content}</p>
+                  <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-600 dark:text-blue-400 font-mono break-all">{shareContent.url}</p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-xs text-gray-500 mb-2">📋 即将复制的内容：</p>
+                  <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">
+                    {shareContent.content}
+                    {'\n'}
+                    {'\n'}
+                    🔗 查看详情：{shareContent.url}
+                  </pre>
+                </div>
+
+                <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-700">
+                    💡 点击"复制并关闭"后，内容将自动复制到剪贴板，您可以粘贴到微信、微博、Twitter 等平台分享。
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6 border-t bg-gray-50 flex gap-3">
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleCopyShareContent}
+                  className="flex-1 px-4 py-3 bg-linear-to-r from-orange-500 to-red-500 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-semibold"
+                >
+                  <CheckCircle className="w-5 h-5" />
+                  <span>复制并关闭</span>
+                </button>
+              </div>
             </div>
-          </section>
-        </div>
+          </div>
+        )}
       </div>
-
-      {/* 创建成功弹窗 */}
-      {showSuccessModal && successData && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-60 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200/60 dark:border-gray-700/60">
-            {/* Header */}
-            <div className="relative flex items-center justify-between p-6 border-b border-gray-200/60 dark:border-gray-800 bg-linear-to-r from-green-50/80 to-emerald-50/80 dark:from-green-900/10 dark:to-emerald-900/10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md shadow-green-500/25">
-                  <CheckCircle className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">🎉 创建成功！</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">选择您的下一步操作</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowSuccessModal(false)}
-                className="p-2 hover:bg-white/50 dark:hover:bg-gray-800/50 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-4">
-              {/* 团队信息预览 */}
-              {successData.documentPackage && (
-                <div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-900/30 rounded-xl p-4">
-                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">
-                    {successData.documentPackage.packageInfo.teamName}
-                  </h3>
-                  <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                    <p>📊 团队类型：{successData.documentPackage.packageInfo.teamType}</p>
-                    <p>📄 文档数量：{successData.documentPackage.packageInfo.totalDocuments} 个</p>
-                    <p>⏰ 生成时间：{new Date(successData.documentPackage.packageInfo.generatedAt).toLocaleString('zh-CN')}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* 操作按钮 */}
-              <div className="space-y-3">
-                <button
-                  onClick={() => {
-                    handleDownload(successData.downloadUrl);
-                    setShowSuccessModal(false);
-                  }}
-                  className="w-full px-6 py-3.5 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
-                >
-                  <Send className="w-5 h-5" />
-                  <span>下载文档包</span>
-                </button>
-                {/* TODO: ProClaw 功能尚未完善，以下按钮为占位 */}
-                <button
-                  onClick={async () => {
-                    if (sessionId) {
-                      await handleIntegrateToProClaw(sessionId);
-                      setShowSuccessModal(false);
-                    }
-                  }}
-                  className="w-full px-6 py-3.5 bg-linear-to-r from-indigo-500 to-blue-700 hover:from-indigo-600 hover:to-blue-800 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  <span>导入 AiTeam 到 ProClaw</span>
-                </button>
-                {/* TODO: ProClaw 下载功能 - 后续根据用户选择进销存模块后跳转到 proclaw.cc */}
-                <a
-                  href="https://proclaw.cc"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full px-6 py-3.5 bg-linear-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-md hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
-                >
-                  <Loader2 className="w-5 h-5" />
-                  <span>下载 ProClaw 桌面端</span>
-                </a>
-                <button
-                  onClick={() => {
-                    handleShare();
-                    setShowSuccessModal(false);
-                  }}
-                  className="w-full px-6 py-3.5 bg-linear-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-xl hover:shadow-lg hover:shadow-orange-200 dark:hover:shadow-orange-900/30 transition-all duration-200 flex items-center justify-center gap-2.5 font-semibold text-base"
-                >
-                  <Share2 className="w-5 h-5" />
-                  <span>分享给朋友</span>
-                </button>
-              </div>
-
-              {/* 提示 */}
-              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700">
-                  💡 您可以稍后在我的 Agent 仓库中查看和管理这个 AiTeam。
-                </p>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="p-6 border-t bg-gray-50">
-              <button
-                onClick={() => setShowSuccessModal(false)}
-                className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
-              >
-                关闭
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 分享弹窗 */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-60 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b bg-linear-to-r from-orange-50 to-red-50">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-linear-to-r from-orange-500 to-red-500 rounded-lg">
-                  <Share2 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">分享给朋友</h2>
-                  <p className="text-sm text-gray-600">复制以下内容分享到社交媒体</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowShareModal(false)}
-                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-4">
-              {/* 预览卡片 */}
-              <div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                <h3 className="font-bold text-gray-900 dark:text-white mb-2">{shareContent.title}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{shareContent.content}</p>
-                <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
-                  <p className="text-xs text-blue-600 dark:text-blue-400 font-mono break-all">{shareContent.url}</p>
-                </div>
-              </div>
-
-              {/* 完整内容预览 */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <p className="text-xs text-gray-500 mb-2">📋 即将复制的内容：</p>
-                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">
-                  {shareContent.content}
-                  {'\n'}
-                  {'\n'}
-                  🔗 查看详情：{shareContent.url}
-                </pre>
-              </div>
-
-              {/* 提示 */}
-              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700">
-                  💡 点击"复制并关闭"后，内容将自动复制到剪贴板，您可以粘贴到微信、微博、Twitter 等平台分享。
-                </p>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="p-6 border-t bg-gray-50 flex gap-3">
-              <button
-                onClick={() => setShowShareModal(false)}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleCopyShareContent}
-                className="flex-1 px-4 py-3 bg-linear-to-r from-orange-500 to-red-500 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-semibold"
-              >
-                <CheckCircle className="w-5 h-5" />
-                <span>复制并关闭</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

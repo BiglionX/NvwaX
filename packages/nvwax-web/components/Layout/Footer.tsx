@@ -1,18 +1,16 @@
 'use client';
 
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
 import { Link } from '@/src/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Heart, Mail } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-  const pathname = usePathname();
   const t = useTranslations();
 
-  // 是否在首页（用于切换暗色星空样式）
-  const isHome = pathname === '/' || pathname === '/en';
+  // 首页即产品（Nvwa 工作台），不再有暗色星空样式，Footer 统一使用普通样式
+  const isHome = false;
 
   const footerLinks = {
     product: [

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import HomeClient from "./HomeClient";
+import NvwaClient from "./nvwa/Client";
 import { alternatesFor } from "@/lib/seo";
 
 type Props = {
@@ -31,5 +31,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default function HomePage() {
-  return <HomeClient />;
+  // 首页即产品：直接渲染 Nvwa 创建工作台（embedded 模式隐藏重复 Logo），用户一进来即可使用
+  return <NvwaClient embedded />;
 }

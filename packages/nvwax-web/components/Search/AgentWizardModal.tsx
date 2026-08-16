@@ -30,6 +30,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { X, Sparkles, Bot, ChevronRight, ChevronLeft, Save, Check, AlertCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
   WizardStepper,
   type WizardStep,
@@ -76,6 +77,8 @@ export default function AgentWizardModal({
   initialSkills = [],
   onSuccess,
 }: AgentWizardModalProps) {
+  const t = useTranslations('agentWizard');
+
   // ============================================================
   // 状态
   // ============================================================
@@ -209,26 +212,26 @@ export default function AgentWizardModal({
   const steps: WizardStep[] = useMemo(() => [
     {
       id: 'identity',
-      title: '身份与定位',
-      description: '为 Agent 命名并选择行业',
+      title: t('stepIdentityTitle'),
+      description: t('stepIdentityDesc'),
       status: stepStatus.identity,
       icon: <Bot size={14} />,
     },
     {
       id: 'capability',
-      title: '能力配置',
-      description: '选择 Skills 和角色',
+      title: t('stepCapabilityTitle'),
+      description: t('stepCapabilityDesc'),
       status: stepStatus.capability,
       icon: <Sparkles size={14} />,
     },
     {
       id: 'test',
-      title: '沙箱测试',
-      description: '实时验证效果后保存',
+      title: t('stepTestTitle'),
+      description: t('stepTestDesc'),
       status: stepStatus.test,
       icon: <Save size={14} />,
     },
-  ], [stepStatus]);
+  ], [stepStatus, t]);
 
   // 当前步骤序号（0-2）
   const currentStepIndex = STEP_IDS.indexOf(currentStepId);
@@ -268,14 +271,22 @@ export default function AgentWizardModal({
       if (text) {
         const parsed = JSON.parse(text);
         const analysis = parsed.analysis;
+        const targetUsersLine = analysis.targetUsers
+          ? t('targetUsersLine', { targetUsers: analysis.targetUsers })
+          : '';
+        const specialRequirementsLine = analysis.specialRequirements
+          ? t('specialRequirementsLine', { specialRequirements: analysis.specialRequirements })
+          : '';
         return {
-          content: `📋 **${name || 'Agent'}** 分析结果：\n\n` +
-            `**团队类型**: ${analysis.companyType}\n` +
-            `**主要职责**: ${analysis.responsibilities?.join('、') || '未指定'}\n` +
-            `**期望产出**: ${analysis.expectedOutputs?.join('、') || '未指定'}\n` +
-            `**置信度**: ${(analysis.confidence * 100).toFixed(0)}%\n\n` +
-            (analysis.targetUsers ? `**目标用户**: ${analysis.targetUsers}\n` : '') +
-            (analysis.specialRequirements ? `**特殊要求**: ${analysis.specialRequirements}\n` : ''),
+          content: t('analysisResult', {
+            name: name || 'Agent',
+            companyType: analysis.companyType,
+            responsibilities: analysis.responsibilities?.join('、') || '未指定',
+            outputs: analysis.expectedOutputs?.join('、') || '未指定',
+            confidence: (analysis.confidence * 100).toFixed(0),
+            targetUsers: targetUsersLine,
+            specialRequirements: specialRequirementsLine,
+          }),
           tokens: text.length,
           durationMs: 800 + Math.random() * 400,
         };
@@ -284,15 +295,16 @@ export default function AgentWizardModal({
     } catch (err: any) {
       // 降级为本地 mock
       return {
-        content: `📋 **${name || 'Agent'}** 模拟响应：\n\n` +
-          `收到输入：「${input}」\n\n` +
-          `基于您的配置（${selectedSkills.length} 个技能），我可以帮您处理此类请求。\n` +
-          `（提示：当前为离线模拟，正式 Agent 创建后将调用真实 LLM）`,
+        content: t('mockResponse', {
+          name: name || 'Agent',
+          input,
+          count: selectedSkills.length,
+        }),
         tokens: input.length * 2,
         durationMs: 600 + Math.random() * 300,
       };
     }
-  }, [name, selectedSkills.length]);
+  }, [name, selectedSkills.length, t]);
 
   // ============================================================
   // 事件处理
@@ -413,13 +425,13 @@ export default function AgentWizardModal({
           <div className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                Agent 名称 <span className="text-red-500">*</span>
+                {t('agentNameLabel')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="例如：小红书内容策划师"
+                placeholder={t('agentNamePlaceholder')}
                 className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white"
                 maxLength={50}
               />
@@ -428,12 +440,12 @@ export default function AgentWizardModal({
 
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                Agent 描述 <span className="text-red-500">*</span>
+                {t('agentDescLabel')} <span className="text-red-500">*</span>
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="详细描述 Agent 的核心职责和适用场景（至少 5 个字）..."
+                placeholder={t('agentDescPlaceholder')}
                 rows={3}
                 className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white resize-none"
                 maxLength={500}
@@ -443,11 +455,11 @@ export default function AgentWizardModal({
 
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                选择行业模板 <span className="text-gray-400 text-xs font-normal">（推荐）</span>
+                {t('industryLabel')} <span className="text-gray-400 text-xs font-normal">{t('industryRecommended')}</span>
               </label>
               <IndustryTemplateGrid
                 selectedId={selectedIndustry || undefined}
-                onSelect={(t: IndustryTemplate) => setSelectedIndustry(t.id)}
+                onSelect={(tpl: IndustryTemplate) => setSelectedIndustry(tpl.id)}
                 size="md"
                 columns={2}
               />
@@ -461,14 +473,14 @@ export default function AgentWizardModal({
             {/* Capabilities 标签 */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                能力标签
+                {t('capabilitiesLabel')}
                 <span className="ml-2 text-xs text-gray-500 font-normal">
-                  {selectedIndustry ? '已根据行业模板自动填充' : '点击下方标签添加'}
+                  {selectedIndustry ? t('capabilitiesAutoFilled') : t('capabilitiesClickToAdd')}
                 </span>
               </label>
               <div className="flex flex-wrap gap-2 min-h-[40px] p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
                 {capabilities.length === 0 ? (
-                  <span className="text-sm text-gray-400">暂未选择能力</span>
+                  <span className="text-sm text-gray-400">{t('noCapabilities')}</span>
                 ) : (
                   capabilities.map(cap => (
                     <span
@@ -479,7 +491,7 @@ export default function AgentWizardModal({
                       <button
                         onClick={() => setCapabilities(prev => prev.filter(c => c !== cap))}
                         className="hover:text-blue-900 dark:hover:text-blue-100"
-                        aria-label={`移除 ${cap}`}
+                        aria-label={t('removeCapability', { cap })}
                       >
                         <X size={12} />
                       </button>
@@ -492,7 +504,7 @@ export default function AgentWizardModal({
             {/* Skills 多选 */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                选择的 Skills <span className="text-red-500">*</span>
+                {t('skillsLabel')} <span className="text-red-500">*</span>
                 <span className="ml-2 text-xs text-gray-500 font-normal">
                   {selectedSkills.length} 个
                 </span>
@@ -500,7 +512,7 @@ export default function AgentWizardModal({
               <div className="space-y-2 max-h-48 overflow-y-auto p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
                 {selectedSkills.length === 0 ? (
                   <div className="text-center py-4 text-sm text-gray-400">
-                    请先选择行业模板或手动添加
+                    {t('noSkills')}
                   </div>
                 ) : (
                   selectedSkills.map(skill => (
@@ -517,7 +529,7 @@ export default function AgentWizardModal({
                       <button
                         onClick={() => setSelectedSkills(prev => prev.filter(s => s !== skill))}
                         className="text-gray-400 hover:text-red-500"
-                        aria-label={`移除 ${skill}`}
+                        aria-label={t('removeSkill', { skill })}
                       >
                         <X size={14} />
                       </button>
@@ -530,13 +542,13 @@ export default function AgentWizardModal({
             {/* 后端推荐 */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                智能推荐 <span className="text-xs text-gray-500 font-normal">（基于您的描述）</span>
+                {t('smartRecommend')} <span className="text-xs text-gray-500 font-normal">{t('smartRecommendHint')}</span>
               </label>
               <div className="p-3 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-200 dark:border-purple-800 min-h-[60px]">
                 {loadingMatches ? (
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Sparkles size={14} className="animate-pulse" />
-                    <span>正在搜索匹配的 Agent...</span>
+                    <span>{t('searchingAgents')}</span>
                   </div>
                 ) : agentMatches.length > 0 ? (
                   <div className="space-y-2">
@@ -547,7 +559,7 @@ export default function AgentWizardModal({
                             {match.agent.name}
                           </span>
                           <span className="ml-2 text-xs text-gray-500">
-                            {(match.score * 100).toFixed(0)}% 匹配
+                            {t('matchPercent', { percent: (match.score * 100).toFixed(0) })}
                           </span>
                         </div>
                         <button
@@ -559,14 +571,14 @@ export default function AgentWizardModal({
                           }}
                           className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                         >
-                          引用
+                          {t('reference')}
                         </button>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500">
-                    完善 Agent 描述后，AI 将为您推荐相似的 Agent 类型
+                    {t('recommendEmpty')}
                   </p>
                 )}
               </div>
@@ -581,25 +593,25 @@ export default function AgentWizardModal({
             <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                 <Check size={14} className="text-green-600" />
-                配置预览
+                {t('configPreview')}
               </h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <span className="text-gray-500">名称：</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{name || '未设置'}</span>
+                  <span className="text-gray-500">{t('fieldName')}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{name || t('notSet')}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">行业：</span>
+                  <span className="text-gray-500">{t('fieldIndustry')}</span>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    {selectedIndustry || '自定义'}
+                    {selectedIndustry || t('custom')}
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-500">能力：</span>
+                  <span className="text-gray-500">{t('fieldCapabilities')}</span>
                   <span className="font-medium text-gray-900 dark:text-white">{capabilities.length} 个</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">技能：</span>
+                  <span className="text-gray-500">{t('fieldSkills')}</span>
                   <span className="font-medium text-gray-900 dark:text-white">{selectedSkills.length} 个</span>
                 </div>
               </div>
@@ -610,7 +622,7 @@ export default function AgentWizardModal({
               <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2">
                 <AlertCircle size={16} className="text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-red-700 dark:text-red-300">创建失败</p>
+                  <p className="text-sm font-semibold text-red-700 dark:text-red-300">{t('createFailed')}</p>
                   <p className="text-xs text-red-600 dark:text-red-400 mt-1">{submitError}</p>
                 </div>
               </div>
@@ -618,9 +630,9 @@ export default function AgentWizardModal({
 
             {/* 沙箱对话 */}
             <SandboxChat
-              title="沙箱测试"
+              title={t('sandboxTitle')}
               agentName={name || 'Agent'}
-              systemHint="测试 Agent 的响应效果。满意后点击下方保存按钮完成创建。"
+              systemHint={t('sandboxHint')}
               executor={sandboxExecutor}
               initialMessages={[]}
               maxMessages={20}
@@ -648,12 +660,12 @@ export default function AgentWizardModal({
             </div>
             <div>
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                Agent 创建向导
-                <span className="ml-2 text-xs font-normal text-gray-500">v2.2.0</span>
+                {t('title')}
+                <span className="ml-2 text-xs font-normal text-gray-500">{t('versionBadge')}</span>
               </h2>
               {initialQuery && (
                 <p className="text-xs text-gray-500">
-                  基于搜索关键词：<span className="font-medium">{initialQuery}</span>
+                  {t('basedOnQuery', { query: initialQuery })}
                 </p>
               )}
             </div>
@@ -661,7 +673,7 @@ export default function AgentWizardModal({
           <button
             onClick={handleClose}
             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            aria-label="关闭"
+            aria-label={t('close')}
           >
             <X size={18} className="text-gray-500" />
           </button>
@@ -690,7 +702,7 @@ export default function AgentWizardModal({
             disabled={submitting}
             className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
           >
-            取消
+            {t('cancel')}
           </button>
 
           <div className="flex items-center gap-2">
@@ -701,7 +713,7 @@ export default function AgentWizardModal({
                 className="inline-flex items-center gap-1 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
               >
                 <ChevronLeft size={16} />
-                上一步
+                {t('prevStep')}
               </button>
             )}
 
@@ -714,12 +726,12 @@ export default function AgentWizardModal({
                 {submitting ? (
                   <>
                     <Sparkles size={16} className="animate-spin" />
-                    创建中...
+                    {t('creating')}
                   </>
                 ) : (
                   <>
                     <Save size={16} />
-                    保存并发布
+                    {t('saveAndPublish')}
                   </>
                 )}
               </button>
@@ -729,7 +741,7 @@ export default function AgentWizardModal({
                 disabled={!canProceed}
                 className="inline-flex items-center gap-1 px-5 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                下一步
+                {t('nextStep')}
                 <ChevronRight size={16} />
               </button>
             )}
