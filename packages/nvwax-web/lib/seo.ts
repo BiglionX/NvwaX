@@ -111,13 +111,77 @@ export function softwareApplicationJsonLd() {
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     description:
-      'NvwaX 虚拟公司制造工厂：搜索 240+ AI Agent，组建 AiTeam 团队，复用 Team Skills 模板，发布悬赏任务，用 AI 智能体驱动业务。',
+      'NvwaX v2.2.0 虚拟公司制造工厂：Structured Output 引擎（图状态机）、动态 Agent 注册表、YAML DSL、反思学习系统、MCP 协议。搜索 240+ AI Agent，组建 AiTeam 团队，复用 Team Skills 模板，发布悬赏任务。',
     offers: {
       '@type': 'Offer',
       price: '0',
       priceCurrency: 'CNY',
       description: '免费注册开始使用，另有 Pro 与 Enterprise 付费套餐',
     },
+    additionalProperty: [
+      { '@type': 'PropertyValue', name: 'version', value: '2.2.0' },
+      { '@type': 'PropertyValue', name: 'agents', value: '240+' },
+      { '@type': 'PropertyValue', name: 'dataSources', value: '8+' },
+      { '@type': 'PropertyValue', name: 'license', value: 'MIT' },
+    ],
+  };
+}
+
+/** 首页 FAQ 结构化数据（GEO 高价值：AI 引擎直接引用问答内容） */
+export function homePageJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'NvwaX 是什么？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'NvwaX 是一个开源的 AI Agent 与 AiTeam 平台，帮助开发者搜索、发现、创建和发布 AI 智能体与 AI 团队。平台提供智能体市场、团队协作模板、智能工作流、悬赏任务系统等能力。',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'v2.2.0 有哪些核心升级？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'v2.2.0 主要升级包括：1) Structured Output 引擎 - 3级降级策略，输出可靠性从80%提升到99%；2) 图状态机流程引擎 - 支持条件分支、Checkpoint、Human-in-the-loop；3) 动态 Agent 注册表 - 突破5种硬编码类型限制；4) 声明式 YAML DSL；5) 反思学习系统；6) MCP 协议支持。',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '如何创建 AI Agent？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '通过 Nvwa 智能体工厂创建：对话说清需求，Nvwa 引导完成需求分析、数据源配置、技能匹配，自动搜索模板并审查配置。支持对话式（7步引导）和状态机两种创建模式。',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '什么是 AiTeam？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'AiTeam 是 NvwaX 的核心概念，代表一个 AI Agent 协作团队。每个团队包含多个协同工作的 Agent（CEO、分析师、工程师等），用于完成特定业务目标。支持团队模板、一键导出为 CrewAI/LangGraph 格式。',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '支持哪些数据源？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '目前支持 GitHub（200+ Agents）、Gitee、ModelScope、百度、阿里、腾讯、华为、京东等多个数据源。采用混合搜索策略，优先本地数据库，无结果时全网搜索。',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'MCP 协议是什么？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Model Context Protocol（MCP）是标准化的 AI Agent 工具调用协议。NvwaX v2.2.0 暴露了6个 MCP Tools（搜索Agent、设计团队、匹配技能、分析需求等），支持 CrewAI、LangGraph、OpenAgents 等外部框架调用。',
+        },
+      },
+    ],
   };
 }
 

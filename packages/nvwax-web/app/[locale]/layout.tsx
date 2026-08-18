@@ -31,10 +31,10 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
 
-  const titleZh = "NvwaX - 虚拟公司制造工厂 | 轻松创建个性化的虚拟公司";
-  const titleEn = "NvwaX - Virtual Company Factory | Easily Create Your AI Virtual Company";
-  const descZh = "NvwaX 是一个虚拟公司制造工厂，帮你轻松创建个性化的 AI 虚拟公司。支持搜索和管理 AI Agent，组建 AiTeam，用 AI 智能体驱动你的业务。";
-  const descEn = "NvwaX is a Virtual Company Factory that helps you easily create personalized AI Virtual Companies. Search and manage AI Agents, build AiTeams, and power your business with AI agents.";
+  const titleZh = "NvwaX v2.2.0 - 虚拟公司制造工厂 | 轻松创建个性化的虚拟公司";
+  const titleEn = "NvwaX v2.2.0 - Virtual Company Factory | Create Your AI Virtual Company";
+  const descZh = "NvwaX v2.2.0 虚拟公司制造工厂。Structured Output 引擎、图状态机、动态 Agent 注册表、YAML DSL、反思学习系统、MCP 协议。搜索 240+ AI Agent，组建 AiTeam，用 AI 智能体驱动业务。";
+  const descEn = "NvwaX v2.2.0 - Virtual Company Factory. Structured Output Engine (99% reliability), Graph State Machine, Dynamic Agent Registry, YAML DSL, Reflection Learning, MCP Protocol. Search 240+ AI Agents, build AiTeams.";
 
   const title = locale === 'en' ? titleEn : titleZh;
   const description = locale === 'en' ? descEn : descZh;
@@ -47,6 +47,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     },
     description,
     keywords: [
+      // 核心产品词
+      "NvwaX",
       "虚拟公司",
       "Virtual Company",
       "AI Agent",
@@ -56,10 +58,33 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       "人工智能代理",
       "Agent搜索",
       "AI Marketplace",
-      "NvwaX",
+      // v2.2.0 新功能关键词
+      "Structured Output",
+      "图状态机",
+      "Graph State Machine",
+      "动态Agent注册表",
+      "Dynamic Agent Registry",
+      "YAML DSL",
+      "声明式YAML",
+      "反思学习",
+      "Reflection Learning",
+      "MCP Protocol",
+      "Model Context Protocol",
+      // v2.1.0 功能
+      "行业插件",
+      "Industry Plugin",
+      "能力注册API",
+      "Action输出扩展",
+      "插件上下文注入",
+      // 通用
       "智能体平台",
       "AI Agent平台",
       "开源AI",
+      "开源AI Agent",
+      "CrewAI",
+      "LangGraph",
+      "AI工作流",
+      "多智能体协作",
     ],
     openGraph: {
       title,
@@ -129,6 +154,12 @@ export default async function LocaleLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        {/* 主题预置脚本：首帧前按 localStorage/系统偏好应用 .dark，避免暗色模式闪烁（FOUC） */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('nvwax-theme');var d=t==='dark'||((!t||t==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark')}catch(e){}})();`,
+          }}
+        />
         {/* GEO 结构化数据：WebSite（站内搜索）+ Organization + SoftwareApplication */}
         <script
           type="application/ld+json"
