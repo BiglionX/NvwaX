@@ -2,22 +2,26 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { User as UserIcon, Folder, Award, Settings, LogOut, Coins, ShoppingCart, Store } from 'lucide-react';
+import { User as UserIcon, Folder, Award, Settings, LogOut, Coins, ShoppingCart, Store, Building2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function UserCenterLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const t = useTranslations('userCenter.common');
   const { logout } = useAuth();
 
   const menuItems = [
-    { label: '个人信息', icon: UserIcon, path: '/profile' },
-    { label: 'Token消耗', icon: Coins, path: '/token-usage' },
-    { label: '购买Token', icon: ShoppingCart, path: '/token-purchase' },
-    { label: '我的Agent仓库', icon: Folder, path: '/agent-repository' },
-    { label: '我的悬赏', icon: Award, path: '/my-bounties' },
-    { label: 'MicroBiz管理', icon: Store, path: '/microbiz' },
-    { label: '账号设置', icon: Settings, path: '/settings' }
+    // 主功能：我的 AI 公司（虚拟公司）置顶
+    { label: t('myAiCompanies'), icon: Building2, path: '/my-aiteam' },
+    { label: t('profile'), icon: UserIcon, path: '/profile' },
+    { label: t('tokenUsage'), icon: Coins, path: '/token-usage' },
+    { label: t('tokenPurchase'), icon: ShoppingCart, path: '/token-purchase' },
+    { label: t('agentRepository'), icon: Folder, path: '/agent-repository' },
+    { label: t('myBounties'), icon: Award, path: '/my-bounties' },
+    { label: t('microbiz'), icon: Store, path: '/microbiz' },
+    { label: t('settings'), icon: Settings, path: '/settings' },
   ];
 
   const handleLogout = () => {
@@ -33,14 +37,14 @@ export default function UserCenterLayout({ children }: { children: React.ReactNo
           <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-4 sticky top-6">
             <div className="flex items-center gap-2 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
               <UserIcon className="text-blue-600 dark:text-blue-400" size={20} />
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white">用户中心</h2>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t('sidebarTitle')}</h2>
             </div>
-            
+
             <nav className="space-y-1">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.path || pathname?.startsWith(item.path + '/');
-                
+
                 return (
                   <Link
                     key={item.path}
@@ -64,7 +68,7 @@ export default function UserCenterLayout({ children }: { children: React.ReactNo
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all"
               >
                 <LogOut size={18} />
-                <span>退出登录</span>
+                <span>{t('logout')}</span>
               </button>
             </div>
           </div>

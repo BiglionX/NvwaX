@@ -31,7 +31,7 @@ const safeParseJSON = (value: unknown) => {
 
 export default function TeamSkillDetailView() {
   const params = useParams();
-  const id = params.id as string;
+  const id = (params?.id as string) || '';
   const [showPackageModal, setShowPackageModal] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -111,7 +111,7 @@ export default function TeamSkillDetailView() {
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
           >
             <ArrowLeft size={18} />
-            返回 Agent 广场
+            返回 AI 团队市场
           </Link>
         </div>
       </div>
@@ -127,7 +127,7 @@ export default function TeamSkillDetailView() {
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
         >
           <ArrowLeft size={18} />
-          返回 Agent 广场
+          返回 AI 团队市场
         </Link>
       </div>
 
@@ -142,7 +142,7 @@ export default function TeamSkillDetailView() {
               {skill.category === 'virtual-company' && (
                 <span className="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 flex items-center gap-1">
                   <Sparkles size={14} />
-                  AiTeam
+                  AI 公司
                 </span>
               )}
               {skill.category === 'website_operations' && (
@@ -513,8 +513,8 @@ export default function TeamSkillDetailView() {
             </div>
             <AiTeamChat
               sessionId={id} 
-              onComplete={(data) => {
-                console.log('Chat completed', data);
+              onComplete={() => {
+                // 会话完成回调（预留）
               }} 
             />
           </div>

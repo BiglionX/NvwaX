@@ -1,4 +1,4 @@
-import apiClient from './client';
+import { authedJson } from '@/lib/oidc/authed-fetch';
 
 /**
  * v2.2.0 Aiteam State Machine API 客户端
@@ -111,16 +111,20 @@ export interface EventResult {
 
 /**
  * 创建新的 Aiteam 状态机 Session
+ *
+ * 鉴权说明：后端 /aiteam-state-machine 挂载 universalAuthMiddleware，
+ * 统一走 authedJson（/api/auth/proxy 注入 OIDC token）。
  */
 export async function createStateMachineSession(
   userId: string,
   initialData?: Record<string, unknown>
 ): Promise<{ sessionId: string }> {
-  const response = await apiClient.post('/aiteam-state-machine/sessions', {
-    userId,
-    initialData,
+  const response = await authedJson<{ sessionId: string }>('/aiteam-state-machine/sessions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, initialData }),
   });
-  return response.data;
+  return response;
 }
 
 /**
@@ -129,16 +133,18 @@ export async function createStateMachineSession(
 export async function getStateMachineState(
   sessionId: string
 ): Promise<StateMachineState> {
-  const response = await apiClient.get(`/aiteam-state-machine/sessions/${sessionId}/state`);
-  return response.data.state;
+  const response = await authedJson<{ state: StateMachineState }>(
+    `/aiteam-state-machine/sessions/${sessionId}/state`,
+  );
+  return response.state;
 }
 
 /**
  * 获取状态机图定义
  */
 export async function getStateMachineGraph(): Promise<StateGraphDefinition> {
-  const response = await apiClient.get('/aiteam-state-machine/graph');
-  return response.data.graph;
+  const response = await authedJson<{ graph: StateGraphDefinition }>('/aiteam-state-machine/graph');
+  return response.graph;
 }
 
 /**
@@ -148,17 +154,22 @@ export async function triggerStateMachineEvent(
   sessionId: string,
   event: StateMachineEvent
 ): Promise<EventResult> {
-  const response = await apiClient.post(`/aiteam-state-machine/sessions/${sessionId}/event`, {
-    event,
-  });
-  return response.data.result;
+  const response = await authedJson<{ result: EventResult }>(
+    `/aiteam-state-machine/sessions/${sessionId}/event`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event }),
+    },
+  );
+  return response.result;
 }
 
 /**
  * 重置状态机到初始状态
  */
 export async function resetStateMachineSession(sessionId: string): Promise<void> {
-  await apiClient.post(`/aiteam-state-machine/sessions/${sessionId}/reset`);
+  await authedJson(`/aiteam-state-machine/sessions/${sessionId}/reset`, { method: 'POST' });
 }
 
 /**

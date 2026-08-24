@@ -41,7 +41,8 @@ export const userApi = {
   // 获取用户统计
   getStats: async (userId: string): Promise<UserStats> => {
     const response = await api.get('/user/stats', { params: { userId } });
-    return response.data;
+    // 后端 successResponse 双重包裹：{ success, data: { projectCount, teamCount, agentTeamCount } }
+    return response.data.data as UserStats;
   },
 
   // ========== Token相关 ==========

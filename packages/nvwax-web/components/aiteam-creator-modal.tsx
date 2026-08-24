@@ -12,6 +12,7 @@ import StepProgress from '@/components/creation/StepProgress';
 import ChatMessage, { ChatMessageData } from '@/components/creation/ChatMessage';
 import ChatInput from '@/components/creation/ChatInput';
 import CreateSuccessDialog, { SuccessData } from '@/components/creation/CreateSuccessDialog';
+import type { ExportFormatType } from '@/components/ExportModal';
 
 interface AiTeamCreatorModalProps {
   onClose: () => void;
@@ -66,7 +67,7 @@ interface AiTeamMessage extends ChatMessageData {
   };
 }
 
-export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage, embedded = false }: AiTeamCreatorModalProps) {
+export default function AiTeamCreatorModal({ onClose, initialMessage, embedded = false }: AiTeamCreatorModalProps) {
   const t = useTranslations('vcChatModal');
   const locale = useLocale();
   const { isLoggedIn, login } = useAuth();
@@ -282,7 +283,6 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
 
       // 如果进入 team_design 或 ceo_generation 阶段，自动触发 Agent/Skill 匹配
       if ((data.data.phase === 'team_design' || data.data.phase === 'ceo_generation') && !data.data.needsClarification) {
-        console.log('🚀 Auto-triggering NvwaX match...');
         setTimeout(() => triggerNvwaXMatch(), 1000);
       }
     } catch (error) {
@@ -300,8 +300,6 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
     if (!sessionId) return;
 
     try {
-      console.log('🚀 Triggering NvwaX match...');
-
       // 添加系统消息
       const systemMessage: AiTeamMessage = {
         id: `system-match-${Date.now()}`,
@@ -322,8 +320,6 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
       if (!response.ok || !data.success) {
         throw new Error(data.error || t('triggerMatchError'));
       }
-
-      console.log('✅ NvwaX match completed:', data.data);
 
       // 添加完成消息
       const agentMatches = data.data.agentMatches || {};
@@ -404,13 +400,10 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
         throw new Error(data.error || t('saveFailed'));
       }
 
-      console.log('✅ Team confirmed and saved:', data.data);
-
       // Step 2: 如果勾选了自动发布，则发布到市场
       let publishResult = null;
       if (autoPublishToMarketplace && sessionId) {
         try {
-          console.log('🚀 Auto-publishing to marketplace...');
           const publishResponse = await authedFetch(`/aiteam-creation/sessions/${sessionId}/publish-to-marketplace`, {
             method: 'POST',
             headers: authedHeaders,
@@ -420,7 +413,6 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
 
           if (publishResponse.ok && publishData.success) {
             publishResult = publishData.data;
-            console.log('✅ Published to marketplace:', publishResult);
           } else {
             console.warn('⚠️ Auto-publish failed:', publishData.error);
           }
@@ -433,6 +425,8 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
       // 设置成功数据并显示弹窗（不再在对话中显示按钮）
       setSuccessData({
         downloadUrl: data.data.downloadUrl,
+        // "创建即入仓库"：confirm 返回的 aiteamId 供后续导出/管理
+        aiteamId: data.data.aiteamId || null,
         documentPackage: data.data.documentPackage
       });
       setShowSuccessModal(true);
@@ -491,8 +485,6 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
       a.click();
       a.remove();
       window.URL.revokeObjectURL(downloadUrl);
-
-      console.log('✅ Document package downloaded');
     } catch (error) {
       console.error('Error downloading document package:', error);
       alert(t('downloadFailed'));
@@ -517,8 +509,6 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
         throw new Error(data.error || t('integrateFailed'));
       }
 
-      console.log('✅ Team integrated to ProClaw:', data.data);
-
       // 添加成功消息
       const successMessage: AiTeamMessage = {
         id: `system-integrate-success-${Date.now()}`,
@@ -536,6 +526,97 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
+    }
+  };
+
+  /**
+   * 多壳落地导出（Sprint 新增）
+   *
+   * 用户在创建成功弹窗选择"落地方式"后触发：
+   * - 优先：若 confirm 已返回 aiteamId（"创建即入仓库"）→ 走标准 /aiteams/:id/export
+   * - 兜底：走 session-based 导出 POST /api/aiteam-creation/sessions/:id/export
+   * - 触发浏览器下载
+   */
+  const handleExportToShell = async (format: ExportFormatType) => {
+    // 优先走标准 aiteam 导出（Agent 仓库同款 API）
+    if (successData?.aiteamId) {
+      try {
+        const response = await authedFetch(`/aiteams/${successData.aiteamId}/export`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ format }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.error?.message || '导出失败');
+        }
+        // data.data 是 ExportResult（含 downloadUrl）
+        const downloadUrl = data.data?.downloadUrl;
+        if (!downloadUrl) throw new Error('Missing downloadUrl');
+        const dlResponse = await authedFetch(downloadUrl, { method: 'GET' });
+        if (!dlResponse.ok) throw new Error('Download failed');
+        const blob = await dlResponse.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        // 按格式映射文件名（避免 YAML/LangGraph 被存成 .json）
+        const shellFilenames: Record<ExportFormatType, string> = {
+          json: 'company-config.json',
+          yaml: 'company-config.yaml',
+          proclaw: 'company-config.proclaw-team.json',
+          crewai: 'team.crewai',
+          langgraph: 'company-config.langgraph.json',
+        };
+        a.download = shellFilenames[format] || 'company-config.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        return;
+      } catch (err) {
+        console.warn('[handleExportToShell] standard aiteam export failed, falling back to session export:', err);
+      }
+    }
+
+    // 兜底：session-based 导出
+    if (!sessionId) {
+      alert(t('exportFailed') || '导出失败：会话不存在');
+      return;
+    }
+    try {
+      const response = await authedFetch(`/aiteam-creation/sessions/${sessionId}/export`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ format }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || t('exportFailed') || '导出失败');
+      }
+
+      // 触发浏览器下载（后端已把文件写到 exports/，通过静态端点提供）
+      const downloadUrl = data.data.downloadUrl;
+      if (!downloadUrl) {
+        throw new Error('Missing downloadUrl');
+      }
+      const dlResponse = await authedFetch(downloadUrl, { method: 'GET' });
+      if (!dlResponse.ok) {
+        throw new Error('Download failed');
+      }
+      const blob = await dlResponse.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.data.fileName || `ai-team.${data.data.extension || 'json'}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting to shell:', error);
+      alert(t('exportFailed') || '导出失败');
     }
   };
 
@@ -574,6 +655,16 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
     const content = generateShareContent();
     setShareContent(content);
     setShowShareModal(true);
+  };
+
+  /**
+   * 创建成功后跳转到「我的 AI 公司」详情（带 ?aiteam=<id> 参数）
+   */
+  const handleViewCompany = (aiteamId: string) => {
+    const target = `/${locale}/my-aiteam?aiteam=${encodeURIComponent(aiteamId)}`;
+    if (typeof window !== 'undefined') {
+      window.location.href = target;
+    }
   };
 
   /**
@@ -809,7 +900,9 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
             onIntegrate={() => {
               if (sessionId) handleIntegrateToProClaw(sessionId);
             }}
+            onExportToShell={handleExportToShell}
             onShare={handleShare}
+            onViewCompany={successData?.aiteamId ? () => handleViewCompany(successData.aiteamId!) : undefined}
           />
         )}
 
@@ -936,7 +1029,9 @@ export default function AiTeamCreatorModal({ onClose, onSuccess, initialMessage,
             onIntegrate={() => {
               if (sessionId) handleIntegrateToProClaw(sessionId);
             }}
+            onExportToShell={handleExportToShell}
             onShare={handleShare}
+            onViewCompany={successData?.aiteamId ? () => handleViewCompany(successData.aiteamId!) : undefined}
           />
         )}
 

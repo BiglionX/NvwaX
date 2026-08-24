@@ -1,4 +1,4 @@
-import { authedFetch } from '@/lib/oidc/authed-fetch';
+import { authedFetch, authedJson } from '@/lib/oidc/authed-fetch';
 import apiClient from './client';
 
 /**
@@ -315,31 +315,33 @@ export const leaderAgentApi = {
 
 /**
  * 团队执行 API 客户端
+ *
+ * 鉴权说明：/teams/:teamId/execute 等端点后端依赖 req.user（由 userAuthMiddleware
+ * 或 equivalent 注入，仅认 Bearer / ?token=），统一走 authedJson。
  */
 export const teamExecutionApi = {
   /**
    * 启动团队执行
    */
   executeTeam: async (teamId: string, requirement: string) => {
-    const response = await apiClient.post(`/teams/${teamId}/execute`, {
-      requirement
+    return authedJson(`/teams/${teamId}/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requirement }),
     });
-    return response.data;
   },
 
   /**
    * 获取执行历史
    */
   getExecutionHistory: async (agentTeamId: string) => {
-    const response = await apiClient.get(`/agent-teams/${agentTeamId}/executions`);
-    return response.data;
+    return authedJson(`/agent-teams/${agentTeamId}/executions`);
   },
 
   /**
    * 获取执行详情
    */
   getExecutionDetails: async (executionId: string) => {
-    const response = await apiClient.get(`/executions/${executionId}`);
-    return response.data;
-  }
+    return authedJson(`/executions/${executionId}`);
+  },
 };

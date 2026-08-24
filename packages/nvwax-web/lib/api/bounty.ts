@@ -3,6 +3,7 @@
  */
 
 import apiClient from './client';
+import { authedJson } from '@/lib/oidc/authed-fetch';
 
 export interface Bounty {
   id: string;
@@ -105,43 +106,59 @@ export const bountyApi = {
   },
 
   /**
-   * 创建悬赏
+   * 创建悬赏（受保护：userAuthMiddleware）
    */
   async createBounty(data: CreateBountyInput): Promise<Bounty> {
-    const response = await apiClient.post('/bounties', data);
-    return response.data.data;
+    const response = await authedJson<{ success: boolean; data: Bounty }>('/bounties', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return response.data;
   },
 
   /**
-   * 领取悬赏
+   * 领取悬赏（受保护：userAuthMiddleware）
    */
   async claimBounty(id: string): Promise<Bounty> {
-    const response = await apiClient.post(`/bounties/${id}/claim`);
-    return response.data.data;
+    const response = await authedJson<{ success: boolean; data: Bounty }>(`/bounties/${id}/claim`, {
+      method: 'POST',
+    });
+    return response.data;
   },
 
   /**
-   * 提交成果
+   * 提交成果（受保护：userAuthMiddleware）
    */
   async submitBounty(id: string, submissionUrl: string): Promise<Bounty> {
-    const response = await apiClient.post(`/bounties/${id}/submit`, { submissionUrl });
-    return response.data.data;
+    const response = await authedJson<{ success: boolean; data: Bounty }>(`/bounties/${id}/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ submissionUrl }),
+    });
+    return response.data;
   },
 
   /**
-   * 验证悬赏
+   * 验证悬赏（受保护：userAuthMiddleware）
    */
   async verifyBounty(id: string, approved: boolean, notes?: string): Promise<Bounty> {
-    const response = await apiClient.post(`/bounties/${id}/verify`, { approved, notes });
-    return response.data.data;
+    const response = await authedJson<{ success: boolean; data: Bounty }>(`/bounties/${id}/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ approved, notes }),
+    });
+    return response.data;
   },
 
   /**
-   * 取消悬赏
+   * 取消悬赏（受保护：userAuthMiddleware）
    */
   async cancelBounty(id: string): Promise<Bounty> {
-    const response = await apiClient.delete(`/bounties/${id}`);
-    return response.data.data;
+    const response = await authedJson<{ success: boolean; data: Bounty }>(`/bounties/${id}`, {
+      method: 'DELETE',
+    });
+    return response.data;
   },
 
   /**

@@ -1,4 +1,4 @@
-import apiClient from './client';
+import { authedJson, buildQuery } from '@/lib/oidc/authed-fetch';
 
 /**
  * 通知定义
@@ -27,6 +27,9 @@ export interface NotificationSearchResult {
 
 /**
  * 通知 API 客户端
+ *
+ * 鉴权说明：后端 /notifications 挂载 universalAuthMiddleware（仅认 Bearer / ?token=），
+ * 统一走 authedJson（/api/auth/proxy 注入 OIDC token）。
  */
 export const notificationApi = {
   /**
@@ -38,8 +41,9 @@ export const notificationApi = {
     page?: number;
     limit?: number;
   }): Promise<{ success: boolean; data: NotificationSearchResult }> => {
-    const response = await apiClient.get('/notifications', { params });
-    return response.data;
+    return authedJson<{ success: boolean; data: NotificationSearchResult }>(
+      `/notifications${buildQuery(params as Record<string, unknown>)}`,
+    );
   },
 
   /**
@@ -47,10 +51,9 @@ export const notificationApi = {
    */
   getUnreadCount: async (): Promise<{ success: boolean; data: { count: number } }> => {
     try {
-      const response = await apiClient.get('/notifications/unread-count', {
-        timeout: 3000 // 缩短超时时间到 3 秒，快速失败
-      });
-      return response.data;
+      return await authedJson<{ success: boolean; data: { count: number } }>(
+        '/notifications/unread-count',
+      );
     } catch {
       // 静默失败，不打印日志，避免干扰开发体验
       // 通知功能是可选的，失败不影响核心功能
@@ -62,23 +65,22 @@ export const notificationApi = {
    * 标记通知为已读
    */
   markAsRead: async (id: string): Promise<{ success: boolean; data: Notification }> => {
-    const response = await apiClient.put(`/notifications/${id}/read`);
-    return response.data;
+    return authedJson<{ success: boolean; data: Notification }>(`/notifications/${id}/read`, {
+      method: 'PUT',
+    });
   },
 
   /**
    * 批量标记所有通知为已读
    */
   markAllAsRead: async () => {
-    const response = await apiClient.put('/notifications/read-all');
-    return response.data;
+    return authedJson('/notifications/read-all', { method: 'PUT' });
   },
 
   /**
    * 删除通知
    */
   deleteNotification: async (id: string) => {
-    const response = await apiClient.delete(`/notifications/${id}`);
-    return response.data;
-  }
+    return authedJson(`/notifications/${id}`, { method: 'DELETE' });
+  },
 };

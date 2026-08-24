@@ -1,6 +1,15 @@
 # NvwaX Agent 仓库重构开发计划
 
-> **项目定位**：NvwaX 是智能体（Agent）与智能体团队（AiTeam）的**制造工厂**，负责创建、配置、发布智能体资产，但不提供运行环境。用户创建的 Agent 和 AiTeam 可发布至 NvwaX 市场，或下载/集成到 ProClaw 本地桌面端使用。
+> **⚠️ 演进声明（2026-08-23）**：本文档为早期「Agent 仓库」重构计划，已被 v2.0.0
+> 「AI Team Builder（虚拟公司）」转型**部分取代**：
+> - 「我的 Agent 仓库」→ 已实现为 **`/agent-repository`「人才库 · 员工管理」**（AI 公司 Tab 前置，Agent 降级为员工）
+> - 「虚拟公司」→ 已实现为 **`/my-aiteam`「我的 AI 公司」** 管理页（含任务分配/执行入口）
+>
+> 最新产品方向与完整改动记录见
+> **[AI-TEAM-BUILDER-TRANSFORMATION.md](./AI-TEAM-BUILDER-TRANSFORMATION.md)**。
+> 本文档保留作为历史计划存档。
+
+> **项目定位**：NvwaX 是帮你组建 AI 公司（虚拟公司）的操作系统，负责创建、配置、发布智能体资产，但不提供运行环境。用户创建的 Agent 和 AiTeam 可发布至 NvwaX 市场，或下载/集成到 ProClaw 本地桌面端使用。
 
 ---
 

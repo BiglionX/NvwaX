@@ -5,15 +5,17 @@ import { usePathname } from 'next/navigation';
 import { Link } from '@/src/i18n/navigation';
 import { useRouter } from '@/src/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { Home, User, LogIn, LogOut, Menu, X, Award, ClipboardList, Sparkles, Store, Code } from 'lucide-react';
+import { Home, User, LogIn, LogOut, Menu, X, Award, ClipboardList, Sparkles, Store, Code, Building2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAiSearch } from '@/contexts/AiSearchContext';
 import { useState } from 'react';
 import NotificationDropdown from '../notification-dropdown';
 import LocaleSwitcher from '../LocaleSwitcher';
+import ThemeSwitcher from '../ThemeSwitcher';
 
 const getNavItems = (t: (key: string) => string) => [
   { label: t('nav.home'), icon: Home, path: '/' },
+  { label: t('nav.buildCompany'), icon: Building2, path: '/nvwa' },
   { label: t('nav.developer'), icon: Code, path: '/developer' },
   { label: t('nav.marketplace'), icon: Store, path: '/marketplace' },
   { label: t('nav.bounties'), icon: Award, path: '/bounties' },
@@ -108,6 +110,7 @@ export default function Navbar() {
 
           {/* User Actions */}
           <div className="hidden lg:flex items-center gap-2 shrink-0">
+            <ThemeSwitcher />
             <LocaleSwitcher />
             {isLoggedIn ? (
               <>
@@ -155,18 +158,22 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile: AI 搜索 + 菜单按钮 */}
+          {/* Mobile: AI 搜索 + 主题 + 菜单按钮 */}
           <div className="lg:hidden flex items-center gap-1">
+            <ThemeSwitcher />
             <button
               onClick={() => openAiSearch()}
               className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
               title={t('nav.aiSearch')}
+              aria-label={t('nav.aiSearch')}
             >
               <Sparkles size={20} />
             </button>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              aria-label={isMobileMenuOpen ? '关闭菜单' : '打开菜单'}
+              aria-expanded={isMobileMenuOpen}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>

@@ -1,4 +1,4 @@
-import apiClient from './client';
+import { authedJson, buildQuery } from '@/lib/oidc/authed-fetch';
 
 /**
  * Agent 定义
@@ -16,7 +16,7 @@ export interface Agent {
   status: 'draft' | 'active' | 'archived' | 'deleted';
   templateId?: string;
   version: string;
-  
+
   // 新增字段（Agent 仓库重构）
   type: 'single' | 'team_member';
   publishStatus: 'draft' | 'published' | 'private';
@@ -27,7 +27,7 @@ export interface Agent {
   thumbnailUrl?: string;
   rating: number;
   reviewCount: number;
-  
+
   createdAt: string;
   updatedAt: string;
 }
@@ -42,6 +42,9 @@ export interface AgentSearchResult {
 
 /**
  * Agent API 客户端
+ *
+ * 鉴权说明：后端 /agents 全部路由挂载 userAuthMiddleware（仅认 Bearer / ?token=），
+ * 统一走 authedJson（/api/auth/proxy 注入 OIDC token）。
  */
 export const agentApi = {
   /**
@@ -57,8 +60,12 @@ export const agentApi = {
     implementation?: string;
     templateId?: string;
   }) => {
-    const response = await apiClient.post('/agents', data);
-    return response.data.data as Agent;
+    const response = await authedJson<{ success: boolean; data: Agent }>('/agents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return response.data as Agent;
   },
 
   /**
@@ -69,16 +76,16 @@ export const agentApi = {
     page?: number;
     limit?: number;
   }): Promise<{ success: boolean; data: AgentSearchResult }> => {
-    const response = await apiClient.get('/agents', { params });
-    return response.data;
+    return authedJson<{ success: boolean; data: AgentSearchResult }>(
+      `/agents${buildQuery(params as Record<string, unknown>)}`,
+    );
   },
 
   /**
    * 获取智能体详情
    */
   getAgentById: async (id: string): Promise<{ success: boolean; data: Agent }> => {
-    const response = await apiClient.get(`/agents/${id}`);
-    return response.data;
+    return authedJson<{ success: boolean; data: Agent }>(`/agents/${id}`);
   },
 
   /**
@@ -98,36 +105,46 @@ export const agentApi = {
       version: string;
     }>
   ) => {
-    const response = await apiClient.put(`/agents/${id}`, data);
-    return response.data.data as Agent;
+    const response = await authedJson<{ success: boolean; data: Agent }>(`/agents/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return response.data as Agent;
   },
 
   /**
    * 删除智能体
    */
   deleteAgent: async (id: string) => {
-    const response = await apiClient.delete(`/agents/${id}`);
-    return response.data;
+    return authedJson(`/agents/${id}`, { method: 'DELETE' });
   },
 
   /**
    * 发布智能体到市场
    */
   publishAgent: async (id: string) => {
-    const response = await apiClient.post(`/agents/${id}/publish`);
-    return response.data.data as Agent;
+    const response = await authedJson<{ success: boolean; data: Agent }>(`/agents/${id}/publish`, {
+      method: 'POST',
+    });
+    return response.data as Agent;
   },
 
   /**
    * 取消发布智能体
    */
   unpublishAgent: async (id: string) => {
-    const response = await apiClient.post(`/agents/${id}/unpublish`);
-    return response.data.data as Agent;
+    const response = await authedJson<{ success: boolean; data: Agent }>(`/agents/${id}/unpublish`, {
+      method: 'POST',
+    });
+    return response.data as Agent;
   },
 
   /**
    * 搜索公开市场的智能体
+   *
+   * ⚠️ 后端 agent.routes.ts 未定义 /agents/search 路由（会命中 /:id），
+   * 该调用为历史遗留，保留鉴权写法；如不再使用建议后续清理。
    */
   searchPublishedAgents: async (params?: {
     q?: string;
@@ -136,54 +153,61 @@ export const agentApi = {
     page?: number;
     limit?: number;
   }): Promise<{ success: boolean; data: AgentSearchResult }> => {
-    const response = await apiClient.get('/agents/search', { 
-      params: {
+    return authedJson<{ success: boolean; data: AgentSearchResult }>(
+      `/agents/search${buildQuery({
         ...params,
-        tags: params?.tags?.join(',')
-      }
-    });
-    return response.data;
+        tags: params?.tags?.join(','),
+      })}`,
+    );
   },
 
   /**
    * 获取用户统计信息
+   *
+   * ⚠️ 后端 agent.routes.ts 未定义 /agents/stats 路由（会命中 /:id），
+   * 为历史遗留调用，保留鉴权写法。
    */
-  getUserStats: async (): Promise<{ 
-    success: boolean; 
+  getUserStats: async (): Promise<{
+    success: boolean;
     data: {
       total: number;
       draft: number;
       published: number;
       private: number;
       totalDownloads: number;
-    }
+    };
   }> => {
-    const response = await apiClient.get('/agents/stats');
-    return response.data;
+    return authedJson(`/agents/stats`);
   },
 
   /**
    * 导出智能体
+   *
+   * 支持格式：json | yaml | proclaw | crewai | langgraph
    */
   exportAgent: async (
     id: string,
-    format: 'json' | 'yaml' | 'proclaw' = 'json',
+    format: 'json' | 'yaml' | 'proclaw' | 'crewai' | 'langgraph' = 'json',
     includeMetadata: boolean = true,
     includeImplementation: boolean = false
   ) => {
-    const response = await apiClient.post(`/agents/${id}/export`, {
-      format,
-      includeMetadata,
-      includeImplementation
+    const response = await authedJson<{ success: boolean; data: unknown }>(`/agents/${id}/export`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ format, includeMetadata, includeImplementation }),
     });
-    return response.data.data;
+    return response.data;
   },
 
   /**
    * 获取导出历史
+   *
+   * ⚠️ 后端 agent.routes.ts 未定义 /agents/exports 路由，为历史遗留调用，保留鉴权写法。
    */
   getExportHistory: async (limit: number = 20) => {
-    const response = await apiClient.get('/agents/exports', { params: { limit } });
-    return response.data.data;
-  }
+    const response = await authedJson<{ success: boolean; data: unknown }>(
+      `/agents/exports${buildQuery({ limit })}`,
+    );
+    return response.data;
+  },
 };

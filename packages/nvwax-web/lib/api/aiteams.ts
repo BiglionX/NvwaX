@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { authedJson, buildQuery } from '@/lib/oidc/authed-fetch';
 
 /**
  * AiTeam 成员定义
@@ -46,6 +47,10 @@ export interface AiTeamSearchResult {
 
 /**
  * AiTeam API 客户端
+ *
+ * 鉴权说明：后端 /aiteams 除 /search、/recommend、/generate-from-query 外全部挂载
+ * userAuthMiddleware（仅认 Bearer / ?token=）。受保护方法统一走 authedJson
+ * （/api/auth/proxy 注入 OIDC token）；公开的 /search 保持直连（未登录可访问市场）。
  */
 export const aiteamApi = {
   /**
@@ -61,8 +66,12 @@ export const aiteamApi = {
     tags?: string[];
     thumbnailUrl?: string;
   }) => {
-    const response = await apiClient.post('/aiteams', data);
-    return response.data.data as AiTeam;
+    const response = await authedJson<{ success: boolean; data: AiTeam }>('/aiteams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return response.data as AiTeam;
   },
 
   /**
@@ -73,16 +82,16 @@ export const aiteamApi = {
     page?: number;
     limit?: number;
   }): Promise<{ success: boolean; data: AiTeamSearchResult }> => {
-    const response = await apiClient.get('/aiteams', { params });
-    return response.data;
+    return authedJson<{ success: boolean; data: AiTeamSearchResult }>(
+      `/aiteams${buildQuery(params as Record<string, unknown>)}`,
+    );
   },
 
   /**
    * 获取 AiTeam 详情
    */
   getAiTeamById: async (id: string): Promise<{ success: boolean; data: AiTeam }> => {
-    const response = await apiClient.get(`/aiteams/${id}`);
-    return response.data;
+    return authedJson<{ success: boolean; data: AiTeam }>(`/aiteams/${id}`);
   },
 
   /**
@@ -103,16 +112,19 @@ export const aiteamApi = {
       thumbnailUrl: string;
     }>
   ) => {
-    const response = await apiClient.put(`/aiteams/${id}`, data);
-    return response.data.data as AiTeam;
+    const response = await authedJson<{ success: boolean; data: AiTeam }>(`/aiteams/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return response.data as AiTeam;
   },
 
   /**
    * 删除 AiTeam
    */
   deleteAiTeam: async (id: string) => {
-    const response = await apiClient.delete(`/aiteams/${id}`);
-    return response.data;
+    return authedJson(`/aiteams/${id}`, { method: 'DELETE' });
   },
 
   /**
@@ -122,16 +134,26 @@ export const aiteamApi = {
     aiteamId: string,
     member: Omit<AiTeamMember, 'sortOrder'>
   ) => {
-    const response = await apiClient.post(`/aiteams/${aiteamId}/members`, member);
-    return response.data.data as AiTeam;
+    const response = await authedJson<{ success: boolean; data: AiTeam }>(
+      `/aiteams/${aiteamId}/members`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(member),
+      }
+    );
+    return response.data as AiTeam;
   },
 
   /**
    * 从 AiTeam 移除成员
    */
   removeMember: async (aiteamId: string, agentId: string) => {
-    const response = await apiClient.delete(`/aiteams/${aiteamId}/members/${agentId}`);
-    return response.data.data as AiTeam;
+    const response = await authedJson<{ success: boolean; data: AiTeam }>(
+      `/aiteams/${aiteamId}/members/${agentId}`,
+      { method: 'DELETE' }
+    );
+    return response.data as AiTeam;
   },
 
   /**
@@ -142,28 +164,39 @@ export const aiteamApi = {
     agentId: string,
     updates: { role?: string; responsibilities?: string; config?: Record<string, unknown> }
   ) => {
-    const response = await apiClient.put(`/aiteams/${aiteamId}/members/${agentId}`, updates);
-    return response.data.data as AiTeam;
+    const response = await authedJson<{ success: boolean; data: AiTeam }>(
+      `/aiteams/${aiteamId}/members/${agentId}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      }
+    );
+    return response.data as AiTeam;
   },
 
   /**
    * 发布 AiTeam 到市场
    */
   publishAiTeam: async (id: string) => {
-    const response = await apiClient.post(`/aiteams/${id}/publish`);
-    return response.data.data as AiTeam;
+    const response = await authedJson<{ success: boolean; data: AiTeam }>(`/aiteams/${id}/publish`, {
+      method: 'POST',
+    });
+    return response.data as AiTeam;
   },
 
   /**
    * 取消发布 AiTeam
    */
   unpublishAiTeam: async (id: string) => {
-    const response = await apiClient.post(`/aiteams/${id}/unpublish`);
-    return response.data.data as AiTeam;
+    const response = await authedJson<{ success: boolean; data: AiTeam }>(`/aiteams/${id}/unpublish`, {
+      method: 'POST',
+    });
+    return response.data as AiTeam;
   },
 
   /**
-   * 搜索公开市场的 AiTeam
+   * 搜索公开市场的 AiTeam（公开路由，未登录可访问，保持直连）
    */
   searchPublishedAiTeams: async (params?: {
     q?: string;
@@ -172,20 +205,23 @@ export const aiteamApi = {
     page?: number;
     limit?: number;
   }): Promise<{ success: boolean; data: AiTeamSearchResult }> => {
-    const response = await apiClient.get('/aiteams/search', { 
+    const response = await apiClient.get('/aiteams/search', {
       params: {
         ...params,
-        tags: params?.tags?.join(',')
-      }
+        tags: params?.tags?.join(','),
+      },
     });
     return response.data;
   },
 
   /**
    * 获取用户统计信息
+   *
+   * ⚠️ 后端 aiteam.routes.ts 未定义 /aiteams/stats 路由（会命中 /:id），
+   * 为历史遗留调用，保留鉴权写法。
    */
-  getUserStats: async (): Promise<{ 
-    success: boolean; 
+  getUserStats: async (): Promise<{
+    success: boolean;
     data: {
       total: number;
       draft: number;
@@ -194,24 +230,26 @@ export const aiteamApi = {
       totalDownloads: number;
       totalExecutions: number;
       avgSuccessRate: number;
-    }
+    };
   }> => {
-    const response = await apiClient.get('/aiteams/stats');
-    return response.data;
+    return authedJson(`/aiteams/stats`);
   },
 
   /**
    * 导出 AiTeam
+   *
+   * 支持格式：json | yaml | proclaw | crewai | langgraph
    */
   exportAiTeam: async (
     id: string,
-    format: 'json' | 'yaml' | 'proclaw' = 'json',
+    format: 'json' | 'yaml' | 'proclaw' | 'crewai' | 'langgraph' = 'json',
     includeMetadata: boolean = true
   ) => {
-    const response = await apiClient.post(`/aiteams/${id}/export`, {
-      format,
-      includeMetadata
+    const response = await authedJson<{ success: boolean; data: unknown }>(`/aiteams/${id}/export`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ format, includeMetadata }),
     });
-    return response.data.data;
-  }
+    return response.data;
+  },
 };

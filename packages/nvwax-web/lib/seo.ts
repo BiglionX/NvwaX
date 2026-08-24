@@ -70,11 +70,11 @@ export function organizationJsonLd() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'NvwaX',
-    alternateName: 'NvwaX 虚拟公司制造工厂',
+    alternateName: 'NvwaX AI 虚拟公司操作系统',
     url: SITE_URL,
     logo: `${SITE_URL}/logo.png`,
     description:
-      'NvwaX 是一个 AI 虚拟公司制造工厂平台，支持搜索 AI Agent、组建 AiTeam（AI 团队）、复用 Team Skills 团队模板，并用 AI 智能体驱动真实业务。',
+      'NvwaX 是帮你组建 AI 公司的操作系统：注册团队、设置岗位（CEO、市场总监、文案...）、分配任务、产出成果。招聘 240+ AI 合伙人，组建你的 AI 虚拟公司。',
     sameAs: ['https://github.com/BigLionX/NvwaX'],
   };
 }
@@ -85,10 +85,10 @@ export function webSiteJsonLd() {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'NvwaX',
-    alternateName: 'NvwaX 虚拟公司制造工厂',
+    alternateName: 'NvwaX AI 虚拟公司操作系统',
     url: SITE_URL,
     description:
-      '虚拟公司制造工厂 - 轻松创建个性化的 AI 虚拟公司，搜索和管理 AI Agent，组建 AiTeam',
+      '帮你组建 AI 公司的操作系统 - 注册团队、设置岗位、分配任务、产出成果，组建你的 AI 虚拟公司。',
     inLanguage: 'zh-CN',
     potentialAction: {
       '@type': 'SearchAction',
@@ -111,7 +111,7 @@ export function softwareApplicationJsonLd() {
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     description:
-      'NvwaX v2.2.0 虚拟公司制造工厂：Structured Output 引擎（图状态机）、动态 Agent 注册表、YAML DSL、反思学习系统、MCP 协议。搜索 240+ AI Agent，组建 AiTeam 团队，复用 Team Skills 模板，发布悬赏任务。',
+      'NvwaX AI 虚拟公司操作系统：注册团队、设置岗位、分配任务、产出成果。招聘 240+ AI 合伙人，组建 AiTeam（AI 公司），复用 Team Skills 模板，发布悬赏任务。',
     offers: {
       '@type': 'Offer',
       price: '0',
@@ -138,23 +138,23 @@ export function homePageJsonLd() {
         name: 'NvwaX 是什么？',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'NvwaX 是一个开源的 AI Agent 与 AiTeam 平台，帮助开发者搜索、发现、创建和发布 AI 智能体与 AI 团队。平台提供智能体市场、团队协作模板、智能工作流、悬赏任务系统等能力。',
+          text: 'NvwaX 是帮你组建 AI 公司的操作系统。与传统"创建单个智能体"的平台不同，NvwaX 以 AI Team Builder 为核心：你注册一家虚拟公司（营销、客服、内容创作等），AI 架构师为你设置岗位（CEO、市场总监、文案...），招聘 AI 合伙人，分配任务并产出成果。',
         },
       },
       {
         '@type': 'Question',
-        name: 'v2.2.0 有哪些核心升级？',
+        name: '如何组建一家 AI 虚拟公司？',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'v2.2.0 主要升级包括：1) Structured Output 引擎 - 3级降级策略，输出可靠性从80%提升到99%；2) 图状态机流程引擎 - 支持条件分支、Checkpoint、Human-in-the-loop；3) 动态 Agent 注册表 - 突破5种硬编码类型限制；4) 声明式 YAML DSL；5) 反思学习系统；6) MCP 协议支持。',
+          text: '在 NvwaX 选择公司类型（营销、客服、内容创作、数据分析...），描述核心目标，AI 架构师会自动设计岗位（CEO、市场总监、文案等）、匹配 AI 合伙人并分配任务，最终生成可下载的公司配置文档包。',
         },
       },
       {
         '@type': 'Question',
-        name: '如何创建 AI Agent？',
+        name: '什么是 AI 合伙人？',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: '通过 Nvwa 智能体工厂创建：对话说清需求，Nvwa 引导完成需求分析、数据源配置、技能匹配，自动搜索模板并审查配置。支持对话式（7步引导）和状态机两种创建模式。',
+          text: 'AI 合伙人是 NvwaX 对单个智能体的新定位：创建单个 Agent 不再是目的，而是"招聘员工"的手段——为你的 AI 公司招募具备特定岗位能力的 AI 合伙人（如客服专员、数据分析师、文案）。',
         },
       },
       {
@@ -162,7 +162,7 @@ export function homePageJsonLd() {
         name: '什么是 AiTeam？',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'AiTeam 是 NvwaX 的核心概念，代表一个 AI Agent 协作团队。每个团队包含多个协同工作的 Agent（CEO、分析师、工程师等），用于完成特定业务目标。支持团队模板、一键导出为 CrewAI/LangGraph 格式。',
+          text: 'AiTeam 是 NvwaX 的核心概念，即一支 AI 团队（虚拟公司）。每个团队包含多个协同工作的 AI 合伙人（CEO、市场总监、工程师等），用于完成特定业务目标。支持团队模板、一键导出为 CrewAI/LangGraph 格式。',
         },
       },
       {

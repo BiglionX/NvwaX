@@ -1,8 +1,8 @@
-# NvwaX - 开源 AI Agent 平台
+# NvwaX - 帮你组建 AI 公司的操作系统
 
 <div align="center">
 
-![NvwaX Logo](https://img.shields.io/badge/NvwaX-AI%20Agent%20Platform-blue?style=for-the-badge)
+![NvwaX Logo](https://img.shields.io/badge/NvwaX-AI%20Virtual%20Company%20OS-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=for-the-badge&logo=typescript)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
@@ -11,7 +11,7 @@
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen?style=for-the-badge)
 ![Deployment](https://img.shields.io/badge/Deployment-Vercel%20%2B%20Railway-blue?style=for-the-badge)
 
-**开源的 AI Agent 搜索、发现和管理平台**
+**开源的 AI 虚拟公司（AI Team Builder）平台 — 你负责提需求，我们负责组建一支能干活的 AI 公司**
 
 [文档](#-文档) • [快速开始](#-快速开始) • [功能特性](#-功能特性) • [MCP 协议](#-mcp-协议) • [贡献指南](#-贡献指南) • [社区](#-社区)
 
@@ -21,14 +21,17 @@
 
 ## 📖 简介
 
-NvwaX 是一个现代化的 AI Agent 平台，提供全网 Agent 和技能的搜索、发现、管理功能。支持多数据源集成，包括 GitHub、Gitee 以及中国科技公司的开源项目。
+NvwaX 是帮你组建 **AI 公司（虚拟公司）** 的操作系统。用户旅程从「创建一个 Agent」升级为「注册团队 → 设置岗位 → 分配任务 → 产出成果」：选择公司类型（营销、客服、内容创作...）→ 描述核心目标 → AI 架构师设置岗位（CEO、市场总监、文案...）→ 招聘 AI 合伙人 → 生成可下载的公司经营配置文档包。
 
 ### ✨ 核心亮点
 
-- 🔍 **智能搜索**: 支持全文搜索、搜索建议、历史记录、热门搜索
-- 🤖 **Nvwa 智能体工厂**: 对话式创建智能体，7步引导流程，可视化进度追踪
-- 💼 **行业插件增强**: Action 类型扩展 + 能力注册 API + 插件上下文注入 + 推荐引擎（NEW! v2.1）
-- 🏢 **虚拟公司打包**: CEO Agent 动态生成 + 团队经营配置文档生成
+- 🏢 **AI 公司创建向导（主功能）**: 对话式组建 AI 虚拟公司——公司类型 → 核心目标 → 岗位设置（CEO、市场总监、文案...）→ 任务分配 → 成果交付，7 步引导流程，可视化进度追踪
+- 🤖 **招聘员工（收敛入口）**: 创建单个智能体已收敛为「招聘」手段，是组建 AI 公司的一个环节；在招聘台按岗位（客服、数据分析、文案...）招募 AI 合伙人
+- 🏪 **我的 AI 公司**: 组建完成的 AiTeam 自动保存到「我的 AI 公司」，支持岗位（AI 合伙人）管理、导出、发布与解散；创建成功后深链跳转 `?aiteam=<id>` 自动打开公司详情并高亮定位
+- ⚡ **公司内任务分配/执行**: 每家公司可下达任务需求，CEO（Leader Agent）自动编排公司内各岗位 AI 合伙人协同执行，实时反馈参与岗位、工作流步数与耗时
+- 🚀 **多壳落地导出**: 一键导出为 ProClaw / CrewAI / LangGraph / JSON / YAML 5 种格式，落到任意本地运行时
+- 💼 **行业插件增强**: Action 类型扩展 + 能力注册 API + 插件上下文注入 + 推荐引擎
+- 📦 **虚拟公司打包**: CEO Agent 动态生成 + 团队经营配置文档生成
 - 🎁 **悬赏系统**: 发布、领取、提交、验证完整的悬赏流程
 - 👑 **Admin 后台升级**: Agent管理、虚拟公司监控、通知中心、审计日志
 - 🌐 **多数据源**: GitHub、Gitee（码云）、ModelScope（魔搭）、百度、阿里、腾讯等
@@ -38,6 +41,8 @@ NvwaX 是一个现代化的 AI Agent 平台，提供全网 Agent 和技能的搜
 - 🎨 **现代 UI**: 响应式设计，支持深色模式，左右分栏布局
 - 🔒 **权限控制**: 完整的用户认证和路由保护
 - ✅ **生产就绪**: 代码质量 100%，零错误零警告
+
+> 📄 完整转型记录与审计结论见 [docs/AI-TEAM-BUILDER-TRANSFORMATION.md](./docs/AI-TEAM-BUILDER-TRANSFORMATION.md)
 
 ---
 

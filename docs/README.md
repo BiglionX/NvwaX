@@ -54,6 +54,13 @@ sudo DOMAIN=account.yourdomain.com \
 | **开发者指南** | 代码规范、贡献指南 | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | **Changelog** | 版本更新记录 | [CHANGELOG.md](../CHANGELOG.md) |
 
+### 4. 产品与迭代
+
+| 文档 | 说明 |
+|------|------|
+| [AI-TEAM-BUILDER-TRANSFORMATION.md](./AI-TEAM-BUILDER-TRANSFORMATION.md) | v2.0.0 AI Team Builder（虚拟公司）转型记录：改动清单、鉴权模式、审计验收结论与已知技术债 |
+| [AGENT-REPOSITORY-REFACTOR-PLAN.md](./AGENT-REPOSITORY-REFACTOR-PLAN.md) | Agent 仓库重构历史计划（已部分被 v2.0.0 取代，保留存档） |
+
 ---
 
 ## 🚀 快速开始
@@ -216,6 +223,7 @@ sudo DOMAIN=account.yourdomain.com \
 | 日期 | 版本 | 更新内容 | 作者 |
 |------|------|---------|------|
 | 2026-06-21 | 1.0 | 初始版本（创建部署指南、API 接入指南、前端 API 说明） | NvwaX Team |
+| 2026-08-23 | 2.0 | 新增「产品与迭代」章节：AI Team Builder 转型记录（v2.0.0） | NvwaX Team |
 |  |  |  |  |
 
 ---

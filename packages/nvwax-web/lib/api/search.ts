@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { authedJson } from '@/lib/oidc/authed-fetch';
 
 export interface Agent {
   id: string;
@@ -99,29 +100,33 @@ export const searchApi = {
 /**
  * AI Search Agent API
  * 对话式 Agent 智能搜索
+ *
+ * 鉴权说明：后端 /ai-search 的 sessions/chat 路由挂载 userAuthMiddleware，
+ * 统一走 authedJson（/api/auth/proxy 注入 OIDC token）。
  */
 export const aiSearchApi = {
   /**
    * 创建新的搜索会话
    */
   createSession: async () => {
-    const response = await apiClient.post('/ai-search/sessions');
-    return response.data;
+    return authedJson('/ai-search/sessions', { method: 'POST' });
   },
 
   /**
    * 发送消息进行对话式搜索
    */
   chat: async (sessionId: string, message: string) => {
-    const response = await apiClient.post('/ai-search/chat', { sessionId, message });
-    return response.data;
+    return authedJson('/ai-search/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, message }),
+    });
   },
 
   /**
    * 获取会话详情
    */
   getSession: async (sessionId: string) => {
-    const response = await apiClient.get(`/ai-search/sessions/${sessionId}`);
-    return response.data;
-  }
+    return authedJson(`/ai-search/sessions/${sessionId}`);
+  },
 };
