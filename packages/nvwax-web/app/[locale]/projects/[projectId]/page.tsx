@@ -13,7 +13,7 @@ export default function ProjectDetailPage() {
   const t = useTranslations('project');
   const params = useParams();
   const queryClient = useQueryClient();
-  const projectId = params.projectId as string;
+  const projectId = (params?.projectId as string) || '';
   
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);

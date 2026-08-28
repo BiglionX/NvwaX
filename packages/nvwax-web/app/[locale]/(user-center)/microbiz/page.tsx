@@ -7,6 +7,8 @@ import { microbizApi, MicroBizTeam } from '@/lib/api/microbiz';
 import { Button, Card } from '@/components/UI';
 import { Store, Users, Check, X, Play, Pause, Trash2, Settings, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
 import LoadingState from '@/components/Layout/LoadingState';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useTranslations } from 'next-intl';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type JsonValue = any;
@@ -70,10 +72,16 @@ export default function MicroBizManagementPage() {
 
   const handlePause = () => statusMutation.mutate('paused');
   const handleResume = () => statusMutation.mutate('active');
+  const t = useTranslations('userCenter.microbiz');
+  const { confirm, ConfirmDialog } = useConfirm();
   const handleUninstall = () => {
-    if (window.confirm('确定要卸载 MicroBiz AI Team Suite 吗？所有配置数据将被清除。')) {
-      statusMutation.mutate('uninstalled');
-    }
+    confirm({
+      title: t('uninstallConfirmTitle'),
+      message: t('uninstallConfirmMessage'),
+      variant: 'danger',
+      confirmText: t('uninstallBtn'),
+      onConfirm: () => statusMutation.mutate('uninstalled'),
+    });
   };
 
   if (loadingInstall || loadingTeams) {
@@ -334,6 +342,7 @@ export default function MicroBizManagementPage() {
           </div>
         </Card>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { userApi } from '@/lib/api/users';
 import { useAuth } from '@/hooks/useAuth';
 import { ShoppingCart, Coins, Smartphone, Wallet, CheckCircle, Loader2, AlertCircle, ArrowLeft, CreditCard } from 'lucide-react';
 import LoadingState from '@/components/Layout/LoadingState';
-import { Card, Button } from '@/components/UI';
+import { Card, Button, ErrorState } from '@/components/UI';
 
 const TOKEN_RATE = 100000; // 每元兑换token数
 const PACKAGE_AMOUNT = 10; // 固定套餐 ¥10
@@ -40,7 +40,7 @@ export default function TokenPurchasePage() {
   }, []);
 
   // 获取可用的支付方式
-  const { data: paymentData, isLoading: loadingPayments } = useQuery({
+  const { data: paymentData, isLoading: loadingPayments, isError: paymentsError, refetch: refetchPayments } = useQuery({
     queryKey: ['user-payment-configs'],
     queryFn: () => userApi.getPaymentConfigs(),
     retry: 1
@@ -116,6 +116,20 @@ export default function TokenPurchasePage() {
 
   if (loadingPayments) {
     return <LoadingState />;
+  }
+
+  if (paymentsError) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">购买Token</h1>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">选择套餐并完成支付</p>
+        <ErrorState
+          title="加载支付配置失败"
+          description="暂时无法获取可用的支付方式，请重试"
+          onRetry={() => refetchPayments()}
+        />
+      </div>
+    );
   }
 
   // Stripe 支付成功页面

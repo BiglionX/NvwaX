@@ -191,7 +191,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
 // ─────────── DELETE：清空 session ───────────
 
-export async function DELETE(): Promise<NextResponse> {
+export async function DELETE(req: Request): Promise<NextResponse> {
   const res = NextResponse.json({ ok: true });
   res.cookies.set(COOKIE_NAME, '', buildClearCookieOptions());
   return res;

@@ -3,6 +3,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { tokenQuotaService } from './token-quota.service.js';
 import { structuredOutputService, TEAM_GENERATION_SCHEMA } from './structured-output.service.js';
 import { llmService } from './llm/llm.service.js';
+import { leaderSkillRouter } from './leader-router.service.js';
+import { leaderSkillService, LeaderSkill } from './leader-skill.service.js';
+import { leaderReflectionService } from './leader-reflection.service.js';
+import { leaderTrajectoryService } from './leader-trajectory.service.js';
 
 // 系统级用户ID用于LLM生成成本
 const SYSTEM_USER_ID_FOR_LLM = 'system-nvwa-leader';
@@ -24,6 +28,7 @@ export class NvwaLeaderService {
    * 从 Nvwa 需求生成团队配置
    * @param nvwaData Nvwa 的需求分析数据
    * @param isAiTeam 是否为 AiTeam 模式（多角色团队）
+   * @param sessionId 会话 ID（可选，用于 Hermes 轨迹记录）
    * @returns 生成的团队配置
    */
   async generateTeamFromNvwa(nvwaData: {
@@ -32,15 +37,15 @@ export class NvwaLeaderService {
     outputs: string[];
     implementation: string;
     skills: string[];
-  }, isAiTeam: boolean = false) {
+  }, isAiTeam: boolean = false, sessionId?: string) {
     console.log(`🤖 Generating ${isAiTeam ? 'AiTeam' : 'team'} configuration from Nvwa data...`);
-    
-    // 使用 LLM 生成配置
+
+    // 使用 LLM 生成配置（Hermes 化：先路由 → 再反思注入 → 再生成）
     if (llmService.isConfigured) {
-      console.log('🤖 Using LLM to generate team configuration...');
-      return await this.generateWithLLM(nvwaData, isAiTeam);
+      console.log('🤖 Using LLM (Hermes 化路由) to generate team configuration...');
+      return await this.generateWithLLM(nvwaData, isAiTeam, sessionId);
     }
-    
+
     // 使用 mock 数据作为降级方案
     if (isAiTeam) {
       return this.generateMockAiTeam(nvwaData);
@@ -50,9 +55,18 @@ export class NvwaLeaderService {
   }
 
   /**
-   * 使用 LLM 生成团队配置（Structured Output 模式）
+   * 使用 LLM 生成团队配置（Structured Output 模式 + Hermes 化 Leader 路由）
+   *
+   * 新流程（对齐 Hermes Agent 设计）：
+   * 1. 通过 LeaderSkillRouter 找到最匹配的 Leader Skill（关键词+语义+LLM排序）
+   * 2. 召回 L4 历史反思经验
+   * 3. 把 Leader Skill 的 system_prompt + 反思 + 团队上下文 注入到 LLM
+   * 4. 调用 LLM 生成团队配置
+   * 5. 记录 L1 轨迹 + 更新 leader skill 使用统计
+   *
    * @param nvwaData Nvwa 需求数据
    * @param isAiTeam 是否为 AiTeam 模式
+   * @param sessionId 会话 ID（用于轨迹，可选）
    * @returns 生成的团队配置
    */
   private async generateWithLLM(nvwaData: {
@@ -61,22 +75,44 @@ export class NvwaLeaderService {
     outputs: string[];
     implementation: string;
     skills: string[];
-  }, isAiTeam: boolean): Promise<any> {
-    const prompt = this.buildTeamGenerationPrompt(nvwaData, isAiTeam);
-    
+  }, isAiTeam: boolean, sessionId?: string): Promise<any> {
+    // === Hermes Step 1: 通过 LeaderSkillRouter 找到最匹配的 Leader Skill ===
+    let selectedSkill: LeaderSkill | null = null;
+    let reflections: any[] = [];
+    let routingResult: any = null;
+    const requirement = nvwaData.description;
+
+    try {
+      routingResult = await leaderSkillRouter.route(requirement, {
+        topK: 5,
+        useLLMReranking: true
+      });
+      selectedSkill = routingResult.matches?.[0]?.skill || null;
+
+      // === Hermes Step 2: 召回 L4 反思经验 ===
+      reflections = await leaderReflectionService.recall(requirement, 5);
+
+      console.log(`[NvwaLeader] Routed to: ${selectedSkill?.name || 'NONE'} (score=${routingResult.matches?.[0]?.finalScore?.toFixed(2)})`);
+      console.log(`[NvwaLeader] Reflections injected: ${reflections.length}`);
+    } catch (routeError) {
+      console.warn('[NvwaLeader] Routing failed, falling back to mock:', (routeError as Error).message);
+    }
+
+    // === Hermes Step 3: 构造增强的 prompt（注入 skill + 反思）===
+    const { systemPrompt, userPrompt } = this.buildEnhancedPrompt(
+      nvwaData,
+      isAiTeam,
+      selectedSkill,
+      reflections
+    );
+
     try {
       const result = await structuredOutputService.callWithSchema<any>({
         model: 'deepseek-v4-flash',
         temperature: 0.7,
         maxTokens: 2000,
-        systemPrompt: `你是一个专业的虚拟团队配置生成专家。根据用户需求，生成最优的团队配置方案。
-        
-要求：
-1. 团队角色应根据实际需求合理配置（通常 3-5 个核心角色）
-2. 工作流程应清晰明确，每一步都有明确的输出
-3. 通信协议和冲突解决机制必须合理可行
-4. 考虑团队协作效率，避免角色职责重叠`,
-        userPrompt: prompt,
+        systemPrompt,
+        userPrompt,
         schemaName: 'team_generation',
         schema: TEAM_GENERATION_SCHEMA,
         maxRetries: 2
@@ -86,20 +122,122 @@ export class NvwaLeaderService {
       if (result.tokensUsed > 0) {
         tokenQuotaService.checkAndDeductTokens(SYSTEM_USER_ID_FOR_LLM, result.tokensUsed, {
           endpoint: '/v1/chat/completions',
-          sourceType: 'nvwa_team_generation',
+          sourceType: 'nvwa_team_generation_hermes',
           model: result.model,
-          metadata: { isAiTeam, mode: result.mode }
+          metadata: {
+            isAiTeam,
+            mode: result.mode,
+            selectedLeaderSkill: selectedSkill?.skillId,
+            reflectionsInjected: reflections.length
+          }
         }).catch(err => console.error('[TokenQuota] Failed to deduct tokens:', err));
       }
 
-      console.log(`[NvwaLeader] Team generation via ${result.mode} mode (${result.tokensUsed} tokens)`);
+      // === Hermes Step 4: 记录 L1 轨迹 ===
+      if (sessionId) {
+        await leaderTrajectoryService.append(sessionId, 'system', systemPrompt, {
+          purpose: 'generation',
+          model: result.model,
+          tokensUsed: result.tokensUsed,
+          leaderSkillId: selectedSkill?.id
+        }).catch(err => console.warn('[NvwaLeader] Trajectory append failed:', err.message));
+
+        await leaderTrajectoryService.append(sessionId, 'user', userPrompt, {
+          purpose: 'generation',
+          leaderSkillId: selectedSkill?.id
+        }).catch(err => console.warn('[NvwaLeader] Trajectory append failed:', err.message));
+
+        await leaderTrajectoryService.append(sessionId, 'assistant', JSON.stringify(result.data).substring(0, 5000), {
+          purpose: 'generation',
+          tokensUsed: result.tokensUsed,
+          model: result.model,
+          leaderSkillId: selectedSkill?.id
+        }).catch(err => console.warn('[NvwaLeader] Trajectory append failed:', err.message));
+      }
+
+      // === Hermes Step 5: 更新 leader skill 使用统计 ===
+      if (selectedSkill) {
+        await leaderSkillService.recordUsage(selectedSkill.skillId, true)
+          .catch(err => console.warn('[NvwaLeader] recordUsage failed:', err.message));
+      }
+
+      console.log(`[NvwaLeader] Team generation via ${result.mode} mode (${result.tokensUsed} tokens, leader=${selectedSkill?.skillId || 'fallback'})`);
 
       return result.data;
     } catch (error: any) {
       console.error('[NvwaLeader] Structured output failed, using mock data:', error.message);
+
+      // 失败时记录反思
+      if (selectedSkill && sessionId) {
+        await leaderReflectionService.create({
+          sessionId,
+          leaderSkillId: selectedSkill.id,
+          requirement,
+          summary: `为 "${requirement.substring(0, 50)}..." 生成团队配置失败: ${error.message}`,
+          failurePattern: this.classifyError(error.message),
+          improvementSuggestion: '考虑降低需求复杂度或拆分任务',
+          successScore: 0.1,
+          tags: [selectedSkill.category]
+        }).catch(err => console.warn('[NvwaLeader] Reflection create failed:', err.message));
+
+        await leaderSkillService.recordUsage(selectedSkill.skillId, false)
+          .catch(err => console.warn('[NvwaLeader] recordUsage failed:', err.message));
+      }
+
       // 降级使用 mock 数据
-      return isAiTeam ? this.generateMockAiTeam(nvwaData) : this.generateMockTeam(nvwaData);
+      return isAiTeam ? this.generateMockAiTeam(nvwaData, selectedSkill) : this.generateMockTeam(nvwaData);
     }
+  }
+
+  /**
+   * 构造增强的 prompt
+   */
+  private buildEnhancedPrompt(
+    nvwaData: { description: string; dataSources: string[]; outputs: string[]; implementation: string; skills: string[]; },
+    isAiTeam: boolean,
+    selectedSkill: LeaderSkill | null,
+    reflections: any[]
+  ): { systemPrompt: string; userPrompt: string } {
+    // System Prompt：基于 selectedSkill 注入
+    let systemPrompt: string;
+    if (selectedSkill) {
+      // 复用 leader skill 的 system prompt 作为基础
+      systemPrompt = `${selectedSkill.systemPrompt}
+
+【当前任务】
+你正在为一个新的虚拟公司组建团队。请基于上述你的角色设定和管理原则，
+结合用户需求生成一份完整的团队配置方案（leaderConfig、roles、workflow、bindingRules）。`;
+    } else {
+      systemPrompt = `你是一个专业的虚拟团队配置生成专家。根据用户需求，生成最优的团队配置方案。
+
+要求：
+1. 团队角色应根据实际需求合理配置（通常 3-5 个核心角色）
+2. 工作流程应清晰明确，每一步都有明确的输出
+3. 通信协议和冲突解决机制必须合理可行
+4. 考虑团队协作效率，避免角色职责重叠`;
+    }
+
+    // 注入反思
+    if (reflections.length > 0) {
+      const reflectionBlock = leaderReflectionService.buildReflectionPrompt(reflections);
+      systemPrompt += `\n\n${reflectionBlock}`;
+    }
+
+    // User Prompt：复用原有模板
+    const userPrompt = this.buildTeamGenerationPrompt(nvwaData, isAiTeam);
+
+    return { systemPrompt, userPrompt };
+  }
+
+  /**
+   * 错误模式分类
+   */
+  private classifyError(message: string): 'timeout' | 'skill_missing' | 'conflict' | 'low_quality' | 'wrong_team_type' | 'other' {
+    const msg = message.toLowerCase();
+    if (msg.includes('timeout') || msg.includes('timed out')) return 'timeout';
+    if (msg.includes('json') || msg.includes('parse') || msg.includes('schema')) return 'low_quality';
+    if (msg.includes('rate limit') || msg.includes('quota')) return 'skill_missing';
+    return 'other';
   }
 
   /**

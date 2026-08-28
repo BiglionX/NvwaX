@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Image from 'next/image';
 import { Link } from '@/src/i18n/navigation';
 import { useTranslations } from 'next-intl';
@@ -162,7 +163,7 @@ export default function Footer() {
             </h3>
             <ul className="space-y-3">
               {footerLinks.community.map((link) => {
-                const Icon = link.icon;
+                const Icon = (link as { icon?: React.ComponentType<{ size?: number }> }).icon;
                 return (
                   <li key={link.href}>
                     <a

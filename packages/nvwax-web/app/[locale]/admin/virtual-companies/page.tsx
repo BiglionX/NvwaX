@@ -19,6 +19,7 @@ interface BuildJob {
 
 export default function AdminVirtualCompaniesPage() {
   const t = useTranslations('admin');
+  const locale = useLocale();
   // 获取 AiTeam 打包任务列表
   const { data: buildsData, isLoading: loadingBuilds } = useQuery({
     queryKey: ['admin-virtual-companies-builds'],

@@ -1,8 +1,14 @@
 /**
  * Export Service
- * 
+ *
  * 负责 Agent 和 AiTeam 的导出功能
- * 支持格式：JSON, YAML, ProClaw
+ * 支持格式：JSON, YAML, ProClaw, CrewAI YAML, LangGraph JSON
+ *
+ * 多壳落地：
+ * - JSON/YAML：通用中间格式，开发者自取
+ * - ProClaw：桌面端专属（.proclaw-team.json），ProClaw 桌面端 import_team 命令直接落库
+ * - CrewAI：开源多 Agent 框架（pip install crewai && crewai run team.yaml）
+ * - LangGraph：开源图状态机框架（用户自行写 driver 调用 graph）
  */
 
 import { Pool } from 'pg';
@@ -10,9 +16,28 @@ import { v4 as uuidv4 } from 'uuid';
 import { writeFileSync, mkdirSync, existsSync, statSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import yaml from 'js-yaml';
+import {
+  normalizeTeamData,
+  convertToCrewAIYaml,
+  convertToLangGraphJson,
+  convertToProClawFormat,
+  serializeTeamExport,
+  type TeamExportFormat
+} from './team-export-formatters.js';
+
+/** 所有支持的导出格式 */
+export type ExportFormat = 'json' | 'yaml' | 'proclaw' | 'crewai' | 'langgraph';
+
+export const SUPPORTED_EXPORT_FORMATS: ExportFormat[] = [
+  'json',
+  'yaml',
+  'proclaw',
+  'crewai',
+  'langgraph'
+];
 
 export interface ExportConfig {
-  format: 'json' | 'yaml' | 'proclaw';
+  format: ExportFormat;
   includeMetadata?: boolean;
   includeImplementation?: boolean;
   compress?: boolean;
@@ -267,9 +292,15 @@ export class ExportService {
       data.implementation = agent.implementation;
     }
 
-    // ProClaw 格式特殊处理
+    // 按目标格式进行转换（Sprint 多壳落地改造：分发到各格式转换器）
     if (config.format === 'proclaw') {
       return this.convertToProClawFormat(data, 'agent');
+    }
+    // crewai / langgraph 也走 builder，但 builder 会基于此分支调用对应专用转换器
+    if (config.format === 'crewai' || config.format === 'langgraph') {
+      // 这两个格式对 Agent 单体意义有限，仍返回通用 data（消费者自行包装）
+      // 保留 metadata 字段便于消费者溯源
+      return data;
     }
 
     return data;
@@ -309,50 +340,20 @@ export class ExportService {
       };
     }
 
-    // ProClaw 格式特殊处理
+    // 按目标格式进行转换（Sprint 多壳落地改造：分发到各格式转换器）
+    // 先归一化为统一形状，再交给 team-export-formatters 纯函数转换
+    const normalized = normalizeTeamData(data);
     if (config.format === 'proclaw') {
-      return this.convertToProClawFormat(data, 'aiteam');
+      return convertToProClawFormat(normalized);
+    }
+    if (config.format === 'crewai') {
+      return convertToCrewAIYaml(normalized);
+    }
+    if (config.format === 'langgraph') {
+      return convertToLangGraphJson(normalized);
     }
 
     return data;
-  }
-
-  /**
-   * 转换为 ProClaw 格式
-   */
-  private convertToProClawFormat(data: any, type: 'agent' | 'aiteam'): any {
-    return {
-      proclaw_version: '1.0.0',
-      type,
-      ...data,
-      compatibility: {
-        min_proclaw_version: '1.0.0',
-        required_modules: this.extractRequiredModules(data)
-      }
-    };
-  }
-
-  /**
-   * 提取所需的模块依赖
-   */
-  private extractRequiredModules(data: any): string[] {
-    const modules = new Set<string>();
-    
-    // 从 config 中提取
-    if (data.config?.modules) {
-      data.config.modules.forEach((m: string) => modules.add(m));
-    }
-    
-    // 从 skills 中提取
-    if (data.skills) {
-      data.skills.forEach((skill: string) => {
-        if (skill.includes('/')) {
-          modules.add(skill.split('/')[0]);
-        }
-      });
-    }
-
-    return Array.from(modules);
   }
 
   /**
@@ -361,30 +362,40 @@ export class ExportService {
   private async generateFile(
     exportId: string,
     data: any,
-    format: 'json' | 'yaml' | 'proclaw'
+    format: ExportFormat
   ): Promise<string> {
     const timestamp = Date.now();
     let content: string;
     let extension: string;
 
-    switch (format) {
-      case 'json':
-        content = JSON.stringify(data, null, 2);
-        extension = 'json';
-        break;
-      
-      case 'yaml':
-        content = yaml.dump(data, { indent: 2 });
-        extension = 'yaml';
-        break;
-      
-      case 'proclaw':
-        content = JSON.stringify(data, null, 2);
-        extension = 'proclaw.json';
-        break;
-      
-      default:
-        throw new Error(`Unsupported format: ${format}`);
+    // crewai / langgraph 通过 formatters 统一序列化（含扩展名）
+    if (format === 'crewai' || format === 'langgraph') {
+      const serialized = serializeTeamExport(data, format as TeamExportFormat);
+      content = serialized.content;
+      extension = serialized.extension;
+    } else {
+      switch (format) {
+        case 'json':
+          content = JSON.stringify(data, null, 2);
+          extension = 'json';
+          break;
+
+        case 'yaml':
+          content = yaml.dump(data, { indent: 2 });
+          extension = 'yaml';
+          break;
+
+        case 'proclaw':
+          content = JSON.stringify(data, null, 2);
+          extension = 'proclaw.json';
+          break;
+
+        default: {
+          // TS 严格模式下兜底——运行时不应该走到这里
+          const exhaustive: never = format;
+          throw new Error(`Unsupported format: ${String(exhaustive)}`);
+        }
+      }
     }
 
     const fileName = `${exportId}_${timestamp}.${extension}`;

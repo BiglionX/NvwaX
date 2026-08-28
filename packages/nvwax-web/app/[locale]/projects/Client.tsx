@@ -8,6 +8,7 @@ import { projectApi } from '@/lib/api/projects';
 import LoadingState from '@/components/Layout/LoadingState';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslations } from 'next-intl';
+import { useConfirm } from '@/hooks/useConfirm';
 
 interface Project {
   id: string;
@@ -66,10 +67,15 @@ export default function ProjectsClient() {
     });
   };
 
+  const { confirm, ConfirmDialog } = useConfirm();
   const handleDeleteProject = (projectId: string) => {
-    if (window.confirm(t('confirmDelete'))) {
-      deleteProjectMutation.mutate(projectId);
-    }
+    confirm({
+      title: t('deleteProject'),
+      message: t('confirmDelete'),
+      variant: 'danger',
+      confirmText: t('deleteProject'),
+      onConfirm: () => deleteProjectMutation.mutate(projectId),
+    });
   };
 
   if (projectsLoading) {
@@ -302,6 +308,7 @@ export default function ProjectsClient() {
           </div>
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

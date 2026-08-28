@@ -52,7 +52,7 @@ export default function SocialLoginButtons() {
 
   // 获取重定向地址
   const getRedirectUrl = useCallback(() => {
-    const redirect = searchParams.get('redirect');
+    const redirect = searchParams?.get('redirect');
     return redirect || '/profile';
   }, [searchParams]);
   /**

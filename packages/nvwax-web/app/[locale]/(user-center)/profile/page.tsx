@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '@/lib/api/users';
 import { useAuth } from '@/hooks/useAuth';
-import { Mail, Calendar, Edit2, Save, X, Folder, Users, Bot, Clock, Shield, Activity } from 'lucide-react';
-import Link from 'next/link';
+import { Mail, Calendar, Edit2, Save, X, Folder, Users, Bot, Shield, Activity } from 'lucide-react';
 import LoadingState from '@/components/Layout/LoadingState';
-import { Card, Button, Input, Space, Avatar, Badge } from '@/components/UI';
+import { Card, Button, Input, Space, Avatar, Badge, Modal } from '@/components/UI';
 
 interface User {
   id: string;
@@ -51,10 +51,6 @@ export default function ProfilePage() {
   const { isLoggedIn, loading, userInfo } = useAuth();
   const [shouldRedirect, setShouldRedirect] = useState(false);
 
-  console.log('=== ProfilePage Render ===');
-  console.log('isLoggedIn:', isLoggedIn);
-  console.log('loading:', loading);
-
   // Sprint 2.2: 不再读 localStorage，靠 useAuth().isLoggedIn 判断
   // useAuth 内部 fetch /api/auth/session，读 OIDC cookie
   useEffect(() => {
@@ -64,14 +60,7 @@ export default function ProfilePage() {
       router.replace('/login?redirect=/profile');
       return;
     }
-    // 检查是否为管理员（按 OIDC userInfo.email 判断，不依赖 localStorage）
-    const adminEmails = ['1055603323@qq.com', 'admin'];
-    const userEmail = userInfo?.email?.toLowerCase();
-    const isAdmin = userEmail && (adminEmails.includes(userEmail) || userEmail.endsWith('@admin.com'));
-    if (isAdmin) {
-      router.replace('/admin/dashboard');
-    }
-  }, [isLoggedIn, loading, userInfo, router]);
+  }, [isLoggedIn, loading, router]);
 
   // 如果 shouldRedirect 为 true，显示跳转中
   if (shouldRedirect) {
@@ -79,16 +68,13 @@ export default function ProfilePage() {
   }
 
   if (loading) {
-    console.log('ProfilePage: Loading...');
     return <LoadingState />;
   }
 
   if (!isLoggedIn) {
-    console.log('ProfilePage: Not logged in, returning null');
     return null; // 正在重定向
   }
 
-  console.log('ProfilePage: Rendering ProfileContent');
   return <ProfileContent />;
 }
 
@@ -169,6 +155,7 @@ function ProfileContent() {
 
 // 个人信息卡片组件
 function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, handleSave, handleCancel, updateMutation }: ProfileCardProps) {
+  const t = useTranslations('userCenter.profile');
   return (
     <Card padding="lg">
       {/* 头像 */}
@@ -187,12 +174,12 @@ function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, han
             type="text"
             value={editForm.name}
             onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-            placeholder="输入昵称"
+            placeholder={t('nicknamePlaceholder')}
             className="text-center mb-2"
           />
         ) : (
           <h2 className="text-base font-medium text-gray-900 dark:text-white mb-1">
-            {user?.name || '未设置昵称'}
+            {user?.name || t('noNickname')}
           </h2>
         )}
         
@@ -211,11 +198,11 @@ function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, han
             onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
             className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white text-sm"
             rows={3}
-            placeholder="介绍一下自己..."
+            placeholder={t('bioPlaceholder')}
           />
         ) : (
           <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            {user?.bio || '暂无简介'}
+            {user?.bio || t('bioEmpty')}
           </p>
         )}
       </div>
@@ -223,7 +210,7 @@ function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, han
       {/* 注册时间 */}
       <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
         <Calendar size={14} />
-        <span>注册于 {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('zh-CN') : '未知'}</span>
+        <span>{t('registeredAt', { date: user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : t('unknown') })}</span>
       </div>
 
       {/* 编辑按钮 */}
@@ -235,7 +222,7 @@ function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, han
             icon={<X size={16} />}
             fullWidth
           >
-            取消
+            {t('cancel')}
           </Button>
           <Button
             variant="primary"
@@ -244,7 +231,7 @@ function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, han
             icon={!updateMutation.isPending ? <Save size={16} /> : undefined}
             fullWidth
           >
-            {updateMutation.isPending ? '保存中...' : '保存'}
+            {updateMutation.isPending ? t('saving') : t('save')}
           </Button>
         </Space>
       ) : (
@@ -257,7 +244,7 @@ function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, han
           icon={<Edit2 size={16} />}
           fullWidth
         >
-          编辑资料
+          {t('edit')}
         </Button>
       )}
     </Card>
@@ -266,9 +253,10 @@ function ProfileCard({ user, isEditing, editForm, setEditForm, setIsEditing, han
 
 // 统计卡片组件
 function StatsCards({ stats }: StatsCardsProps) {
+  const t = useTranslations('userCenter.profile');
   const statsData = [
     {
-      label: '项目数',
+      label: t('statsProjects'),
       value: stats?.projectCount || 0,
       icon: Folder,
       color: 'from-blue-500 to-blue-600',
@@ -276,7 +264,7 @@ function StatsCards({ stats }: StatsCardsProps) {
       iconColor: 'text-blue-600 dark:text-blue-400'
     },
     {
-      label: 'AiTeam 数',
+      label: t('statsTeams'),
       value: stats?.teamCount || 0,
       icon: Users,
       color: 'from-blue-600 to-blue-700',
@@ -284,7 +272,7 @@ function StatsCards({ stats }: StatsCardsProps) {
       iconColor: 'text-blue-600 dark:text-blue-400'
     },
     {
-      label: 'Agent Team 数',
+      label: t('statsAgentTeams'),
       value: stats?.agentTeamCount || 0,
       icon: Bot,
       color: 'from-blue-500 to-blue-600',
@@ -314,78 +302,88 @@ function StatsCards({ stats }: StatsCardsProps) {
 }
 
 
-// 最近活动组件
+// 最近活动组件（无真实活动接口，显示诚实空状态，避免伪造数据）
 function RecentActivity() {
-  const activities = [
-    { type: 'project', message: '创建了新项目 "AI Agent 平台"', time: '2 小时前', icon: Folder, color: 'text-blue-600' },
-    { type: 'team', message: '加入了 AiTeam "前端开发组"', time: '1 天前', icon: Users, color: 'text-blue-600' },
-    { type: 'agent', message: '收藏了 Agent "Code Review Bot"', time: '3 天前', icon: Bot, color: 'text-blue-600' }
-  ];
-
+  const t = useTranslations('userCenter.profile');
   return (
     <Card>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <Activity className="text-blue-600" size={20} />
-          最近活动
+          {t('activityTitle')}
         </h3>
-        <Link href="/activity" prefetch={false} className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium">
-          查看全部
-        </Link>
       </div>
-      <Space direction="vertical" size="small" className="w-full">
-        {activities.map((activity, index) => {
-          const Icon = activity.icon;
-          return (
-            <div key={index} className="flex items-start gap-3 pb-3 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0">
-              <div className={`w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0`}>
-                <Icon className={activity.color} size={20} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-900 dark:text-white truncate">{activity.message}</p>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <Clock size={12} className="text-gray-400" />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </Space>
+      <div className="text-center py-10">
+        <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center mx-auto mb-3">
+          <Activity size={24} className="text-gray-400 dark:text-gray-500" />
+        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t('noActivity')}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+          {t('noActivityDesc')}
+        </p>
+      </div>
     </Card>
   );
 }
 
 // 账号安全组件
 function AccountSecurity() {
+  const t = useTranslations('userCenter.profile');
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const issuer = process.env.NEXT_PUBLIC_OIDC_ISSUER || 'https://account.proclaw.cc';
+
   return (
     <Card>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <Shield className="text-green-600" size={20} />
-          账号安全
+          {t('securityTitle')}
         </h3>
-        <Badge variant="success">安全</Badge>
+        <Badge variant="success">{t('secure')}</Badge>
       </div>
       <Space direction="vertical" size="small" className="w-full">
         <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            <span className="text-sm text-gray-700 dark:text-gray-300">邮箱已验证</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('emailVerified')}</span>
           </div>
-          <Badge variant="success">已验证</Badge>
+          <Badge variant="success">{t('verified')}</Badge>
         </div>
         <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            <span className="text-sm text-gray-700 dark:text-gray-300">密码强度</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">{t('passwordStrength')}</span>
           </div>
-          <Badge variant="success">强</Badge>
+          <Badge variant="success">{t('strong')}</Badge>
         </div>
-        <Button variant="outline" fullWidth>
-          修改密码
+        <Button variant="outline" fullWidth onClick={() => setShowAccountModal(true)}>
+          {t('changePassword')}
         </Button>
       </Space>
+
+      {/* 密码管理引导（账号统一由 ProClaw 账号中心管理） */}
+      <Modal
+        open={showAccountModal}
+        onClose={() => setShowAccountModal(false)}
+        title={t('passwordModalTitle')}
+        footer={
+          <Space size="small" className="w-full justify-end">
+            <Button variant="outline" onClick={() => setShowAccountModal(false)}>
+              {t('close')}
+            </Button>
+            <a href={`${issuer}/portal/`} target="_blank" rel="noreferrer noopener">
+              <Button variant="primary">{t('goAccountCenter')}</Button>
+            </a>
+          </Space>
+        }
+      >
+        <div className="flex items-start gap-3">
+          <Shield className="text-blue-600 shrink-0 mt-1" size={24} />
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {t('passwordModalDesc')}
+          </p>
+        </div>
+      </Modal>
     </Card>
   );
 }

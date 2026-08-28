@@ -32,6 +32,7 @@ import {
   X,
   AlertCircle,
   CheckCircle,
+  Laptop,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import LoadingState from '@/components/Layout/LoadingState';
@@ -42,6 +43,7 @@ import { Card, Button, Badge, EmptyState, ErrorState } from '@/components/UI';
 import { authedFetch } from '@/lib/oidc/authed-fetch';
 import { aiteamApi } from '@/lib/api/aiteams';
 import type { AiTeam, AiTeamMember } from '@/lib/api/aiteams';
+import { aiteamCreationApi } from '@/lib/api/aiteam-creation';
 import { leaderAgentApi, type LeaderAgentExecutionResult } from '@/lib/api/team-skills';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -168,6 +170,49 @@ export default function MyAiCompaniesPage() {
     await exportAiTeamAuthed(exportCompany.id, format);
   };
 
+  // Sprint 2.13: 在 ProClaw 中运行（生成 .nvwax-vc.json 并触发下载）
+  const [integratingId, setIntegratingId] = useState<string | null>(null);
+  const handleIntegrateToProClaw = async (companyId: string, companyName: string) => {
+    try {
+      setIntegratingId(companyId);
+      // 1. 调用后端生成导出包
+      const r = await aiteamCreationApi.integrateToProClaw(companyId);
+      // 2. 兼容 Sprint 2.13 新字段 / 旧字段
+      const downloadUrl = (r as any).downloadUrl as string | undefined;
+      const teamName = (r as any).teamName ?? companyName;
+      const agentsCount = (r as any).agentsCount ?? 0;
+      const packageId = (r as any).packageId;
+      // 3. 自动下载 .nvwax-vc.json
+      if (downloadUrl) {
+        const dl = await authedFetch(downloadUrl, { method: 'GET' });
+        if (!dl.ok) throw new Error('下载 .nvwax-vc.json 失败');
+        const blob = await dl.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `virtual-company-${teamName || packageId}.nvwax-vc.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        alert(
+          `✅ 已生成「${teamName}」的 ProClaw 导出包（${agentsCount} 个 Agent）。\n\n` +
+            '**方式 A（推荐）**：把下载的 .nvwax-vc.json 拖入 ProClaw「虚拟公司 → 导入团队」页面。\n\n' +
+            '**方式 B（远程 NvwaX）**：复制下面的链接在 ProClaw 中粘贴：\n\n' +
+            `${window.location.origin}${downloadUrl}`
+        );
+      } else {
+        // 旧版 fallback（兼容 v1.0 的 mock 行为）
+        alert(`✅ ${(r as any).message ?? '已模拟集成（需升级后端到 Sprint 2.13）'}`);
+      }
+    } catch (err) {
+      console.error('[integrateToProClaw] 失败:', err);
+      alert(err instanceof Error ? err.message : '集成失败，请重试');
+    } finally {
+      setIntegratingId(null);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteCompany) return;
     await deleteMutation.mutateAsync(deleteCompany.id);
@@ -212,6 +257,25 @@ export default function MyAiCompaniesPage() {
 
   return (
     <div className="space-y-6">
+      {/* Sprint 2.13/2.14 横幅：在 ProClaw 中运行 */}
+      <div className="rounded-xl bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 border border-purple-200 dark:border-purple-800 p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center flex-shrink-0">
+            <Laptop className="text-purple-600 dark:text-purple-400" size={20} />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+              在 ProClaw 桌面端运行你的 AI 公司
+            </h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              每张公司卡片都有「在 ProClaw 中运行」按钮，一键生成 <code className="bg-purple-100 dark:bg-purple-900/40 px-1 rounded">.nvwax-vc.json</code> 导出包，
+              即可在 <a href="https://proclaw.cc" target="_blank" rel="noopener" className="text-purple-700 dark:text-purple-300 underline">ProClaw 桌面端</a> 本地运行整个 AI 团队（多设备自动同步）。
+              详见 <a href="https://github.com/BiglionX/ProClaw/blob/main/docs/integration/NVWAX_INTEGRATION.md" target="_blank" rel="noopener" className="text-purple-700 dark:text-purple-300 underline">集成开发者指南</a>。
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* 页面标题和操作栏 */}
       <div className="flex flex-wrap justify-between items-center gap-3">
         <div>
@@ -301,6 +365,10 @@ export default function MyAiCompaniesPage() {
                   setDeleteCompany({ id: company.id, name: company.name });
                   setShowDeleteDialog(true);
                 }}
+                integrating={integratingId === company.id}
+                onIntegrateToProClaw={() =>
+                  handleIntegrateToProClaw(company.id, company.name)
+                }
               />
             </div>
           ))}
@@ -366,19 +434,23 @@ export default function MyAiCompaniesPage() {
 function CompanyCard({
   company,
   publishing,
+  integrating,
   onView,
   onTask,
   onPublish,
   onExport,
   onDelete,
+  onIntegrateToProClaw,
 }: {
   company: AiTeam;
   publishing: boolean;
+  integrating: boolean;
   onView: () => void;
   onTask: () => void;
   onPublish: () => void;
   onExport: () => void;
   onDelete: () => void;
+  onIntegrateToProClaw: () => void;
 }) {
   const members: AiTeamMember[] = company.members || [];
   const statusText =
@@ -474,6 +546,18 @@ function CompanyCard({
         </Button>
         <Button variant="outline" size="sm" icon={<Send size={14} />} onClick={onExport}>
           导出配置
+        </Button>
+        {/* Sprint 2.13/2.14：在 ProClaw 中运行（导出 .nvwax-vc.json 并下载） */}
+        <Button
+          variant="outline"
+          size="sm"
+          icon={integrating ? <Loader2 size={14} className="animate-spin" /> : <Laptop size={14} />}
+          onClick={() => onIntegrateToProClaw()}
+          disabled={integrating}
+          title="在 ProClaw 桌面端运行这家公司（生成 .nvwax-vc.json）"
+          className="!text-purple-600 hover:!bg-purple-50 dark:hover:!bg-purple-900/20"
+        >
+          {integrating ? '导出中…' : '在 ProClaw 中运行'}
         </Button>
         <Button
           variant={company.publishStatus === 'published' ? 'ghost' : 'outline'}

@@ -21,6 +21,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // e2e specs are typed-checked separately via `tsc -p e2e` and validated
+    // by Playwright at runtime — keep them out of this package's lint scope.
+    "../../e2e/**",
   ]),
 ]);
 

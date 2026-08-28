@@ -41,6 +41,8 @@ router.post('/projects/:id/restore', adminController.restoreProject);
 // 系统管理
 router.get('/system/stats', adminController.getSystemStats);
 router.get('/system/logs', adminController.getSystemLogs);
+router.post('/system/logs', adminController.createAuditEvent); // v2.3+ 接收前端审计事件
+router.get('/system/logs/stats', adminController.getSystemLogStats); // v2.3+ 审计聚合统计
 router.get('/system/health', adminController.getSystemHealth);
 router.post('/system/clear-cache', adminController.clearCache);
 router.post('/system/backup', adminController.backupDatabase);

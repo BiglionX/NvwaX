@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations, useLocale } from 'next-intl';
+import { useConfirm } from '@/hooks/useConfirm';
 import { adminApi, User } from '@/lib/api/admin';
 import { 
   Search, 
@@ -25,6 +26,7 @@ interface UserListResponse {
 
 export default function AdminUsersPage() {
   const t = useTranslations('admin');
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -99,10 +101,15 @@ export default function AdminUsersPage() {
     }
   };
 
+  const { confirm, ConfirmDialog } = useConfirm();
   const handleUnban = (userId: string) => {
-    if (confirm(t('confirmUnban'))) {
-      unbanMutation.mutate(userId);
-    }
+    confirm({
+      title: t('unbanBtn'),
+      message: t('confirmUnban'),
+      variant: 'warning',
+      confirmText: t('confirm'),
+      onConfirm: () => unbanMutation.mutate(userId),
+    });
   };
 
   const totalPages = usersData ? Math.ceil(usersData.total / limit) : 0;
@@ -388,6 +395,7 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

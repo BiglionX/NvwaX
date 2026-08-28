@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useConfirm } from '@/hooks/useConfirm';
 import { adminApi, Project } from '@/lib/api/admin';
 import { 
   Search, 
@@ -128,10 +129,15 @@ export default function AdminProjectsPage() {
     }
   };
 
+  const { confirm, ConfirmDialog } = useConfirm();
   const handleRestore = (projectId: string) => {
-    if (confirm(t('confirmRestore'))) {
-      restoreMutation.mutate(projectId);
-    }
+    confirm({
+      title: t('restoreBtn'),
+      message: t('confirmRestore'),
+      variant: 'warning',
+      confirmText: t('confirm'),
+      onConfirm: () => restoreMutation.mutate(projectId),
+    });
   };
 
   const totalPages = projectsData ? Math.ceil(projectsData.total / limit) : 0;
@@ -449,6 +455,7 @@ export default function AdminProjectsPage() {
           </div>
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

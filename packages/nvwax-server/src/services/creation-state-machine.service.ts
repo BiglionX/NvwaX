@@ -13,6 +13,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { databaseService } from './database.service.js';
+import type { OrchestrationResult } from './orchestrator/types.js';
 import {
   type StateNodeId,
   type StateNode,
@@ -21,9 +22,18 @@ import {
   type StateCheckpoint,
   type StateMachineConfig,
   type StateMachineEvent,
+  type OrchestrationInfo,
   DEFAULT_STATE_NODES,
   DEFAULT_TRANSITIONS,
 } from '../types/creation-state.js';
+
+/**
+ * 编排器注入接口（状态机不直接依赖 OrchestratorExecutor，保持纯流程壳）
+ * 由路由层注入真实实现；未注入时编排相关能力自动跳过（降级，行为与集成前一致）
+ */
+export interface OrchestratorHook {
+  orchestrate(input: { userInput: string; userId: string; sessionId: string; context?: string }): Promise<OrchestrationResult>;
+}
 
 // ============================================================
 // 状态机引擎
@@ -37,6 +47,8 @@ export class CreationStateMachine {
   private stateData: CreationStateData;
   private history: StateTransition[];
   private sessionId: string;
+  /** 可选编排器（ceo_generation 节点内增强；未注入则跳过） */
+  private orchestrator?: OrchestratorHook;
 
   constructor(config: {
     sessionId: string;
@@ -44,6 +56,7 @@ export class CreationStateMachine {
     nodes?: StateNode[];
     transitions?: StateTransition[];
     initialData?: Partial<CreationStateData>;
+    orchestrator?: OrchestratorHook;
   }) {
     // 注册节点
     const nodeList = config.nodes || DEFAULT_STATE_NODES;
@@ -53,6 +66,7 @@ export class CreationStateMachine {
     
     // 初始化状态
     this.sessionId = config.sessionId;
+    this.orchestrator = config.orchestrator;
     this.currentNodeId = 'requirements_gathering';
     this.history = [];
     this.stateData = {
@@ -187,6 +201,9 @@ export class CreationStateMachine {
             recoverable: false
           };
           break;
+        case 'ORCHESTRATE':
+          nextNode = await this.handleOrchestrate(event.data);
+          break;
         default:
           return { success: false, fromNode, toNode: null, message: `未知事件类型: ${(event as any).type}` };
       }
@@ -238,6 +255,12 @@ export class CreationStateMachine {
       return null;
     }
 
+    // 编排增强：ceo_generation 节点 + 已注入编排器 → 自动执行节点内编排
+    // （失败静默降级，orchestration 记录 degraded，流程推进不受影响）
+    if (currentNode.id === 'ceo_generation' && this.orchestrator) {
+      await this.runNodeOrchestration();
+    }
+
     // 先尝试 on_data 条件（基于新数据评估）
     const onDataNode = this.resolveNextNode('on_data');
     if (onDataNode) {
@@ -247,6 +270,72 @@ export class CreationStateMachine {
     // 降级到 'always' 转换
     const nextNode = this.resolveNextNode('always');
     return nextNode;
+  }
+
+  /**
+   * 执行 ceo_generation 节点内的编排（结果写入 stateData.orchestration）
+   * 任何失败只记录不阻断 —— 编排是增强不是依赖
+   */
+  private async runNodeOrchestration(): Promise<void> {
+    if (!this.orchestrator) return;
+    try {
+      const userInput =
+        this.stateData.requirements?.description ||
+        this.stateData.teamDesign?.overview ||
+        '创建智能体团队';
+      const context = buildOrchestrationContext(this.stateData);
+      const result = await this.orchestrator.orchestrate({
+        userInput,
+        userId: this.stateData.userId,
+        sessionId: this.sessionId,
+        context,
+      });
+      this.stateData.orchestration = toOrchestrationInfo(result);
+      console.log(
+        `[StateMachine] Orchestration @ ceo_generation: intent=${result.intent} agent=${result.agentId} ` +
+        `confidence=${result.confidence} degraded=${result.degraded}`
+      );
+    } catch (error: any) {
+      // 编排失败 → 记录 degraded，流程继续（与集成前一致）
+      console.warn(`[StateMachine] Orchestration failed, degraded: ${error?.message ?? error}`);
+      this.stateData.orchestration = {
+        intent: 'proceed',
+        agentId: null,
+        agentName: null,
+        confidence: 0,
+        output: '',
+        handoffChain: [],
+        degraded: true,
+      };
+    }
+  }
+
+  /** 处理 ORCHESTRATE 事件（显式编排入口；返回转换后的节点） */
+  private async handleOrchestrate(data?: { userInput?: string; context?: string }): Promise<StateNodeId | null> {
+    if (!this.orchestrator) {
+      console.warn('[StateMachine] ORCHESTRATE received but no orchestrator injected');
+      return null;
+    }
+    const userInput =
+      data?.userInput ||
+      this.stateData.requirements?.description ||
+      this.stateData.teamDesign?.overview ||
+      '创建智能体团队';
+    const result = await this.orchestrator.orchestrate({
+      userInput,
+      userId: this.stateData.userId,
+      sessionId: this.sessionId,
+      context: data?.context || buildOrchestrationContext(this.stateData),
+    });
+    this.stateData.orchestration = toOrchestrationInfo(result);
+
+    // 意图感知：clarify → 澄清节点；其余走 on_data / always 转换
+    if (result.intent === 'clarify' && !result.degraded) {
+      return 'clarify';
+    }
+    const onDataNode = this.resolveNextNode('on_data');
+    if (onDataNode) return onDataNode;
+    return this.resolveNextNode('always');
   }
 
   /** 处理 CLARIFY 事件（需要澄清） */
@@ -385,6 +474,14 @@ export class CreationStateMachine {
       if (expression.includes('goBackTo')) {
         return false; // GO_BACK 使用专门的处理逻辑
       }
+      // 编排结果条件：orchestration.intent === 'clarify' / orchestration.degraded
+      if (expression.includes('orchestration.intent')) {
+        const expected = extractQuotedValue(expression);
+        return this.stateData.orchestration?.intent === expected;
+      }
+      if (expression.includes('orchestration.degraded')) {
+        return this.stateData.orchestration?.degraded === true;
+      }
       return false;
     } catch {
       return false;
@@ -500,6 +597,51 @@ export class CreationStateMachine {
       progress: this.getProgress()
     };
   }
+}
+
+// ============================================================
+// 编排桥接辅助函数
+// ============================================================
+
+/** OrchestrationResult → 状态机侧轻量结构（只拷贝所需字段，保持类型解耦） */
+function toOrchestrationInfo(result: OrchestrationResult): OrchestrationInfo {
+  return {
+    intent: result.intent,
+    agentId: result.agentId,
+    agentName: result.agentName,
+    confidence: result.confidence,
+    output: result.output,
+    handoffChain: result.handoffChain,
+    degraded: result.degraded,
+  };
+}
+
+/** 从 stateData 拼装编排上下文（需求/团队设计/匹配结果的紧凑摘要） */
+function buildOrchestrationContext(stateData: CreationStateData): string {
+  const parts: string[] = [];
+  if (stateData.requirements?.description) {
+    parts.push(`需求描述：${stateData.requirements.description}`);
+  }
+  if (stateData.requirements?.companyType) {
+    parts.push(`公司类型：${stateData.requirements.companyType}`);
+  }
+  if (stateData.requirements?.mainResponsibilities?.length) {
+    parts.push(`核心职责：${stateData.requirements.mainResponsibilities.join('、')}`);
+  }
+  if (stateData.teamDesign) {
+    parts.push(`团队设计：${JSON.stringify(stateData.teamDesign).slice(0, 500)}`);
+  }
+  if (stateData.agentMatches && Object.keys(stateData.agentMatches).length > 0) {
+    parts.push(`Agent 匹配：${Object.keys(stateData.agentMatches).join('、')}`);
+  }
+  return parts.join('\n');
+}
+
+/** 从表达式提取引号内的期望值，如 `orchestration.intent === 'clarify'` → 'clarify' */
+function extractQuotedValue(expression: string): string | undefined {
+  const match = expression.match(/'([^']*)'|"([^"]*)"/);
+  if (!match) return undefined;
+  return match[1] ?? match[2];
 }
 
 // 导出

@@ -18,7 +18,7 @@ import { useTranslations, useLocale } from 'next-intl';
 
 export default function TeamSkillDetailView() {
   const params = useParams();
-  const id = params.id as string;
+  const id = (params?.id as string) || '';
   const t = useTranslations('teamSkill');
   const locale = useLocale();
 

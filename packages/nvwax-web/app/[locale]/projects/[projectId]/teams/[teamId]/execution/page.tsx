@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl';
 export default function TeamExecutionPage() {
   const t = useTranslations('teamExecution');
   const params = useParams();
+  const projectId = (params?.projectId as string) || '';
   const [requirement, setRequirement] = useState('');
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResult, setExecutionResult] = useState<LeaderAgentExecutionResult | null>(null);
@@ -48,7 +49,7 @@ export default function TeamExecutionPage() {
       {/* 返回按钮 */}
       <div className="mb-6">
         <Link
-          href={`/projects/${params.projectId}`}
+          href={`/projects/${projectId}`}
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
         >
           <ArrowLeft size={20} />

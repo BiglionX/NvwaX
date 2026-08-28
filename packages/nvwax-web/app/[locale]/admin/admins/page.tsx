@@ -8,6 +8,7 @@ import { Plus, Trash2, Edit, Shield, Mail, User as UserIcon } from 'lucide-react
 
 export default function AdminsPage() {
   const t = useTranslations('admin');
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [formData, setFormData] = useState({

@@ -1,0 +1,26 @@
+{
+  "name": "development-bundle",
+  "version": "1.0.0",
+  "format": "hermes-skill-bundle/v1",
+  "description": "开发团队 Leader Skill Bundle - 提供技术架构、代码审查、DevOps 相关 Leader",
+  "author": "nvwax-team",
+  "license": "MIT",
+
+  "skills": [
+    "tech-lead-v1"
+  ],
+
+  "dependencies": {
+    "leader-agent": ">=2.0.0"
+  },
+
+  "tags": ["development", "engineering", "tech", "architecture"],
+
+  "icon": "💻",
+
+  "distribution": {
+    "registry": "https://bundles.nvwax.cc",
+    "checksum": "sha256:placeholder",
+    "size": "8kb"
+  }
+}

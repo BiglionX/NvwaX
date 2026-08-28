@@ -17,6 +17,7 @@ interface Agent {
 
 export default function AdminAgentsPage() {
   const t = useTranslations('admin');
+  const locale = useLocale();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');

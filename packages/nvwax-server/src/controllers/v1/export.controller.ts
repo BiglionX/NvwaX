@@ -15,6 +15,7 @@ const exportService = new ExportService(pool);
 /**
  * POST /api/v1/agents/:id/export
  * 导出 Agent 为指定格式
+ * 支持格式：json | yaml | proclaw | crewai | langgraph
  */
 export const exportAgent = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -32,16 +33,17 @@ export const exportAgent = async (req: Request, res: Response): Promise<void> =>
     const agentId = Array.isArray(id) ? id[0] : id;
     const { format = 'json', includeMetadata = true, includeImplementation = false } = req.body;
 
-    if (!['json', 'yaml', 'proclaw'].includes(format)) {
+    const allowedFormats = ['json', 'yaml', 'proclaw', 'crewai', 'langgraph'];
+    if (!allowedFormats.includes(format)) {
       res.status(400).json({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: '不支持的导出格式，请使用 json、yaml 或 proclaw' }
+        error: { code: 'VALIDATION_ERROR', message: '不支持的导出格式，请使用 json / yaml / proclaw / crewai / langgraph' }
       });
       return;
     }
 
     const result = await exportService.exportAgent(agentId, userId, {
-      format: format as 'json' | 'yaml' | 'proclaw',
+      format: format as 'json' | 'yaml' | 'proclaw' | 'crewai' | 'langgraph',
       includeMetadata,
       includeImplementation
     });
@@ -72,6 +74,7 @@ export const exportAgent = async (req: Request, res: Response): Promise<void> =>
 /**
  * POST /api/v1/aiteams/:id/export
  * 导出 AiTeam 为指定格式
+ * 支持格式：json | yaml | proclaw | crewai | langgraph
  */
 export const exportAiTeam = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -89,16 +92,17 @@ export const exportAiTeam = async (req: Request, res: Response): Promise<void> =
     const aiteamId = Array.isArray(id) ? id[0] : id;
     const { format = 'json', includeMetadata = true } = req.body;
 
-    if (!['json', 'yaml', 'proclaw'].includes(format)) {
+    const allowedFormats = ['json', 'yaml', 'proclaw', 'crewai', 'langgraph'];
+    if (!allowedFormats.includes(format)) {
       res.status(400).json({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: '不支持的导出格式，请使用 json、yaml 或 proclaw' }
+        error: { code: 'VALIDATION_ERROR', message: '不支持的导出格式，请使用 json / yaml / proclaw / crewai / langgraph' }
       });
       return;
     }
 
     const result = await exportService.exportAiTeam(aiteamId, userId, {
-      format: format as 'json' | 'yaml' | 'proclaw',
+      format: format as 'json' | 'yaml' | 'proclaw' | 'crewai' | 'langgraph',
       includeMetadata
     });
 
@@ -203,10 +207,11 @@ export const batchExport = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    if (!['json', 'yaml', 'proclaw'].includes(format)) {
+    const allowedFormats = ['json', 'yaml', 'proclaw', 'crewai', 'langgraph'];
+    if (!allowedFormats.includes(format)) {
       res.status(400).json({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: '不支持的导出格式' }
+        error: { code: 'VALIDATION_ERROR', message: '不支持的导出格式，请使用 json / yaml / proclaw / crewai / langgraph' }
       });
       return;
     }
@@ -217,12 +222,12 @@ export const batchExport = async (req: Request, res: Response): Promise<void> =>
       try {
         if (item.type === 'agent') {
           const result = await exportService.exportAgent(item.id, userId, {
-            format: format as 'json' | 'yaml' | 'proclaw'
+            format: format as 'json' | 'yaml' | 'proclaw' | 'crewai' | 'langgraph'
           });
           results.push(result);
         } else if (item.type === 'aiteam') {
           const result = await exportService.exportAiTeam(item.id, userId, {
-            format: format as 'json' | 'yaml' | 'proclaw'
+            format: format as 'json' | 'yaml' | 'proclaw' | 'crewai' | 'langgraph'
           });
           results.push(result);
         }

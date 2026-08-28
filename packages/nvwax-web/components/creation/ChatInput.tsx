@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { Send, RotateCcw, CornerDownLeft, Lightbulb } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 
 /**
  * 统一聊天输入区组件
@@ -55,6 +56,7 @@ export default function ChatInput({
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   // textarea 自动调整高度
   useEffect(() => {
@@ -73,9 +75,13 @@ export default function ChatInput({
 
   const handleRestart = () => {
     if (!onRestart) return;
-    if (confirm(restartConfirm)) {
-      onRestart();
-    }
+    confirm({
+      title: restartChatLabel,
+      message: restartConfirm,
+      variant: 'warning',
+      confirmText: restartLabel,
+      onConfirm: () => onRestart(),
+    });
   };
 
   return (
@@ -158,6 +164,7 @@ export default function ChatInput({
         </div>
         )}
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

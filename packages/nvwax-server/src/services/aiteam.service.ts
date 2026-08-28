@@ -137,6 +137,125 @@ export class AiTeamService {
   }
 
   /**
+   * 从创建会话（session）创建 AiTeam（"创建即入仓库"）
+   *
+   * 与 createAiTeam 的区别：
+   * - 成员数据来自 session 的 team_design.roles / agent_matches（只有 agentName，无 agent_id）
+   * - 成员完整写入 aiteams.members JSONB（确保仓库列表/详情能显示）
+   * - 关联表 aiteam_members 只写入能匹配到 agents.id 的成员（避免外键失败）
+   * - 幂等：同一 session 只创建一次（通过 session 上记录 final_aiteam_id）
+   */
+  async createAiTeamFromSession(input: {
+    userId: string;
+    sessionId: string;
+    name: string;
+    description?: string;
+    members: Array<{
+      role: string;
+      responsibilities?: any;
+      config?: Record<string, unknown>;
+      agentName?: string;
+    }>;
+    workflow?: Record<string, unknown>;
+    triggers?: Record<string, unknown>;
+    category?: string | null;
+    tags?: string[];
+  }): Promise<AiTeam> {
+    const client = await this.pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // 幂等：若该 session 已创建过 aiteam，直接返回已有记录
+      const existing = await client.query(
+        'SELECT final_aiteam_id FROM aiteam_creation_sessions WHERE id = $1',
+        [input.sessionId]
+      );
+      if (existing.rows.length > 0 && existing.rows[0].final_aiteam_id) {
+        const prev = await this.getAiTeamById(existing.rows[0].final_aiteam_id, input.userId);
+        if (prev) {
+          await client.query('COMMIT');
+          return prev;
+        }
+      }
+
+      const aiteamId = uuidv4();
+
+      // 1) 写入 aiteams 主表（members 全量进 JSONB）
+      const memberJson = JSON.stringify(
+        input.members.map((m, idx) => ({
+          agentId: null,
+          agentName: m.agentName || null,
+          role: m.role,
+          responsibilities: m.responsibilities || null,
+          config: m.config || {},
+          sortOrder: idx
+        }))
+      );
+
+      const result = await client.query(
+        `INSERT INTO aiteams (
+          id, user_id, name, description, members, workflow, triggers,
+          version, publish_status, category, tags, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::text[], CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        RETURNING *`,
+        [
+          aiteamId,
+          input.userId,
+          input.name,
+          input.description || null,
+          memberJson,
+          JSON.stringify(input.workflow || {}),
+          JSON.stringify(input.triggers || {}),
+          '1.0.0',
+          'private',
+          input.category || null,
+          input.tags && input.tags.length > 0 ? input.tags : '{}'
+        ]
+      );
+
+      // 2) 尝试写关联表（只写能匹配到 agents.id 的成员，避免外键失败）
+      for (let i = 0; i < input.members.length; i++) {
+        const m = input.members[i];
+        if (!m.agentName) continue;
+        const agentRow = await client.query(
+          'SELECT id FROM agents WHERE name = $1 LIMIT 1',
+          [m.agentName]
+        );
+        if (agentRow.rows.length === 0) continue;
+        await client.query(
+          `INSERT INTO aiteam_members (aiteam_id, agent_id, role, responsibilities, config, sort_order)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT (aiteam_id, agent_id) DO NOTHING`,
+          [
+            aiteamId,
+            agentRow.rows[0].id,
+            m.role,
+            Array.isArray(m.responsibilities) ? m.responsibilities.join('；') : (m.responsibilities || null),
+            JSON.stringify(m.config || {}),
+            i
+          ]
+        );
+      }
+
+      // 3) 记录到 session（幂等）
+      await client.query(
+        'UPDATE aiteam_creation_sessions SET final_aiteam_id = $1 WHERE id = $2',
+        [aiteamId, input.sessionId]
+      );
+
+      await client.query('COMMIT');
+
+      return this.mapRowToAiTeam(result.rows[0]);
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * 获取用户的 AiTeam 列表
    */
   async getAiTeamsByUserId(userId: string, options?: {
@@ -233,16 +352,20 @@ export class AiTeamService {
     );
 
     const aiteam = this.mapRowToAiTeam(aiteamResult.rows[0]);
-    
-    // 映射成员
-    aiteam.members = membersResult.rows.map(row => ({
-      agentId: row.agent_id,
-      agentName: row.agent_name,
-      role: row.role,
-      responsibilities: row.responsibilities,
-      config: JSON.parse(row.config || '{}'),
-      sortOrder: row.sort_order
-    }));
+
+    // 关联表优先；为空时回退到 members JSONB（session 创建路径可能无关联记录）
+    if (membersResult.rows.length > 0) {
+      aiteam.members = membersResult.rows.map(row => ({
+        agentId: row.agent_id,
+        agentName: row.agent_name,
+        role: row.role,
+        responsibilities: row.responsibilities,
+        config: JSON.parse(row.config || '{}'),
+        sortOrder: row.sort_order
+      }));
+    } else {
+      aiteam.members = (aiteam.members as any[]) || [];
+    }
 
     return aiteam;
   }

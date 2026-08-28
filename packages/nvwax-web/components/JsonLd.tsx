@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { type JSX } from 'react';
 
 /**
  * JSON-LD 结构化数据注入组件
@@ -14,7 +14,7 @@ export default function JsonLd({
   data,
 }: {
   data: Record<string, unknown> | Array<Record<string, unknown>>;
-}): ReactNode {
+}): JSX.Element {
   return (
     <script
       type="application/ld+json"

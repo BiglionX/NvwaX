@@ -111,6 +111,29 @@ export interface CreationStateData {
     message: string;
     recoverable: boolean;
   };
+
+  // 编排结果（agent-squad 节点内编排，见 OrchestratorExecutor）
+  orchestration?: OrchestrationInfo;
+}
+
+/**
+ * 编排信息（状态机侧轻量结构，兼容 OrchestratorExecutor 的 OrchestrationResult）
+ * 供 on_data 条件表达式（如 `orchestration.intent === 'clarify'`）与审计使用
+ */
+export interface OrchestrationInfo {
+  /** classifier 分类出的流程意图 */
+  intent: 'clarify' | 'proceed' | 'approve' | 'handoff';
+  /** 被选中的子代理 id（无匹配/降级时为 null） */
+  agentId: string | null;
+  agentName: string | null;
+  /** 路由置信度 0-1 */
+  confidence: number;
+  /** 子代理输出文本 */
+  output: string;
+  /** handoff 接力链（预留） */
+  handoffChain: string[];
+  /** true = 编排器不可用/无匹配，调用方应走降级路径 */
+  degraded: boolean;
 }
 
 // ============================================================
@@ -156,7 +179,8 @@ export type StateMachineEvent =
   | { type: 'GO_BACK'; targetNode: StateNodeId }
   | { type: 'RESTORE'; checkpointId: string }
   | { type: 'ERROR'; error: Error }
-  | { type: 'TIMEOUT' };
+  | { type: 'TIMEOUT' }
+  | { type: 'ORCHESTRATE'; data?: { userInput?: string; context?: string } };
 
 // ============================================================
 // 预定义节点

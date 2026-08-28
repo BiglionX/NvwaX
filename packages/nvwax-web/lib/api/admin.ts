@@ -203,15 +203,49 @@ export interface TokenOverview {
 /**
  * 审计日志记录（后端 /admin/system/logs 列表项，参见 admin.controller.ts: getAuditLogs）。
  * 所有字段为必填，与 audit-logs/page.tsx 本地 interface AuditLog 一致。
+ *
+ * v2.3+ 扩展：user_id / source 字段（Nvwa 工作台前端审计事件来源）。
+ * 老数据库两列可能为 null（向后兼容）。
  */
 export interface AuditLog {
   id: string;
-  adminId: string;
+  adminId: string | null;
+  userId?: string | null;
+  source?: string | null;
+  /** v2.3+：关联资源 ID（agentId / blueprintId / sessionId / aiteamId） */
+  resourceId?: string | null;
   level: string;
   action: string;
   details: string;
-  ipAddress: string;
+  ipAddress: string | null;
   createdAt: string;
+}
+
+/**
+ * 审计日志聚合统计响应（GET /api/admin/system/logs/stats）
+ *
+ * windowDays  - 统计窗口（默认 7）
+ * totalEvents - 窗口内总事件数
+ * byLevel     - { info, warning, error } 计数
+ * bySource    - 按 source 分组计数（Nvwa 工作台 vs Admin）
+ * topActions  - 前 10 高频 action（含 errorRate）
+ * timeline24h - 24 小时分布（按 UTC 小时聚合）
+ * successRate - 0-1 浮点（1 - error/total）
+ */
+export interface AuditLogStats {
+  windowDays: number;
+  totalEvents: number;
+  byLevel: { info: number; warning: number; error: number };
+  bySource: Array<{ source: string; count: number }>;
+  topActions: Array<{
+    action: string;
+    count: number;
+    errorCount: number;
+    errorRate: number;
+    latestAt: string;
+  }>;
+  timeline24h: Array<{ hour: string; count: number; errorCount: number }>;
+  successRate: number;
 }
 
 /**
@@ -394,8 +428,52 @@ export const adminApi = {
 
   // ─── 系统统计 / 日志 ───
   getSystemStats: () => getJson<SystemStats>('/admin/system/stats'),
-  getSystemLogs: (page: number = 1, limit: number = 20) =>
-    rawGetJson<PaginatedResponse<AuditLog>>(`/admin/system/logs${qs({ page, limit })}`),
+  /**
+   * 获取系统日志（v2.3+ 支持按 userId / source / resourceId 过滤）
+   * - action: 模糊匹配 action 字段
+   * - adminId / userId / source / resourceId: 精确匹配
+   * - level: 精确匹配（info / warning / error）
+   */
+  getSystemLogs: (
+    pageOrOpts: number | {
+      page?: number;
+      limit?: number;
+      action?: string;
+      adminId?: string;
+      userId?: string;
+      source?: string;
+      resourceId?: string;
+      level?: string;
+    } = 1,
+    limit: number = 20
+  ) => {
+    // 兼容旧签名 getSystemLogs(page, limit)
+    if (typeof pageOrOpts === 'number') {
+      return rawGetJson<PaginatedResponse<AuditLog>>(`/admin/system/logs${qs({ page: pageOrOpts, limit })}`);
+    }
+    const opts = pageOrOpts;
+    return rawGetJson<PaginatedResponse<AuditLog>>(`/admin/system/logs${qs({
+      page: opts.page ?? 1,
+      limit: opts.limit ?? 20,
+      action: opts.action,
+      adminId: opts.adminId,
+      userId: opts.userId,
+      source: opts.source,
+      resourceId: opts.resourceId,
+      level: opts.level,
+    })}`);
+  },
+
+  /**
+   * 审计日志聚合统计（v2.3+）
+   * - days: 时间窗口（默认 7，最多 90）
+   * - source: 过滤 source（可选）
+   * 返回：totalEvents / byLevel / bySource / topActions / timeline24h / successRate
+   */
+  getSystemLogStats: (opts: { days?: number; source?: string } = {}) =>
+    rawGetJson<{ success: boolean; data: AuditLogStats }>(
+      `/admin/system/logs/stats${qs({ days: opts.days ?? 7, source: opts.source })}`
+    ),
 
   // ─── 爬虫管理 ───
   getCrawlerStatus: () => getJson<CrawlerStatus>('/admin/crawler/status'),

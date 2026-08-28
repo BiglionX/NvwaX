@@ -14,9 +14,22 @@ interface SSEClient {
 
 /**
  * SSE 进度事件
+ *
+ * v1.4.0 / Sprint 2.17 扩展：
+ * - 新增 `agent_message` 事件类型：推送 NvwaX CEO Agent 的自然语言回复
+ *   到 wizard UI，用于让 ProClaw 端 `nvwax_stream_session_v2` 真正实现
+ *   流式 chat 体验（不再只是 progress 进度条）
+ * - 每个事件都带 SSE 标准 `event:` 字段名（由 sendEvent 写入）
+ * - `complete` 事件表示 done=true，客户端收到后断开连接
  */
 export interface SSEProgressEvent {
-  type: 'progress_update' | 'step_completed' | 'session_status_changed' | 'error';
+  type:
+    | 'progress_update'
+    | 'step_completed'
+    | 'session_status_changed'
+    | 'agent_message'
+    | 'complete'
+    | 'error';
   data: any;
   timestamp: Date;
 }
@@ -211,6 +224,96 @@ export class SSEProgressService {
   }
 
   /**
+   * v1.4.0 / Sprint 2.17：广播 NvwaX CEO Agent 的自然语言回复到 wizard UI
+   *
+   * 该事件是 ProClaw 端 `nvwax_stream_session_v2` 真正流式显示 agent 回复的关键。
+   * 旧版 wizard 只能看到 progress_update 事件，无法拿到 agent message content。
+   *
+   * @param sessionId  会话 ID
+   * @param message    NvwaX Agent 回复的自然语言文本
+   * @param phase      当前会话阶段（requirements_gathering / team_design / agent_matching / skill_matching / confirming 等）
+   * @param progress   进度（0-100）
+   * @param confidence 置信度（0-1）
+   * @param nextStep   下一步提示
+   */
+  broadcastAgentMessage(
+    sessionId: string,
+    message: string,
+    phase?: string,
+    progress?: number,
+    confidence?: number,
+    nextStep?: string
+  ): void {
+    const clients = this.clients.get(sessionId);
+    if (!clients || clients.length === 0) {
+      return;
+    }
+
+    const event: SSEProgressEvent = {
+      type: 'agent_message',
+      data: {
+        sessionId,
+        message,
+        phase,
+        progress,
+        confidence,
+        nextStep
+      },
+      timestamp: new Date()
+    };
+
+    clients.forEach(client => {
+      this.sendEvent(client, event);
+    });
+
+    console.log(
+      `📢 Broadcasted agent_message (${message.length} chars) to ${clients.length} clients`
+    );
+  }
+
+  /**
+   * v1.4.0 / Sprint 2.17：广播会话完成事件
+   *
+   * 客户端收到后应立即断开连接。如果会话状态变为 completed / failed / cancelled，
+   * 调用方在更新数据库后立即调用此方法。
+   */
+  broadcastComplete(
+    sessionId: string,
+    finalStatus: 'completed' | 'failed' | 'cancelled',
+    finalTeamSkillId?: string,
+    errorMessage?: string
+  ): void {
+    const clients = this.clients.get(sessionId);
+    if (!clients || clients.length === 0) {
+      return;
+    }
+
+    const event: SSEProgressEvent = {
+      type: 'complete',
+      data: {
+        sessionId,
+        status: finalStatus,
+        finalTeamSkillId,
+        errorMessage
+      },
+      timestamp: new Date()
+    };
+
+        // 先复制一份（避免在 forEach 中 splice 同一数组导致跳过元素）
+    const clientsSnapshot = [...clients];
+    clientsSnapshot.forEach(client => {
+      this.sendEvent(client, event);
+      // 发送 complete 后立即断开客户端（但保留广播能力）
+      try {
+        client.res.end();
+      } catch (_) {}
+      this.disconnect(client.id, sessionId);
+    });
+
+    console.log(`🏁 Broadcasted complete (${finalStatus}) to ${clients.length} clients`);
+  }
+
+  /**
    * 广播错误事件
    */
   broadcastError(sessionId: string, error: Error): void {
@@ -238,11 +341,21 @@ export class SSEProgressService {
 
   /**
    * 发送单个事件到客户端
+   *
+   * SSE 协议：每个事件由 `event: <type>\ndata: <json>\n\n` 组成。
+   * `event:` 字段让 ProClaw 端按类型路由（progress / agent_message / complete），
+   * 旧版仅用 `data:` 仍兼容（type 默认 'progress_update'）。
    */
   private sendEvent(client: SSEClient, event: SSEProgressEvent): void {
     try {
       const data = JSON.stringify(event);
-      client.res.write(`data: ${data}\n\n`);
+      // event 名映射：去掉 _update 后缀以匹配 ProClaw 端监听名
+      // progress_update -> progress, session_status_changed -> status
+      const eventName = event.type
+        .replace('_update', '')
+        .replace('session_status_changed', 'status')
+        .replace('step_completed', 'step');
+      client.res.write(`event: ${eventName}\ndata: ${data}\n\n`);
     } catch (error) {
       console.error(`Error sending event to client ${client.id}:`, error);
       // 如果发送失败，断开连接

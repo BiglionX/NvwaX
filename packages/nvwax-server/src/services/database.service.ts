@@ -156,11 +156,22 @@ class DatabaseService {
           level TEXT NOT NULL,
           action TEXT NOT NULL,
           admin_id TEXT REFERENCES admins(id) ON DELETE SET NULL,
+          user_id TEXT,
+          source TEXT,
+          resource_id TEXT,
           details TEXT,
           ip_address TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+      // v2.3 兼容旧部署：单独 ALTER 加列（IF NOT EXISTS 避免重复执行报错）
+      await client.query(`ALTER TABLE system_logs ADD COLUMN IF NOT EXISTS user_id TEXT`);
+      await client.query(`ALTER TABLE system_logs ADD COLUMN IF NOT EXISTS source TEXT`);
+      await client.query(`ALTER TABLE system_logs ADD COLUMN IF NOT EXISTS resource_id TEXT`);
+      // 加索引便于按 user / source / resource 过滤
+      await client.query(`CREATE INDEX IF NOT EXISTS idx_system_logs_user_id ON system_logs(user_id)`);
+      await client.query(`CREATE INDEX IF NOT EXISTS idx_system_logs_source ON system_logs(source)`);
+      await client.query(`CREATE INDEX IF NOT EXISTS idx_system_logs_resource_id ON system_logs(resource_id)`);
 
       // 创建 Agent 元数据表
       await client.query(`
@@ -288,6 +299,8 @@ class DatabaseService {
         await client.query(`ALTER TABLE aiteam_creation_sessions ADD COLUMN IF NOT EXISTS agent_matches JSONB DEFAULT '{}'::jsonb`);
         await client.query(`ALTER TABLE aiteam_creation_sessions ADD COLUMN IF NOT EXISTS skill_matches JSONB DEFAULT '{}'::jsonb`);
         await client.query(`ALTER TABLE aiteam_creation_sessions ADD COLUMN IF NOT EXISTS document_package_url TEXT`);
+        // "创建即入仓库"：记录该 session 已创建的 aiteam id（幂等）
+        await client.query(`ALTER TABLE aiteam_creation_sessions ADD COLUMN IF NOT EXISTS final_aiteam_id TEXT`);
       } catch (error) {
         console.log('AiTeam sessions extra columns already exist or not needed');
       }

@@ -4,7 +4,7 @@ import { motion, HTMLMotionProps } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import React from 'react';
 
-export interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'ref' | 'onDrag'> {
+export interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'ref' | 'onDrag' | 'children'> {
   /** 按钮变体 */
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   /** 按钮尺寸 */

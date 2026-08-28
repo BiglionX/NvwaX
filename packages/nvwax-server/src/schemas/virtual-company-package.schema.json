@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://proclaw.cc/schemas/virtual-company-package.schema.json",
+  "title": "VirtualCompanyPackage",
+  "description": "NvwaX → ProClaw 虚拟公司导出包的官方 Schema。NvwaX 服务端按此格式生成，ProClaw 桌面端按此格式导入。该 Schema 必须保持两端二进制兼容；任何字段增删必须使用 $comment 标注版本。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "packageId", "exportedAt", "source", "team", "agents"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Schema 主版本号；当前固定为 '1.0.0'，主版本不一致即拒绝导入",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "packageId": {
+      "type": "string",
+      "description": "导出包的唯一 ID，UUID 格式；用于幂等导入",
+      "pattern": "^[0-9a-fA-F-]{36}$"
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 导出时间"
+    },
+    "checksum": {
+      "type": "string",
+      "description": "对 packageId+exportedAt+team+agents 的 SHA-256 摘要，hex 编码"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "sessionId"],
+      "properties": {
+        "platform": { "const": "nvwax" },
+        "sessionId": { "type": "string", "description": "NvwaX aiteam_creation_session ID" },
+        "userId": { "type": "string" },
+        "aiteamId": { "type": "string", "description": "导出的 AiTeam ID" }
+      }
+    },
+    "team": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "industry": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "ceoConfig": {
+          "type": "object",
+          "description": "CEO Agent 配置（persona、systemPrompt、决策模型等）",
+          "additionalProperties": true
+        },
+        "workflow": {
+          "type": "array",
+          "description": "团队工作流节点列表",
+          "items": { "type": "object", "additionalProperties": true }
+        },
+        "bindingRules": {
+          "type": "array",
+          "items": { "type": "object", "additionalProperties": true }
+        }
+      }
+    },
+    "agents": {
+      "type": "array",
+      "description": "虚拟公司成员 Agent 列表",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "role"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "role": { "type": "string" },
+          "avatarUrl": { "type": "string", "format": "uri-reference" },
+          "capabilities": { "type": "array", "items": { "type": "string" } },
+          "permissions": { "type": "array", "items": { "type": "string" } },
+          "inputSchema": { "type": "object", "additionalProperties": true },
+          "outputSchema": { "type": "object", "additionalProperties": true },
+          "modelConfig": {
+            "type": "object",
+            "properties": {
+              "provider": { "type": "string", "enum": ["openai", "anthropic", "ollama", "proclaw-local", "custom"] },
+              "model": { "type": "string" },
+              "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+              "maxTokens": { "type": "integer", "minimum": 1 }
+            },
+            "additionalProperties": true
+          },
+          "systemPrompt": { "type": "string" }
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "description": "可选：团队绑定的 Skill 列表",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "content": { "type": "string", "description": "Skill 的 SKILL.md 内容" }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "可选：Nvwax 自定义元数据，会被 ProClaw 原样存储到本地 SQLite"
+    }
+  }
+}

@@ -12,6 +12,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { universalAuthMiddleware } from '../middleware/universal-auth.middleware.js';
 import { databaseService } from '../services/database.service.js';
 import { CreationStateMachine } from '../services/creation-state-machine.service.js';
+import { OrchestratorExecutor } from '../services/orchestrator/orchestrator-executor.service.js';
+import { llmService } from '../services/llm/llm.service.js';
 import {
   DEFAULT_STATE_NODES,
   DEFAULT_TRANSITIONS,
@@ -25,6 +27,9 @@ const router = Router();
 
 // 所有 Aiteam 状态机路由需要认证
 router.use(universalAuthMiddleware);
+
+// ceo_generation 节点内编排器（懒加载内部编排器，disabled 时 orchestrate 返回 degraded）
+const creationOrchestrator = new OrchestratorExecutor(llmService);
 
 // ============================================================
 // 类型定义
@@ -122,6 +127,10 @@ async function loadOrCreateStateMachineSession(
     nodes: DEFAULT_STATE_NODES,
     transitions: DEFAULT_TRANSITIONS,
     initialData: state.stateData as any,
+    // 注入 ceo_generation 节点内编排（增强；不可用时 orchestrate 返回 degraded，流程不变）
+    orchestrator: {
+      orchestrate: (input) => creationOrchestrator.orchestrate(input),
+    },
   });
 
   // 4. 恢复当前节点和历史
@@ -267,6 +276,11 @@ router.post('/sessions/:id/event', async (req, res) => {
           return { type: 'GO_BACK', targetNode: targetNode! };
         case 'ERROR':
           return { type: 'ERROR', error: new Error(error || 'Unknown error') };
+        case 'ORCHESTRATE':
+          return {
+            type: 'ORCHESTRATE',
+            data: { userInput: data?.userInput, context: data?.context },
+          };
         default:
           throw new Error(`Unknown event type: ${type}`);
       }

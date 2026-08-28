@@ -2,13 +2,21 @@ import { ChatOpenAI } from '@langchain/openai';
 import { HumanMessage } from '@langchain/core/messages';
 
 /**
- * Leader Agent - 智能团队编排器
- * 
+ * Leader Agent - 智能团队编排器（Legacy 实现）
+ *
+ * ⚠️ 此实现已被 Hermes 化的新版本替代：
+ *    详见 `hermes-leader-agent.js` 和 `docs/LEADER-AGENT-HERMES-REFACTOR-PLAN.md`
+ *
+ * 保留本文件作为兜底方案，确保向后兼容。
+ * 新代码应优先使用 HermesStyleLeaderAgent。
+ *
  * 负责：
  * 1. 根据需求智能匹配或创建 Team Skill
  * 2. 动态组建团队
  * 3. 按照工作流执行团队任务
  * 4. 协调 Teammate 之间的协作
+ *
+ * @deprecated 请使用 hermes-leader-agent.js 中的 HermesStyleLeaderAgent
  */
 export class LeaderAgent {
   constructor() {

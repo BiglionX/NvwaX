@@ -13,6 +13,7 @@
 
 /// <reference types="jest" />
 
+import { jest } from '@jest/globals';
 import { CreationStateMachine } from '../services/creation-state-machine.service.js';
 import {
   DEFAULT_STATE_NODES,
@@ -355,6 +356,134 @@ describe('CreationStateMachine', () => {
         (t: StateTransition) => t.from === 'requirements_gathering' && t.to === 'team_design'
       );
       expect(hasRequirementsToTeam).toBe(true);
+    });
+  });
+
+  // ============================================================
+  // 8. 编排桥接（Orchestration bridge）
+  // ============================================================
+  describe('Orchestration Bridge', () => {
+    function makeOrchestratorHook(overrides?: Partial<{
+      intent: 'clarify' | 'proceed';
+      degraded: boolean;
+      output: string;
+    }>) {
+      const cfg = {
+        intent: 'proceed' as const,
+        degraded: false,
+        output: '团队设计方案：CEO + 市场 + 产品。',
+        ...overrides,
+      };
+      const hook = {
+        orchestrate: jest.fn(async () => ({
+          intent: cfg.intent,
+          agentId: cfg.degraded ? null : 'team_architect',
+          agentName: cfg.degraded ? null : '团队架构师',
+          confidence: cfg.degraded ? 0 : 0.9,
+          output: cfg.output,
+          handoffChain: [],
+          raw: {} as Record<string, unknown>,
+          degraded: cfg.degraded,
+        })),
+      };
+      return { hook, cfg };
+    }
+
+    async function advanceToCeoGeneration(machine: CreationStateMachine): Promise<void> {
+      // requirements_gathering → team_design → agent_matching → skill_matching → ceo_generation
+      for (let i = 0; i < 4; i++) {
+        const r = await machine.handleEvent({ type: 'PROCEED' });
+        expect(r.success).toBe(true);
+      }
+      expect(machine.getCurrentNodeId()).toBe('ceo_generation');
+    }
+
+    test('ceo_generation PROCEED 自动编排（intent=proceed）→ orchestration 写入并推进', async () => {
+      const { hook } = makeOrchestratorHook();
+      const machine = new CreationStateMachine({
+        sessionId: 's-orch-1',
+        userId: 'u-1',
+        initialData: { requirements: { description: '我要建电商团队' } as any },
+        orchestrator: hook,
+      });
+      await advanceToCeoGeneration(machine);
+
+      const result = await machine.handleEvent({ type: 'PROCEED' });
+      expect(result.success).toBe(true);
+      expect(result.toNode).toBe('document_generation');
+      expect(hook.orchestrate).toHaveBeenCalledTimes(1);
+
+      const orch = machine.getStateData().orchestration;
+      expect(orch).toBeDefined();
+      expect(orch!.intent).toBe('proceed');
+      expect(orch!.agentId).toBe('team_architect');
+      expect(orch!.degraded).toBe(false);
+    });
+
+    test('ORCHESTRATE 事件显式触发（intent=clarify）→ 进入 clarify 节点', async () => {
+      const { hook } = makeOrchestratorHook({ intent: 'clarify' });
+      const machine = new CreationStateMachine({
+        sessionId: 's-orch-2',
+        userId: 'u-1',
+        orchestrator: hook,
+      });
+      const result = await machine.handleEvent({ type: 'ORCHESTRATE', data: { userInput: '需求不明确' } });
+      expect(result.success).toBe(true);
+      expect(result.toNode).toBe('clarify');
+      expect(machine.getStateData().orchestration?.intent).toBe('clarify');
+    });
+
+    test('编排器抛错 → 降级（degraded=true），流程照常推进', async () => {
+      const hook = {
+        orchestrate: jest.fn(async () => {
+          throw new Error('upstream 500');
+        }),
+      };
+      const machine = new CreationStateMachine({
+        sessionId: 's-orch-3',
+        userId: 'u-1',
+        orchestrator: hook,
+      });
+      await advanceToCeoGeneration(machine);
+
+      const result = await machine.handleEvent({ type: 'PROCEED' });
+      expect(result.success).toBe(true);
+      expect(result.toNode).toBe('document_generation');
+      const orch = machine.getStateData().orchestration;
+      expect(orch!.degraded).toBe(true);
+      expect(orch!.agentId).toBeNull();
+    });
+
+    test('未注入编排器 → ceo_generation PROCEED 不触发编排（行为与集成前一致）', async () => {
+      const machine = new CreationStateMachine({ sessionId: 's-orch-4', userId: 'u-1' });
+      await advanceToCeoGeneration(machine);
+      const result = await machine.handleEvent({ type: 'PROCEED' });
+      expect(result.success).toBe(true);
+      expect(result.toNode).toBe('document_generation');
+      expect(machine.getStateData().orchestration).toBeUndefined();
+    });
+
+    test('未注入编排器 → ORCHESTRATE 事件返回失败且不崩溃', async () => {
+      const machine = new CreationStateMachine({ sessionId: 's-orch-5', userId: 'u-1' });
+      const result = await machine.handleEvent({ type: 'ORCHESTRATE' });
+      expect(result.success).toBe(false);
+      expect(machine.getCurrentNodeId()).toBe('requirements_gathering');
+    });
+
+    test('evaluateCondition 支持 orchestration.intent 表达式', async () => {
+      const { hook } = makeOrchestratorHook({ intent: 'clarify' });
+      const machine = new CreationStateMachine({
+        sessionId: 's-orch-6',
+        userId: 'u-1',
+        orchestrator: hook,
+      });
+      await machine.handleEvent({ type: 'ORCHESTRATE', data: { userInput: 'x' } });
+
+      // 通过私有方法间接验证：on_data 转换条件评估
+      const anyMachine = machine as any;
+      expect(anyMachine.evaluateCondition(`orchestration.intent === 'clarify'`)).toBe(true);
+      expect(anyMachine.evaluateCondition(`orchestration.intent === 'proceed'`)).toBe(false);
+      expect(anyMachine.evaluateCondition(`orchestration.degraded`)).toBe(false);
     });
   });
 });

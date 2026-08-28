@@ -39,11 +39,11 @@ interface DocumentPackagePreviewProps {
  * - 文档列表
  * - 下载按钮（JSON / Markdown）
  */
-const DocumentPackagePreview: React.FC<DocumentPackagePreviewProps> = ({
+export default function DocumentPackagePreview({
   docPackage,
   onDownloadJSON,
   onDownloadMarkdown
-}) => {
+}: DocumentPackagePreviewProps) {
   const t = useTranslations('docPackage');
   const locale = useLocale();
   const handleDownloadJSON = () => {
@@ -183,6 +183,4 @@ const DocumentPackagePreview: React.FC<DocumentPackagePreviewProps> = ({
       </div>
     </div>
   );
-};
-
-export default DocumentPackagePreview;
+}

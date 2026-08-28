@@ -2,6 +2,7 @@ import { Pool } from 'pg';
 import { v4 as uuidv4 } from 'uuid';
 import { databaseService } from './database.service.js';
 import { sseProgressService } from './sse-progress.service.js';
+import { leaderEventStore } from './leader-event-store.service.js';
 
 /**
  * AiTeam 创建会话类型定义
@@ -16,9 +17,15 @@ export interface AiTeamSession {
   teamDesign?: any;
   progress: CreationProgress;
   finalTeamSkillId?: string;
+  /** "创建即入仓库"：该 session 已导入仓库的 aiteam id（幂等标记） */
+  finalAiteamId?: string | null;
   createdAt: Date;
   updatedAt: Date;
   completedAt?: Date;
+  /** Sprint 2.15: ProClaw 桌面端推送的最新本地状态（启用/停用 Agent、负责人角色映射等） */
+  localState?: Record<string, any> | null;
+  /** 本地状态最后同步时间（local_state.lastSyncedAt 退化到 updated_at） */
+  localStateLastSyncedAt?: string;
 }
 
 export type SessionStatus = 
@@ -85,6 +92,10 @@ export interface ProgressStep {
   details?: string;
   startedAt?: Date;
   completedAt?: Date;
+  /** Sprint 2.15: ProClaw 桌面端推送的最新本地状态（启用/停用 Agent、负责人角色映射等） */
+  localState?: Record<string, any> | null;
+  /** 本地状态最后同步时间（local_state.lastSyncedAt 退化到 updated_at） */
+  localStateLastSyncedAt?: string;
 }
 
 /**
@@ -245,6 +256,8 @@ export class AiTeamCreationService {
 
   /**
    * 更新会话状态
+   *
+   * P1 增强：状态变更时通过 leaderEventStore 追加事件（事件溯源）
    */
   async updateStatus(sessionId: string, status: SessionStatus): Promise<void> {
     // 获取旧状态（用于广播）
@@ -259,11 +272,35 @@ export class AiTeamCreationService {
     }
 
     await this.pool.query(
-      `UPDATE aiteam_creation_sessions 
-       SET ${updates.join(', ')} 
+      `UPDATE aiteam_creation_sessions
+       SET ${updates.join(', ')}
        WHERE id = $${values.length}`,
       values
     );
+
+    // === P1: 事件溯源 - 状态变更事件 ===
+    if (oldStatus && oldStatus !== status) {
+      // 映射 SessionStatus 到 LeaderEventType
+      const eventType = this.statusToEventType(status);
+      if (eventType) {
+        await leaderEventStore.append({
+          sessionId,
+          eventType,
+          payload: {
+            fromStatus: oldStatus,
+            toStatus: status,
+            timestamp: new Date().toISOString()
+          },
+          metadata: {
+            source: 'aiteam-creation-service',
+            component: 'updateStatus'
+          }
+        }).catch(err => {
+          // 事件溯源失败不应阻断主流程
+          console.warn('[AiteamCreationService] Failed to append status event:', err.message);
+        });
+      }
+    }
 
     // 广播状态变更
     if (oldStatus && oldStatus !== status) {
@@ -271,6 +308,25 @@ export class AiTeamCreationService {
         console.error('Error broadcasting status change:', err);
       });
     }
+  }
+
+  /**
+   * SessionStatus → LeaderEventType 映射
+   */
+  private statusToEventType(status: SessionStatus): any | null {
+    const map: Record<SessionStatus, any> = {
+      'initiated': null,
+      'requirements_gathering': 'skill.routing.start',
+      'role_selection': 'skill.routing.start',
+      'agent_searching': 'orchestration.start',
+      'skill_matching': 'orchestration.start',
+      'confirming': 'orchestration.start',
+      'building': 'orchestration.start',
+      'completed': 'orchestration.completed',
+      'failed': 'orchestration.failed',
+      'cancelled': 'orchestration.failed'
+    };
+    return map[status] || null;
   }
 
   /**
@@ -395,11 +451,62 @@ export class AiTeamCreationService {
    */
   async markAsFailed(sessionId: string, errorMessage: string): Promise<void> {
     await this.updateStatus(sessionId, 'failed');
-    
+
     // 添加错误消息到对话历史
     await this.addMessage(sessionId, 'ceo_agent', `❌ 创建失败: ${errorMessage}`, {
       error: true
     });
+  }
+
+  /**
+   * P1: 从事件流恢复会话状态
+   *
+   * 应用场景：
+   * 1. 服务崩溃重启后，需要把进行中的会话从 leader_events 重建出来
+   * 2. 调试 / 审计：检查会话的事件流来推断其历史状态
+   *
+   * 注意：当前实现只做"事件可重放"的标记，不真正改变 aiteam_creation_sessions 表
+   *（因为会话快照信息量更大）。后续可加入基于事件的完全重建。
+   */
+  async replayFromEvents(sessionId: string): Promise<{
+    sessionId: string;
+    eventCount: number;
+    eventsByType: Record<string, number>;
+    lastEventAt?: string;
+    suggestedAction?: string;
+  }> {
+    const stats = await leaderEventStore.getStats(sessionId);
+
+    // 基于事件流推断当前状态
+    let suggestedAction: string | undefined;
+    const hasFailed = (stats.byType['orchestration.failed'] || 0) > 0;
+    const hasCompleted = (stats.byType['orchestration.completed'] || 0) > 0;
+    const hasStart = (stats.byType['orchestration.start'] || 0) > 0;
+
+    if (hasFailed) {
+      suggestedAction = '会话已失败，可重试或查看失败事件详情';
+    } else if (hasCompleted) {
+      suggestedAction = '会话已完成，事件流可用于审计';
+    } else if (hasStart) {
+      // 正在进行中
+      const compensationStart = stats.byType['saga.compensate.start'] || 0;
+      const compensationComplete = stats.byType['saga.compensate.completed'] || 0;
+      if (compensationStart > compensationComplete) {
+        suggestedAction = '补偿流程被中断，建议恢复补偿';
+      } else {
+        suggestedAction = '会话进行中，建议检查 worker 状态';
+      }
+    } else {
+      suggestedAction = '会话无事件流，可能未启动';
+    }
+
+    return {
+      sessionId,
+      eventCount: stats.total,
+      eventsByType: stats.byType,
+      lastEventAt: stats.lastAt,
+      suggestedAction
+    };
   }
 
   /**
@@ -421,10 +528,31 @@ export class AiTeamCreationService {
         steps: []
       },
       finalTeamSkillId: row.final_team_skill_id,
+      finalAiteamId: row.final_aiteam_id || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      completedAt: row.completed_at
+      completedAt: row.completed_at,
+      // Sprint 2.15: 多设备同步
+      // 暴露 local_state 字段，供 ProClaw 桌面端在「立即同步」时使用
+      localState: row.local_state || null,
+      localStateLastSyncedAt: row.local_state?.lastSyncedAt || row.updated_at,
     };
+  }
+
+  /**
+   * 获取单个会话的本地状态（Sprint 2.15 多设备同步）
+   * @param sessionId  会话 ID
+   * @param userId   用户 ID（鉴权用）
+   * @returns local_state JSONB 内容，若无记录则 null
+   */
+  async getLocalState(sessionId: string, userId: string): Promise<Record<string, any> | null> {
+    const result = await this.pool.query(
+      `SELECT local_state FROM aiteam_creation_sessions
+       WHERE id = $1 AND user_id = $2`,
+      [sessionId, userId]
+    );
+    if (result.rows.length === 0) return null;
+    return result.rows[0].local_state || null;
   }
 }
 

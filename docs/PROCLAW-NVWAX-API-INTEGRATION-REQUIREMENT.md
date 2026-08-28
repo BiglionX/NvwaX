@@ -548,3 +548,122 @@ const usage = await client.getUsage('month');
 | SDK 包名 | @nvwax/sdk |
 | Admin 后台 | https://nvwax.proclaw.cc/admin |
 | 技术支持 | 联系 NvwaX 开发团队开通内部团队权限 |
+
+---
+
+## 📌 实施更新记录（v2.2.0 / Sprint 2.13–2.15）
+
+> **本节为附录**：原 PRD 主体（§1-§7）描述 v1.0 设计的 Agent 集成 + 两级计费 + Marketplace 流程。
+> **v2.2.0 起三个 Sprint 把范围扩展到"虚拟公司（Virtual Company）"双向闭环**，新增以下端点、服务、数据结构。
+> 若要回顾原始设计，请看上方 §1-§7；若要查最新实施，请阅读本节。
+
+### 新增端点（5 个）
+
+| Method | Path | 用途 | Sprint |
+|--------|------|------|--------|
+| POST | `/api/aiteam-creation/sessions/:id/integrate-proclaw` | 把 session 数据组装成 `VirtualCompanyPackage` JSON，写入临时目录，返回 `downloadUrl` | 2.13 |
+| GET  | `/api/aiteam-creation/packages/:packageId/download` | 返回 128-bit UUID 对应的导出包 JSON（packageId 不可枚举） | 2.13 |
+| PUT  | `/api/aiteam-creation/sessions/:id/local-state` | 接收 ProClaw 推送的本地状态变更（Agent 启停 / 别名 / 负责人角色） | 2.14 |
+| GET  | `/api/aiteam-creation/sessions/:id/local-state` | 拉取单个 session 的最新 `local_state` JSONB | 2.15 |
+| GET  | `/api/aiteam-creation/sessions` | 列表响应增加 `local_state` + `localStateLastSyncedAt` 字段 | 2.15 |
+
+### 新增 Service 方法
+
+- `ProClawBackendService.buildVirtualCompanyPackageFromSession(sessionId, userId)`（Sprint 2.13）
+  - 从 `aiteam_creation_sessions` 读 `team_design` / `ceo_config` / `agent_matches` / `skill_matches`
+  - 兜底逻辑：若 `agent_matches` 为空，从 `team_design.roles` 提取
+  - 计算 SHA-256 校验和写入 `checksum` 字段
+- `ProClawBackendService.writePackageToTempFile(pkg)` / `readPackageFromTempFile(packageId)`（Sprint 2.13）
+  - 临时目录：`os.tmpdir()/nvwax-vc-packages/{uuid}.nvwax-vc.json`
+- `AiTeamCreationService.getLocalState(sessionId, userId)`（Sprint 2.15）
+
+### 新增 Controller 方法
+
+- `aiteamCreationController.integrateToProClaw`（Sprint 2.13）
+  - 不再返回 mock：`success: true` + 真实 `downloadUrl` + `checksum` + `packageId`
+- `aiteamCreationController.pushLocalState`（Sprint 2.14）
+  - 接收 ProClaw 推送，写入 `aiteam_creation_sessions.local_state` JSONB
+  - 返回 `{ sessionId, lastSyncedAt, agentsCount, teamStatus }`
+- `aiteamCreationController.getLocalState`（Sprint 2.15）
+  - 拉取单个 session 的 `local_state` JSONB
+
+### 新增数据库迁移
+
+`packages/nvwax-server/migrations/012_virtual_company_local_state.sql`：
+- 在 `virtual_company_sessions` 表加 `local_state` JSONB 列（可空，老数据自动得 `null`）
+- 加 GIN 索引 `idx_vcs_local_state_pkg`（基于 `(local_state->>'importedPackageId')`，加速多设备同步拉取）
+
+> 详细部署说明见 [`packages/nvwax-server/migrations/README.md`](../packages/nvwax-server/migrations/README.md)（v2.2.0 新增迁移索引）。
+
+### 跨包数据契约
+
+新增 [`packages/nvwax-server/src/schemas/virtual-company-package.schema.json`](../packages/nvwax-server/src/schemas/virtual-company-package.schema.json)（**v1.0.0**，与 ProClaw 端 [`ProClaw/docs/integration/virtual-company-package.schema.json`](https://github.com/BiglionX/ProClaw/blob/main/docs/integration/virtual-company-package.schema.json) 双端镜像）：
+
+```jsonc
+{
+  "schemaVersion": "1.0.0",         // 主版本不一致即拒绝导入
+  "packageId": "uuid",              // 导入幂等键
+  "exportedAt": "ISO-8601",         // 导出时间
+  "source": { "platform": "nvwax", "sessionId": "..." },
+  "team": { "id": "...", "name": "...", "ceoConfig": {...}, ... },
+  "agents": [ { "id": "...", "name": "...", "role": "...", ... } ],
+  "skills": [ ... ],                  // 可选
+  "metadata": { ... }                // 可选
+}
+```
+
+### 字段级 Last-Write-Wins 合并（多设备同步核心算法）
+
+虽然合并逻辑在 ProClaw 端实现（[`ProClaw/src/lib/virtualCompanySync.ts`](https://github.com/BiglionX/ProClaw/blob/main/src/lib/virtualCompanySync.ts)），但 NvWaX 端需要保证 `lastSyncedAt` 字段单调递增：
+
+```ts
+// 简化版（实现细节见 ProClaw 端 mergeAgentState）
+function lww(localVal, localTs, remoteVal, remoteTs) {
+  if (localTs === 0 && remoteTs === 0) return remoteVal;  // 首次同步 → 云端权威
+  if (remoteTs > localTs) return remoteVal;  // 远程新 → 用远程
+  if (localTs > remoteTs) return localVal;    // 本地新 → 保留本地
+  return remoteVal;                           // tie → 云端优先
+}
+```
+
+### 三 Sprint 工时累计
+
+| Sprint | 工时 | 关键交付 |
+|--------|------|----------|
+| **2.13** | ~28h | 1 套 JSON Schema + 3 个 Tauri 命令 + 4 个 React 路由 + 修复 plugin frontend bug |
+| **2.14** | ~24h | CEO Skill + 220+ 行开发者文档 + 回写 API + SSE 流式 |
+| **2.15** | ~22h | 字段级 LWW 合并引擎 + App 启动后台同步 + Companies 页报告卡片 |
+| **合计** | **~74h** | 8 个 Tauri 命令 / 10 个 TS 类型 / 67 个新测试 |
+
+### 与原始 PRD §7 实施清单对照
+
+| 原 §7 任务 | 当前状态 | 说明 |
+|-----------|---------|------|
+| 1. 注册 NvwaX 开发者账号 | ✅ | 完成 |
+| 2. 内部团队标记 | ✅ | 完成 |
+| 3. NvwaX API 客户端模块 | ✅ | Rust 端 `src-tauri/src/services/nvwax_client.rs` |
+| 4. Token 消耗记录表 | ✅ | `nvwax_billing.rs` |
+| 5. 实时计费拦截 | ✅ | `billing.require_balance()` 前置检查 |
+| 6. 接入 Marketplace 接口 | ✅ | `search_agents` / `get_agent_detail` 等 |
+| 7. 接入 Agent/AiTeam CRUD | ✅ | `create_agent` / `update_agent` 等 |
+| **8. 接入导出接口** | ✅→🚀 | v1.0 阶段：`exportModule.agent`；**v2.2.0 新增**：`/integrate-proclaw` 端点（生成 `VirtualCompanyPackage`） |
+| 9. 消耗统计同步 | ✅ | `nvwax_sync_usage` Tauri 命令 |
+| 10. 部署验证 | ✅ | 端到端测试覆盖 8 个 Tauri 命令 |
+
+### 验收标准（v2.2.0 更新版）
+
+在原 §7 验收基础上**新增**：
+
+- [x] NvwaX 端 `integrateToProClaw` controller 真正生成 `.nvwax-vc.json`（不再返回 mock `proclaw_team_${Date.now()}`）
+- [x] `GET /api/aiteam-creation/packages/:packageId/download` 端点可访问且返回合法 JSON
+- [x] `PUT /api/aiteam-creation/sessions/:id/local-state` 接收 ProClaw 推送，合并入 `local_state` JSONB
+- [x] `GET /api/aiteam-creation/sessions/:id/local-state` 拉取单 session 状态（供多设备同步用）
+- [x] `GET /api/aiteam-creation/sessions` 列表响应包含 `local_state`
+- [x] 数据库迁移 `012_virtual_company_local_state.sql` 已部署，`local_state` 列存在
+- [x] 跨包 JSON Schema `virtual-company-package.schema.json` 在两端保持 1:1 一致（schemaVersion 1.0.0）
+
+### 后续计划（非本轮范围）
+
+- **v2.3.0**：虚拟公司模板市场反向发布（ProClaw → NvWaX marketplace）
+- **v3.0.0**：Schema v2.0 主版本升级（ADR 流程）
+- **持续**：与 ProClaw 端协调文档同步（[`MULTI_PROJECT_INTEGRATION_SPEC.md`](https://github.com/BiglionX/ProClaw/blob/main/docs/MULTI_PROJECT_INTEGRATION_SPEC.md) 第 11 节）

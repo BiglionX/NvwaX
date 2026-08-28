@@ -1,0 +1,43 @@
+{
+  "name": "marketing-bundle",
+  "version": "1.0.0",
+  "format": "hermes-skill-bundle/v1",
+  "description": "营销团队 Leader Skill Bundle - 提供营销策略、内容运营、用户增长相关 Leader",
+  "author": "nvwax-team",
+  "license": "MIT",
+  "homepage": "https://nvwax.proclaw.cc/bundles/marketing-bundle",
+
+  "skills": [
+    "marketing-director-v1",
+    "marketing-director-v2"
+  ],
+
+  "dependencies": {
+    "leader-agent": ">=2.0.0",
+    "@nvwax/core": ">=1.0.0"
+  },
+
+  "peerDependencies": {
+    "langchain": ">=0.1.0"
+  },
+
+  "engines": {
+    "node": ">=18.0.0"
+  },
+
+  "tags": ["marketing", "content", "growth", "seo"],
+
+  "icon": "📈",
+
+  "documentation": {
+    "readme": "./README.md",
+    "changelog": "./CHANGELOG.md",
+    "examples": "./examples/"
+  },
+
+  "distribution": {
+    "registry": "https://bundles.nvwax.cc",
+    "checksum": "sha256:placeholder",
+    "size": "12kb"
+  }
+}

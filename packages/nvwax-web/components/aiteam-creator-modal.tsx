@@ -493,7 +493,16 @@ export default function AiTeamCreatorModal({ onClose, initialMessage, embedded =
 
   /**
    * 集成到ProClaw
-   * TODO: ProClaw 功能尚未完善，此接口为占位
+   *
+   * 真实实现（Sprint 2.13）：
+   * 1. 调用 POST /api/aiteam-creation/sessions/:id/integrate-proclaw
+   *    服务端会生成符合 schema 的 .nvwax-vc.json 导出包（详见
+   *    docs/integration/virtual-company-package.schema.json），
+   *    写入临时目录，返回 { packageId, downloadUrl, checksum }
+   * 2. 自动触发浏览器下载 .nvwax-vc.json
+   * 3. 在对话中提示用户：
+   *    - 方案 A：直接把下载好的文件拖入 ProClaw「导入团队」页面
+   *    - 方案 B：复制 downloadUrl 在 ProClaw 内粘贴（适合远程 NvwaX + 本地 ProClaw 的场景）
    */
   const handleIntegrateToProClaw = async (teamSessionId: string) => {
     try {
@@ -509,12 +518,41 @@ export default function AiTeamCreatorModal({ onClose, initialMessage, embedded =
         throw new Error(data.error || t('integrateFailed'));
       }
 
-      // 添加成功消息
+      const { packageId, downloadUrl, checksum, teamName, agentsCount } = data.data;
+
+      // 自动触发下载 .nvwax-vc.json
+      // downloadUrl 形如 /api/aiteam-creation/packages/<uuid>/download
+      try {
+        const downloadResp = await authedFetch(downloadUrl, { method: 'GET' });
+        if (downloadResp.ok) {
+          const blob = await downloadResp.blob();
+          const blobUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = `virtual-company-${teamName || packageId}.nvwax-vc.json`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(blobUrl);
+        }
+      } catch (downloadErr) {
+        console.warn('[integrateToProClaw] 自动下载失败（用户可手动使用链接）:', downloadErr);
+      }
+
+      // 拼出可在 ProClaw 中粘贴的完整 URL（基于当前 origin）
+      const fullDownloadUrl = `${window.location.origin}${downloadUrl}`;
+
       const successMessage: AiTeamMessage = {
         id: `system-integrate-success-${Date.now()}`,
         role: 'nvwax_agent',
-        content: t('integrateSuccess', { proclawTeamId: data.data.proclawTeamId || t('proclawTeamCreated') }),
-        timestamp: new Date()
+        content:
+          `✅ 团队「${teamName || data.data.proclawTeamId}」已生成 ProClaw 导出包（${agentsCount} 个 Agent）。\n\n` +
+          `**方式 A（推荐）**：文件已开始自动下载，把下载好的 .nvwax-vc.json 文件拖入 ProClaw「虚拟公司 → 导入团队」页面即可。\n\n` +
+          `**方式 B（适合远程 NvwaX）**：复制下面的链接，在 ProClaw「导入团队」页面粘贴即可：\n\n` +
+          `\`${fullDownloadUrl}\`\n\n` +
+          `包 ID：\`${packageId}\`\n` +
+          `校验和：\`${checksum}\``,
+        timestamp: new Date(),
       };
       setMessages(prev => [...prev, successMessage]);
     } catch (error) {

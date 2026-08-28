@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* 暗色模式改为 class 策略（.dark 由 ThemeProvider 控制，支持手动切换） */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================
    NvwaX 设计令牌系统
    版本: 2.0.0

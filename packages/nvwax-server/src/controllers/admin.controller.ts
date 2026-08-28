@@ -203,6 +203,49 @@ export class AdminController {
     }
   }
 
+  // 接收前端审计事件（v2.3+）—— 把 Nvwa 工作台审计持久化到 system_logs
+  // POST /api/admin/system/logs
+  // Body: { level, action, details, resourceId?, meta?, source? }
+  // 鉴权：universalAuthMiddleware 已挂载（必须有登录 user）
+  async createAuditEvent(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || (req as any).sessionUser?.id || null;
+      if (!userId) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+      }
+
+      const { level, action, details, resourceId, meta, source } = req.body ?? {};
+      if (!action || typeof action !== 'string') {
+        return res.status(400).json({ success: false, error: 'Missing or invalid action' });
+      }
+      if (!level || !['info', 'warning', 'error'].includes(level)) {
+        return res.status(400).json({ success: false, error: 'level must be info/warning/error' });
+      }
+
+      // details 保留人读描述；meta 单独存到 details 后缀（保持向后兼容）
+      // v2.3+: resource_id 已单独成列，不再序列化到 details
+      const detailsWithMeta = meta && Object.keys(meta).length > 0
+        ? `${details ?? ''}${details ? ' | ' : ''}meta=${JSON.stringify(meta)}`
+        : details ?? '';
+
+      await adminService.logAction(
+        level,
+        action,
+        undefined, // adminId = null（user 级事件，不是 admin 操作）
+        detailsWithMeta,
+        req.ip,
+        userId,
+        source ?? 'nvwa-workbench',
+        typeof resourceId === 'string' && resourceId ? resourceId : undefined
+      );
+
+      res.status(201).json({ success: true, message: 'Audit event recorded' });
+    } catch (error) {
+      console.error('[Audit] createAuditEvent failed:', error);
+      res.status(500).json({ success: false, error: 'Failed to record audit event' });
+    }
+  }
+
   // 获取系统日志
   async getSystemLogs(req: Request, res: Response) {
     try {
@@ -210,11 +253,14 @@ export class AdminController {
       const limit = parseInt(req.query.limit as string) || 20;
       const action = req.query.action as string | undefined;
       const adminId = req.query.adminId as string | undefined;
+      const userId = req.query.userId as string | undefined;
+      const resourceId = req.query.resourceId as string | undefined;
+      const source = req.query.source as string | undefined;
 
       const pool = databaseService.getPool();
       let query = 'SELECT * FROM system_logs';
       const params: any[] = [];
-      let whereClauses = [];
+      const whereClauses: string[] = [];
 
       if (action) {
         whereClauses.push(`action ILIKE $${params.length + 1}`);
@@ -223,6 +269,18 @@ export class AdminController {
       if (adminId) {
         whereClauses.push(`admin_id = $${params.length + 1}`);
         params.push(adminId);
+      }
+      if (userId) {
+        whereClauses.push(`user_id = $${params.length + 1}`);
+        params.push(userId);
+      }
+      if (source) {
+        whereClauses.push(`source = $${params.length + 1}`);
+        params.push(source);
+      }
+      if (resourceId) {
+        whereClauses.push(`resource_id = $${params.length + 1}`);
+        params.push(resourceId);
       }
 
       if (whereClauses.length > 0) {
@@ -252,6 +310,135 @@ export class AdminController {
     } catch (error) {
       console.error('Error fetching system logs:', error);
       res.status(500).json({ error: 'Failed to fetch system logs' });
+    }
+  }
+
+  /**
+   * 审计日志聚合统计（v2.3+）
+   * GET /api/admin/system/logs/stats
+   *
+   * Query:
+   *   - source: 按 source 过滤（默认全部）
+   *   - days: 时间窗口（默认 7）
+   *
+   * 返回：
+   *   - totalEvents: 总事件数
+   *   - byLevel: { info, warning, error } 计数
+   *   - bySource: { 'admin': n, 'nvwa-workbench': m } 计数
+   *   - topActions: [{ action, count, latestAt, errorRate }] 前 10
+   *   - timeline24h: [{ hour: '00'-'23', count, errorCount }] 24 小时分布
+   *   - successRate: 0-1 浮点（基于 failed actions 集合）
+   */
+  async getSystemLogStats(req: Request, res: Response) {
+    try {
+      const pool = databaseService.getPool();
+      const source = req.query.source as string | undefined;
+      const days = Math.max(1, Math.min(90, parseInt(req.query.days as string) || 7));
+
+      // 通用 WHERE 片段
+      const whereParts: string[] = [`created_at >= NOW() - ($1 || ' days')::interval`];
+      const baseParams: unknown[] = [String(days)];
+      if (source) {
+        whereParts.push(`source = $${baseParams.length + 1}`);
+        baseParams.push(source);
+      }
+      const baseWhere = `WHERE ${whereParts.join(' AND ')}`;
+
+      // 1) 总数 + 按 level 分组
+      const totalsRes = await pool.query(
+        `SELECT level, COUNT(*)::int AS count FROM system_logs ${baseWhere} GROUP BY level`,
+        baseParams
+      );
+      const byLevel = { info: 0, warning: 0, error: 0 } as Record<string, number>;
+      let totalEvents = 0;
+      for (const row of totalsRes.rows) {
+        const lvl = row.level as string;
+        const c = row.count as number;
+        byLevel[lvl] = (byLevel[lvl] ?? 0) + c;
+        totalEvents += c;
+      }
+
+      // 2) 按 source 分组
+      const bySourceRes = await pool.query(
+        `SELECT COALESCE(source, 'unknown') AS src, COUNT(*)::int AS count
+         FROM system_logs ${baseWhere}
+         GROUP BY COALESCE(source, 'unknown')
+         ORDER BY count DESC`,
+        baseParams
+      );
+
+      // 3) Top 10 actions + 每 action 的 error 率
+      const topRes = await pool.query(
+        `SELECT action,
+                COUNT(*)::int AS count,
+                COUNT(CASE WHEN level = 'error' THEN 1 END)::int AS error_count,
+                MAX(created_at) AS latest_at
+         FROM system_logs ${baseWhere}
+         GROUP BY action
+         ORDER BY count DESC
+         LIMIT 10`,
+        baseParams
+      );
+      const topActions = topRes.rows.map((r) => {
+        const cnt = r.count as number;
+        const ec = r.error_count as number;
+        return {
+          action: r.action as string,
+          count: cnt,
+          errorCount: ec,
+          errorRate: cnt > 0 ? ec / cnt : 0,
+          latestAt: r.latest_at as string,
+        };
+      });
+
+      // 4) 24 小时时间分布（按本地时间聚合，PG 用 date_trunc('hour', created_at AT TIME ZONE 'UTC')）
+      const timelineRes = await pool.query(
+        `SELECT
+           EXTRACT(HOUR FROM created_at AT TIME ZONE 'UTC')::int AS hour_utc,
+           COUNT(*)::int AS count,
+           COUNT(CASE WHEN level = 'error' THEN 1 END)::int AS error_count
+         FROM system_logs
+         ${baseWhere}
+           AND created_at >= NOW() - INTERVAL '24 hours'
+         GROUP BY EXTRACT(HOUR FROM created_at AT TIME ZONE 'UTC')
+         ORDER BY hour_utc ASC`,
+        baseParams
+      );
+      // 填齐 0-23 缺失的小时
+      const hourMap = new Map<number, { count: number; errorCount: number }>();
+      for (const r of timelineRes.rows) {
+        hourMap.set(r.hour_utc as number, {
+          count: r.count as number,
+          errorCount: r.error_count as number,
+        });
+      }
+      const timeline24h = Array.from({ length: 24 }, (_, h) => ({
+        hour: String(h).padStart(2, '0'),
+        count: hourMap.get(h)?.count ?? 0,
+        errorCount: hourMap.get(h)?.errorCount ?? 0,
+      }));
+
+      // 5) 成功率：error 事件占总事件比例
+      const successRate = totalEvents > 0 ? 1 - byLevel.error / totalEvents : 1;
+
+      res.json({
+        success: true,
+        data: {
+          windowDays: days,
+          totalEvents,
+          byLevel,
+          bySource: bySourceRes.rows.map((r) => ({
+            source: r.src as string,
+            count: r.count as number,
+          })),
+          topActions,
+          timeline24h,
+          successRate,
+        },
+      });
+    } catch (error) {
+      console.error('[Audit] getSystemLogStats failed:', error);
+      res.status(500).json({ success: false, error: 'Failed to get system log stats' });
     }
   }
 

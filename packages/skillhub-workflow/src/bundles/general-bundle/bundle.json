@@ -1,0 +1,26 @@
+{
+  "name": "general-bundle",
+  "version": "1.0.0",
+  "format": "hermes-skill-bundle/v1",
+  "description": "通用团队 Leader Skill Bundle - 提供项目管理、跨职能协调相关 Leader",
+  "author": "nvwax-team",
+  "license": "MIT",
+
+  "skills": [
+    "project-manager-v1"
+  ],
+
+  "dependencies": {
+    "leader-agent": ">=2.0.0"
+  },
+
+  "tags": ["general", "project-management", "coordination", "agile"],
+
+  "icon": "📋",
+
+  "distribution": {
+    "registry": "https://bundles.nvwax.cc",
+    "checksum": "sha256:placeholder",
+    "size": "5kb"
+  }
+}

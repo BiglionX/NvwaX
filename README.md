@@ -7,7 +7,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=for-the-badge&logo=typescript)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-blue?style=for-the-badge&logo=postgresql)
-![Version](https://img.shields.io/badge/Version-v2.2.0-orange?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-v2.2.1-orange?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen?style=for-the-badge)
 ![Deployment](https://img.shields.io/badge/Deployment-Vercel%20%2B%20Railway-blue?style=for-the-badge)
 
@@ -46,7 +46,33 @@ NvwaX 是帮你组建 **AI 公司（虚拟公司）** 的操作系统。用户�
 
 ---
 
-## 🆕 最新更新 (v2.2.0)
+## 🆕 最新更新 (v2.2.1 — Sprint 2.17)
+
+**更新日期**: 2026-XX-XX
+
+### 📡 真实 SSE 流式（v1.4.0 闭环收尾）
+
+配合 ProClaw v1.4.0 / v1.4.1 的 `nvwax_stream_session_v2` 真 SSE 命令，本轮改造 `GET /api/aiteam-creation/sessions/:id/stream` 端点：
+
+- **新增 6 种 SSE 事件类型**（`event:` 前缀）：
+  - `progress` — 进度快照（currentStep / percentage / status）
+  - `agent_message` — NvWaX CEO Agent 的自然语言回复（**ProClaw wizard 真正流式显示的关键**）
+  - `step` — 某 step 完成
+  - `status` — 会话状态变化
+  - `complete` — 会话终态（completed / failed / cancelled），携带 finalTeamSkillId
+  - `error` — 错误事件
+- **`broadcastAgentMessage(sessionId, message, phase?, progress?, confidence?, nextStep?)`** 在 `sse-progress.service` 中新增
+- **`broadcastComplete(sessionId, finalStatus, finalTeamSkillId?)`** 在终态时调用
+- `sendMessage` controller 改造：`broadcastAgentMessage(...)` 在持久化 `nvwaxResponse.message` 后立即推送
+- `confirmAndSaveTeam` 改造：成功保存到 `team_skills` 后 `broadcastComplete('completed', aiteamId)`
+- **向后兼容**：旧版（无 `event:` 前缀）客户端仍可工作（默认 fallback 到 progress_update 行为）
+- **端到端测试覆盖**：`sse-progress.service.test.ts` 7 个用例（headers / events / cleanup / done detection / 客户端断开清理）
+
+完整 changelog 与迁移指南见 [`docs/PROCLAW-NVWAX-API-INTEGRATION-REQUIREMENT.md`](./docs/PROCLAW-NVWAX-API-INTEGRATION-REQUIREMENT.md)。
+
+---
+
+## 🆕 历史更新 (v2.2.0)
 
 **更新日期**: 2026-06-22
 
@@ -145,6 +171,84 @@ agent:
 详细升级需求和实施计划见：
 - [NVWAX-AGENT-CREATION-UPGRADE-V3.md](./docs/NVWAX-AGENT-CREATION-UPGRADE-V3.md)
 - [NVWAX-UPGRADE-IMPLEMENTATION-PLAN.md](./docs/NVWAX-UPGRADE-IMPLEMENTATION-PLAN.md)
+
+---
+
+## 🌐 与 ProClaw 桌面端的集成（v2.2.0+）
+
+> **官方推荐**：[ProClaw](https://github.com/BiglionX/ProClaw) 是 NvWaX 官方推荐的"本地壳"。
+> NvWaX 在云端完成 AI 团队设计，ProClaw 在本地运行整个团队。三个 Sprint（2.13/2.14/2.15）累计交付：8 个 Tauri 命令 / 5 个 HTTP 端点 / 1 套 JSON Schema / 47 个测试。
+
+### 双向闭环全景
+
+```
+┌─────────────────────────┐                  ┌──────────────────────────┐
+│  NvWaX Cloud (Web)        │   HTTP / JWT    │  ProClaw Desktop (Tauri)  │
+│  · 对话式创建虚拟公司      │ ◄─────────────► │  · virtual-company 插件   │
+│  · AI 自动匹配 Agent       │                  │  · 本地 SQLite 持久化     │
+│  · 一键导出 .nvwax-vc.json │                  │  · Hermes Skill 触发     │
+│  · 多设备 local_state 同步  │                  │  · 多设备 LWW 合并        │
+└─────────────────────────┘                  └──────────────────────────┘
+```
+
+### 用户旅程
+
+1. 用户在 NvWaX Web 用对话式 AI 设计虚拟公司（5-10 分钟）
+2. NvWaX 调 `POST /api/aiteam-creation/sessions/:id/integrate-proclaw` → 生成 `VirtualCompanyPackage`（schemaVersion 1.0.0），写入临时文件，返回 `{packageId, downloadUrl, checksum}`
+3. 前端 `aiteam-creator-modal` 自动下载 `.nvwax-vc.json` + 显示完整下载链接
+4. 用户在 ProClaw 桌面端粘贴 URL → `nvwax_import_virtual_company_from_url` 拉取 → 写入本地 SQLite
+5. 用户在 ProClaw 启用/停用某个 Agent → `nvwax_push_virtual_company_state` → `PUT /sessions/:id/local-state` 同步到 NvWaX
+6. MacBook 端 ProClaw 启动 5 秒后 `startBackgroundSync()` 拉取最新 → 字段级 LWW 合并 → 状态一致
+
+### 5 个新增 HTTP 端点（Sprint 2.13–2.15）
+
+| Method | Path | 用途 | Sprint |
+|--------|------|------|--------|
+| POST | `/api/aiteam-creation/sessions/:id/integrate-proclaw` | 生成 `.nvwax-vc.json` 包（写临时文件） | 2.13 |
+| GET  | `/api/aiteam-creation/packages/:packageId/download` | 下载导出包 | 2.13 |
+| PUT  | `/api/aiteam-creation/sessions/:id/local-state` | 接收 ProClaw 推送的本地状态回写 | 2.14 |
+| GET  | `/api/aiteam-creation/sessions/:id/local-state` | 拉取单个 session 的最新 `local_state` | 2.15 |
+| GET  | `/api/aiteam-creation/sessions` | 列表响应增加 `local_state` + `localStateLastSyncedAt` | 2.15 |
+
+### 关键代码
+
+- **Service**：`packages/nvwax-server/src/services/proclaw.service.ts`
+  - `buildVirtualCompanyPackageFromSession(sessionId, userId)` → 组装 `VirtualCompanyPackage`
+  - `getLocalState(sessionId, userId)` → 拉取 `local_state` JSONB
+  - `writePackageToTempFile(pkg)` / `readPackageFromTempFile(packageId)` → 临时文件 I/O
+- **Controller**：`packages/nvwax-server/src/controllers/aiteam-creation.controller.ts`
+  - `integrateToProClaw`（Sprint 2.13）→ `pushLocalState`（2.14）→ `getLocalState`（2.15）
+- **Migration**：`packages/nvwax-server/migrations/012_virtual_company_local_state.sql`（新增 `aiteam_creation_sessions.local_state` JSONB 列）
+- **Schema 镜像**：`packages/nvwax-server/src/schemas/virtual-company-package.schema.json`（双端镜像）
+
+### 跨包数据契约
+
+- 文件位置：[`packages/nvwax-server/src/schemas/virtual-company-package.schema.json`](packages/nvwax-server/src/schemas/virtual-company-package.schema.json)
+- 镜像：[ProClaw](https://github.com/BiglionX/ProClaw) 端 [`docs/integration/virtual-company-package.schema.json`](https://github.com/BiglionX/ProClaw/blob/main/docs/integration/virtual-company-package.schema.json)
+- 当前版本：`1.0.0`（主版本不一致即拒绝导入）
+- 必填字段：`schemaVersion` / `packageId` / `exportedAt` / `source.platform === "nvwax"` / `team.id` `team.name` / `agents[]`
+- 可选字段：`checksum`（SHA-256）· `skills[]` · `metadata`
+
+### 测试覆盖（4 个 Jest 测试）
+
+`packages/nvwax-server/src/services/proclaw.service.test.ts`：
+- `buildVirtualCompanyPackageFromSession` × 4 个场景
+  - 完整 session → 完整 VirtualCompanyPackage
+  - session 不存在 → 返回 null
+  - agent_matches 为空时从 team_design.roles 兜底
+  - checksum 对相同输入稳定
+
+### 字段级 Last-Write-Wins 合并（实现细节）
+
+- 每个 Agent 字段（`enabled` / `alias` / `ownerRole`）独立比较时间戳
+- 时间更新的字段胜出；tie 场景：云端优先；首次同步：云端优先
+- 实现见 ProClaw 端 `src/lib/virtualCompanySync.ts::mergeAgentState`
+
+### 后续路线图（计划中）
+
+- 虚拟公司模板市场反向发布（ProClaw → NvWaX marketplace）
+- 多设备冲突 UI 撤销按钮
+- Schema v2.0（ProClaw + NvWaX 同步主版本升级）
 
 ---
 
@@ -508,7 +612,7 @@ def nvwax_design_team(team_type: str, responsibilities: list):
 - ✅ 深色模式支持
 - ✅ 响应式设计
 
-### 🏢 虚拟公司系统（Phase 2-3 完成）
+### 🏢 虚拟公司系统（Phase 2-3 完成 + Sprint 2.13/2.14/2.15）
 
 - ✅ **CEO Agent 动态生成** - 4 种管理风格模板
 - ✅ **智能团队推断** - 根据描述自动匹配团队类型
@@ -517,6 +621,9 @@ def nvwax_design_team(team_type: str, responsibilities: list):
 - ✅ **团队经营配置文档** - 4 种文档类型自动生成
 - ✅ **多格式导出** - JSON / Markdown 格式下载
 - ✅ **实时预览组件** - 前端展示配置和文档详情
+- ✅ **Sprint 2.13**：导出 `VirtualCompanyPackage`（schemaVersion 1.0.0）+ 端点 `POST /api/aiteam-creation/sessions/:id/integrate-proclaw` + `GET /api/aiteam-creation/packages/:packageId/download`
+- ✅ **Sprint 2.14**：本地→云回写 `PUT /api/aiteam-creation/sessions/:id/local-state`（用于 ProClaw 多端同步）
+- ✅ **Sprint 2.15**：拉取最新 `local_state` `GET /api/aiteam-creation/sessions/:id/local-state` + 列表响应增加 `local_state` 字段
 
 ### ️ Admin 后台
 

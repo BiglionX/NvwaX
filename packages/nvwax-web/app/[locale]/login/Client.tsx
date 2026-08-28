@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, Suspense } from 'react';
+import * as React from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -38,12 +39,13 @@ function LoginForm() {
   const [oidcErrorDesc, setOidcErrorDesc] = useState<string>('');
   const [autoTriggered, setAutoTriggered] = useState(false);
 
-  const returnTo = searchParams.get('return') || searchParams.get('redirect') || '/dashboard';
+  // 登录后默认回到首页工作台（原默认 /dashboard 为模拟数据页，已废弃为落地页）
+  const returnTo = searchParams?.get('return') || searchParams?.get('redirect') || '/';
 
   // 解析 OIDC 错误
   useEffect(() => {
-    const err = searchParams.get('error');
-    const desc = searchParams.get('desc');
+    const err = searchParams?.get('error');
+    const desc = searchParams?.get('desc');
     if (err) {
       setOidcError(err);
       setOidcErrorDesc(desc ?? '');
@@ -60,7 +62,7 @@ function LoginForm() {
   // 自动触发：URL 带 return 且未登录 + 未自动触发过
   useEffect(() => {
     if (autoTriggered || loading || isLoggedIn) return;
-    if (searchParams.get('auto') === '1' || searchParams.get('return')) {
+    if (searchParams?.get('auto') === '1' || searchParams?.get('return')) {
       setAutoTriggered(true);
       login(returnTo).catch((err) => {
         console.error('[login] auto startLogin failed:', err);

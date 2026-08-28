@@ -26,7 +26,7 @@ interface CEOConfigPreviewProps {
  * - System Prompt
  * - 决策规则
  */
-const CEOConfigPreview: React.FC<CEOConfigPreviewProps> = ({ config, onDownload }) => {
+export default function CEOConfigPreview({ config, onDownload }: CEOConfigPreviewProps) {
   const t = useTranslations('ceoConfig');
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(config.systemPrompt);
@@ -137,6 +137,4 @@ const CEOConfigPreview: React.FC<CEOConfigPreviewProps> = ({ config, onDownload 
       </div>
     </div>
   );
-};
-
-export default CEOConfigPreview;
+}

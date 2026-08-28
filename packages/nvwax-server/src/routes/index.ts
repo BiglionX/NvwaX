@@ -31,6 +31,7 @@ import executionRouter from './execution.routes.js';
 import actionRouter from './action.routes.js';
 import recommendationRouter from './recommendation.routes.js';
 import oidcAdminRouter from './oidc-admin.routes.js';
+import blueprintRouter from './blueprint.routes.js';
 
 const router = Router();
 
@@ -211,5 +212,8 @@ router.get('/user/api-keys/usage', userAuthMiddleware, apiKeyManagerController.g
 
 // V1 API routes (OpenAI-compatible)
 router.use('/v1', v1Router);
+
+// Agent blueprint routes (Draft → Deploy 门禁，Phase 3)
+router.use('/blueprints', blueprintRouter);
 
 export default router;

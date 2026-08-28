@@ -20,6 +20,8 @@ export type { LoadingProps } from './Loading';
 
 export { default as EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
+export { default as ErrorState } from './ErrorState';
+export type { ErrorStateProps } from './ErrorState';
 
 // 弹窗组件
 export { default as Modal } from './Modal';

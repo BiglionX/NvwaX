@@ -444,7 +444,7 @@ export default function AiSearchPanel({ isOpen, onClose, initialMessage, onAutoG
       </div>
 
       {/* 动画样式 */}
-      <style jsx>{`
+      <style>{`
         @keyframes slideInRight {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }

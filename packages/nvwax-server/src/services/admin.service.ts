@@ -218,11 +218,42 @@ export class AdminService {
   }
 
   // 记录系统日志
-  async logAction(level: string, action: string, adminId?: string, details?: string, ipAddress?: string): Promise<void> {
+  /**
+   * @param level info/warning/error
+   * @param action 操作标识（如 'ADMIN_LOGIN'、'AGENT_CREATED'）
+   * @param adminId 可选：管理员 ID（FK admins）
+   * @param details 可选：详细描述
+   * @param ipAddress 可选：客户端 IP
+   * @param userId 可选：普通用户 ID（来自 OIDC session，与 adminId 二选一）
+   * @param source 可选：事件来源标识（如 'nvwa-workbench' / 'admin' / 'api'）
+   * @param resourceId 可选：关联资源 ID（agentId / blueprintId / sessionId / aiteamId）
+   *                     加列后 admin 可按 resource 过滤全链路事件
+   */
+  async logAction(
+    level: string,
+    action: string,
+    adminId?: string,
+    details?: string,
+    ipAddress?: string,
+    userId?: string,
+    source?: string,
+    resourceId?: string
+  ): Promise<void> {
     const id = uuidv4();
     await this.pool.query(
-      'INSERT INTO system_logs (id, level, action, admin_id, details, ip_address) VALUES ($1, $2, $3, $4, $5, $6)',
-      [id, level, action, adminId || null, details || null, ipAddress || null]
+      `INSERT INTO system_logs (id, level, action, admin_id, user_id, source, resource_id, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
+        id,
+        level,
+        action,
+        adminId || null,
+        userId || null,
+        source || null,
+        resourceId || null,
+        details || null,
+        ipAddress || null,
+      ]
     );
   }
 

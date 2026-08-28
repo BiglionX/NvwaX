@@ -17,23 +17,14 @@ export default function ProtectedRoute({
   const router = useRouter();
   const pathname = usePathname();
 
-  console.log('ProtectedRoute render - isLoggedIn:', isLoggedIn, 'loading:', loading, 'pathname:', pathname);
-
   useEffect(() => {
-    console.log('ProtectedRoute effect triggered - isLoggedIn:', isLoggedIn, 'loading:', loading);
-    
     // 只在加载完成后才检查登录状态
     if (!loading) {
       if (!isLoggedIn) {
         // 保存当前路径，登录后可以跳回来
-        const redirectUrl = `${redirectTo}?redirect=${encodeURIComponent(pathname)}`;
-        console.log('Not logged in, redirecting to:', redirectUrl);
+        const redirectUrl = `${redirectTo}?redirect=${encodeURIComponent(pathname || '/')}`;
         router.replace(redirectUrl);
-      } else {
-        console.log('User is logged in, showing protected content');
       }
-    } else {
-      console.log('Still loading auth state...');
     }
   }, [isLoggedIn, loading]);
 

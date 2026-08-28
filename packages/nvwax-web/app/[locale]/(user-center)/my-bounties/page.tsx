@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { Award, FileText, CheckCircle } from 'lucide-react';
 import { bountyApi } from '@/lib/api/bounty';
 import BountyCard from '@/components/Bounty/BountyCard';
-import { Card, Button, Space, Skeleton } from '@/components/UI';
+import { Card, Button, Space, Skeleton, ErrorState } from '@/components/UI';
+import LoadingState from '@/components/Layout/LoadingState';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function MyBountiesPage() {
@@ -17,7 +18,7 @@ export default function MyBountiesPage() {
   const userId = userInfo?.id;
 
   // 获取我发布的悬赏
-  const { data: publishedData, isLoading: loadingPublished } = useQuery({
+  const { data: publishedData, isLoading: loadingPublished, isError: publishedError, refetch: refetchPublished } = useQuery({
     queryKey: ['my-published-bounties', userId, status],
     queryFn: () => {
       if (!userId) return Promise.resolve({ bounties: [], pagination: { page: 1, limit: 12, total: 0, totalPages: 0 } });
@@ -30,7 +31,7 @@ export default function MyBountiesPage() {
   });
 
   // 获取我领取的悬赏
-  const { data: claimedData, isLoading: loadingClaimed } = useQuery({
+  const { data: claimedData, isLoading: loadingClaimed, isError: claimedError, refetch: refetchClaimed } = useQuery({
     queryKey: ['my-claimed-bounties', userId, status],
     queryFn: () => {
       if (!userId) return Promise.resolve({ bounties: [], pagination: { page: 1, limit: 12, total: 0, totalPages: 0 } });
@@ -44,6 +45,8 @@ export default function MyBountiesPage() {
 
   const currentData = activeTab === 'published' ? publishedData : claimedData;
   const currentLoading = activeTab === 'published' ? loadingPublished : loadingClaimed;
+  const currentError = activeTab === 'published' ? publishedError : claimedError;
+  const refetchCurrent = activeTab === 'published' ? refetchPublished : refetchClaimed;
   const bounties = currentData?.bounties || [];
 
   if (!isLoggedIn) {
@@ -64,6 +67,42 @@ export default function MyBountiesPage() {
           </div>
         </Card>
       </div>
+    );
+  }
+
+  if (currentLoading) {
+    return <LoadingState />;
+  }
+
+  if (currentError) {
+    return (
+      <Space direction="vertical" size="middle" className="w-full">
+        <Card padding="sm">
+          <div className="flex gap-2">
+            <Button
+              variant={activeTab === 'published' ? 'primary' : 'ghost'}
+              onClick={() => setActiveTab('published')}
+              icon={<FileText size={18} />}
+              fullWidth
+            >
+              我发布的
+            </Button>
+            <Button
+              variant={activeTab === 'claimed' ? 'primary' : 'ghost'}
+              onClick={() => setActiveTab('claimed')}
+              icon={<CheckCircle size={18} />}
+              fullWidth
+            >
+              我领取的
+            </Button>
+          </div>
+        </Card>
+        <ErrorState
+          title="加载悬赏失败"
+          description="暂时无法获取您的悬赏数据，请重试"
+          onRetry={() => refetchCurrent()}
+        />
+      </Space>
     );
   }
 

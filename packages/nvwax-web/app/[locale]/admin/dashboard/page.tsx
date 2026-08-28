@@ -12,8 +12,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 export default function AdminDashboardPage() {
   const t = useTranslations('admin');
   const locale = useLocale();
-  console.log('[AdminDashboard] Component rendering...');
-  
+
   // Hooks 必须在条件语句之前调用
   const { data: stats, isLoading: isLoadingStats, error: statsError } = useQuery({
     queryKey: ['admin-stats'],
@@ -34,16 +33,6 @@ export default function AdminDashboardPage() {
   });
   
   const isLoading = isLoadingStats || isLoadingLogs;
-  
-  console.log('[AdminDashboard] Query state:', { 
-    isLoading, 
-    isLoadingStats, 
-    isLoadingLogs,
-    hasStats: !!stats, 
-    hasLogs: !!logs,
-    statsError,
-    logsError
-  });
 
   const statCards = [
     {

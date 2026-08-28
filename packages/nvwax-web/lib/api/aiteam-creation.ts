@@ -283,16 +283,42 @@ export const aiteamCreationApi = {
   },
 
   /**
-   * 集成到 ProClaw（TODO: 后端当前为模拟实现）
+   * 集成到 ProClaw（Sprint 2.13：真正实现）
    * POST /api/aiteam-creation/sessions/:id/integrate-proclaw
+   *
+   * 响应数据（Sprint 2.13）：
+   *   {
+   *     success: true,
+   *     data: {
+   *       packageId, downloadUrl, checksum,
+   *       teamName, agentsCount, skillsCount,
+   *       schemaVersion, exportedAt,
+   *       sessionId
+   *     }
+   *   }
+   *
+   * 兼容旧版 { proclawTeamId }（Sprint 2.13 之前）的返回，调用方需检查 packageId。
    */
   integrateToProClaw: async (
     sessionId: string
-  ): Promise<{ proclawTeamId: string; sessionId: string; message: string }> => {
+  ): Promise<{
+    packageId?: string;
+    downloadUrl?: string;
+    checksum?: string;
+    teamName?: string;
+    agentsCount?: number;
+    skillsCount?: number;
+    schemaVersion?: string;
+    exportedAt?: string;
+    sessionId: string;
+    // 向后兼容字段（Sprint 2.13 之前）
+    proclawTeamId?: string;
+    message?: string;
+  }> => {
     try {
       const r = await authedJson<{
         success: boolean;
-        data?: { proclawTeamId: string; sessionId: string; message: string };
+        data?: any;
         error?: string;
       }>(`/aiteam-creation/sessions/${sessionId}/integrate-proclaw`, { method: 'POST' });
       return unwrap(r, 'Failed to integrate to ProClaw');

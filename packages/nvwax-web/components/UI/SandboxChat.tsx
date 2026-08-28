@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, Bot, Loader2, AlertCircle, RotateCcw, Trash2 } from 'lucide-react';
+import { useConfirm } from '@/hooks/useConfirm';
 
 /**
  * 消息角色
@@ -191,10 +192,16 @@ export default function SandboxChat({
   /**
    * 清空对话
    */
+  const { confirm, ConfirmDialog } = useConfirm();
+
   const handleClear = () => {
-    if (confirm('确定清空所有对话吗？')) {
-      setMessages([]);
-    }
+    confirm({
+      title: '清空对话',
+      message: '确定清空所有对话吗？',
+      variant: 'warning',
+      confirmText: '清空',
+      onConfirm: () => setMessages([]),
+    });
   };
 
   /**
@@ -375,6 +382,7 @@ export default function SandboxChat({
           <span className="hidden sm:inline">发送</span>
         </button>
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

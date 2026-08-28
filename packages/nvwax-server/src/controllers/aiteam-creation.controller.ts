@@ -1,11 +1,19 @@
 import { Request, Response } from 'express';
 import { aiteamCreationService } from '../services/aiteam-creation.service.js';
+import { aiteamService } from '../services/aiteam.service.js';
 import { ceoAgentService } from '../services/ceo-agent.service.js';
 import { nvwaxAgentService } from '../services/nvwax-agent.service.js';
 import { agentReuseService } from '../services/agent-reuse.service.js';
 import { sseProgressService } from '../services/sse-progress.service.js';
 import { databaseService } from '../services/database.service.js';
 import { nvwaxMemoryService } from '../services/nvwax-memory.service.js';
+import { existsSync } from 'fs';
+import { ProClawBackendService } from '../services/proclaw.service.js';
+import {
+  normalizeTeamData,
+  serializeTeamExport,
+  suggestTeamFilename
+} from '../services/team-export-formatters.js';
 
 /**
  * AiTeam 创建控制器
@@ -206,12 +214,33 @@ export class AiTeamCreationController {
         console.log(`🔄 Updating session ${sessionId} status from ${session.status} to ${newStatus}`);
         await aiteamCreationService.updateStatus(sessionId, newStatus as any);
       }
-      
+
+      // v1.4.0 / Sprint 2.17：广播 CEO Agent 自然语言回复到 SSE 流
+      // 这是 ProClaw wizard "流式显示 AI 回复" 真正能用的关键
+      sseProgressService.broadcastAgentMessage(
+        sessionId,
+        nvwaxResponse.message,
+        newStatus ?? nvwaxResponse.phase,
+        (session.progress?.percentage ?? 0) as number,
+        nvwaxResponse.confidence,
+        nvwaxResponse.nextStep
+      );
+
       // 广播进度更新（SSE 服务会自动从数据库读取最新状态）
       sseProgressService.broadcastProgress(sessionId).catch(err => {
         console.error('Failed to broadcast progress:', err);
       });
-      
+
+      // 如果 status 进入终态（completed / failed / cancelled），广播 complete 事件让客户端断开
+      const terminalStates = new Set(['completed', 'failed', 'cancelled']);
+      if (newStatus && terminalStates.has(newStatus)) {
+        sseProgressService.broadcastComplete(
+          sessionId,
+          newStatus as 'completed' | 'failed' | 'cancelled'
+          // finalTeamSkillId 由后续 confirmAndSaveTeam 端点产生；这里不传
+        );
+      }
+
       res.json({
         success: true,
         data: {
@@ -339,23 +368,23 @@ export class AiTeamCreationController {
       const { id } = req.params;
       const sessionId = Array.isArray(id) ? id[0] : id;
       const userId = (req as any).user?.id || (req as any).admin?.id;
-      
+
       if (!userId) {
         return res.status(401).json({
           success: false,
           error: 'Authentication required'
         });
       }
-      
+
       const deleted = await aiteamCreationService.deleteSession(sessionId, userId);
-      
+
       if (!deleted) {
         return res.status(404).json({
           success: false,
           error: 'Session not found or unauthorized'
         });
       }
-      
+
       res.json({
         success: true,
         message: 'Session deleted'
@@ -365,6 +394,36 @@ export class AiTeamCreationController {
       res.status(500).json({
         success: false,
         error: 'Failed to delete session'
+      });
+    }
+  }
+
+  /**
+   * P1: 从事件流重放会话
+   * GET /api/aiteam-creation/sessions/:id/replay
+   *
+   * 应用：服务崩溃恢复 / 调试审计
+   */
+  async replaySession(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const sessionId = Array.isArray(id) ? id[0] : id;
+
+      const session = await aiteamCreationService.getSessionById(sessionId);
+      if (!session) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session not found'
+        });
+      }
+
+      const result = await aiteamCreationService.replayFromEvents(sessionId);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      console.error('Error replaying session:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to replay session'
       });
     }
   }
@@ -689,12 +748,51 @@ export class AiTeamCreationController {
         );
       }
 
+      // ── "创建即入仓库"：把 session 团队落库到 aiteams 表 ──
+      // 用户确认保存后，团队立即出现在「我的 Agent 仓库」的 AiTeam tab 中
+      let aiteamId: string | null = null;
+      try {
+        const teamMembers = Array.isArray(teamDesign?.roles)
+          ? teamDesign.roles.map((r: any) => ({
+              role: r.roleName || r.role || 'Agent',
+              responsibilities: r.responsibilities || [],
+              config: { systemPrompt: r.description || '' },
+              agentName: null // 由 aiteamService 按名称匹配 agents 表
+            }))
+          : [];
+        const teamName = ceoConfig.teamType ? `${ceoConfig.teamType}团队` : 'AI团队';
+        const savedTeam = await aiteamService.createAiTeamFromSession({
+          userId,
+          sessionId,
+          name: teamName,
+          description: ceoConfig.description || `由 NvwaX 创建的${teamName}`,
+          members: teamMembers,
+          workflow: { steps: [] },
+          triggers: {},
+          category: ceoConfig.industry || ceoConfig.teamType || null,
+          tags: []
+        });
+        aiteamId = savedTeam.id;
+        console.log(`✅ AiTeam saved to repository: ${aiteamId} (session ${sessionId})`);
+
+        // v1.4.0 / Sprint 2.17：广播 complete 事件携带 finalTeamSkillId
+        sseProgressService.broadcastComplete(
+          sessionId,
+          'completed',
+          aiteamId
+        );
+      } catch (saveErr) {
+        // 落库失败不阻断主流程（文档包已生成），记录日志即可
+        console.error('⚠️ Failed to save AiTeam to repository:', saveErr);
+      }
+
       console.log('✅ Team confirmed and saved successfully');
 
       res.json({
         success: true,
         data: {
           sessionId,
+          aiteamId,
           documentPackage,
           downloadUrl: `/api/aiteam-creation/sessions/${sessionId}/download`,
           message: '团队已保存到用户中心，文档包已生成'
@@ -817,7 +915,12 @@ export class AiTeamCreationController {
   /**
    * 集成到ProClaw
    * POST /api/aiteam-creation/sessions/:id/integrate-proclaw
-   * TODO: ProClaw 功能尚未完善，保留接口为占位
+   *
+   * 实现流程：
+   * 1. 读取 aiteam_creation_sessions 的完整配置
+   * 2. 通过 ProClawBackendService 组装 VirtualCompanyPackage
+   * 3. 写入临时目录，返回下载 URL
+   * 4. 前端可立即用 URL 下载 .nvwax-vc.json 文件，导入到 ProClaw 桌面端
    */
   async integrateToProClaw(req: Request, res: Response) {
     try {
@@ -833,7 +936,7 @@ export class AiTeamCreationController {
         });
       }
 
-      console.log(` Integrating team to ProClaw for session ${sessionId}...`);
+      console.log(`[integrateToProClaw] Integrating session ${sessionId} to ProClaw for user ${userId}...`);
 
       // 获取会话
       const session = await aiteamCreationService.getSessionById(sessionId);
@@ -844,43 +947,38 @@ export class AiTeamCreationController {
         });
       }
 
-      // 获取完整的团队配置
+      // 通过 ProClawBackendService 组装导出包
       const pool = databaseService.getPool();
-      const result = await pool.query(
-        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM aiteam_creation_sessions WHERE id = $1',
-        [sessionId]
-      );
+      const proClawService = new ProClawBackendService(pool);
+      const pkg = await proClawService.buildVirtualCompanyPackageFromSession(sessionId, userId);
 
-      if (result.rows.length === 0) {
-        return res.status(404).json({
+      if (!pkg) {
+        return res.status(500).json({
           success: false,
-          error: 'Session data not found'
+          error: 'Failed to build virtual company package'
         });
       }
 
-      const rowData = result.rows[0];
-      const teamDesign = rowData.team_design;
-      const ceoConfig = rowData.ceo_config;
+      // 写入临时文件并获取下载 URL
+      const { downloadUrl } = await proClawService.writePackageToTempFile(pkg);
 
-      if (!teamDesign || !ceoConfig) {
-        return res.status(400).json({
-          success: false,
-          error: 'Team configuration not complete'
-        });
-      }
-
-      // TODO: ProClaw 功能尚未完善，目前返回模拟数据
-      // 后续实现：导出 AiTeam 配置文件到 ProClaw 桌面端
-      const proclawTeamId = `proclaw_team_${Date.now()}`;
-      
-      console.log(`✅ Team integrated to ProClaw: ${proclawTeamId} (TODO: 待完善)`);
+      console.log(`[integrateToProClaw] ✅ Package ready: ${pkg.packageId} (${pkg.agents.length} agents, ${pkg.skills?.length ?? 0} skills)`);
 
       res.json({
         success: true,
         data: {
-          proclawTeamId,
+          packageId: pkg.packageId,
+          checksum: pkg.checksum,
+          downloadUrl,
+          // 向后兼容旧字段
+          proclawTeamId: pkg.team.id,
           sessionId,
-          message: '团队已成功集成到 ProClaw（功能开发中）'
+          teamName: pkg.team.name,
+          agentsCount: pkg.agents.length,
+          skillsCount: pkg.skills?.length ?? 0,
+          schemaVersion: pkg.schemaVersion,
+          exportedAt: pkg.exportedAt,
+          message: `团队「${pkg.team.name}」已导出（${pkg.agents.length} 个 Agent）。请在 ProClaw 桌面端打开「导入团队」页面，粘贴下载链接完成导入。`,
         }
       });
     } catch (error) {
@@ -889,6 +987,130 @@ export class AiTeamCreationController {
         success: false,
         error: 'Failed to integrate to ProClaw'
       });
+    }
+  }
+
+  /**
+   * ProClaw 桌面端回写虚拟公司本地状态
+   * PUT /api/aiteam-creation/sessions/:id/local-state
+   *
+   * ProClaw 用户在本地对虚拟公司做了状态变更（启用/停用某个 Agent、
+   * 修改负责人角色、暂停/恢复团队），通过该 endpoint 把变更推送到 NvWaX。
+   * NvWaX 只做"接收 + 记录"，不参与决策（避免破坏"本地优先"原则）。
+   *
+   * 请求体：
+   * {
+   *   "importedPackageId": "uuid-here",       // ProClaw 端的 package_id
+   *   "schemaVersion": "1.0.0",
+   *   "proclawVersion": "1.3.1",
+   *   "teamStatus": "active" | "paused" | "archived",
+   *   "agents": [
+   *     {
+   *       "agentId": "agent-barista-1",
+   *       "enabled": true,
+   *       "alias": "咖啡师小绿",
+   *       "ownerRole": "owner" | "shared" | "reviewer",
+   *       "lastRunAt": "2026-01-01T00:00:00Z"
+   *     }
+   *   ]
+   * }
+   */
+  async pushLocalState(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const sessionId = Array.isArray(id) ? id[0] : id;
+      const userId = (req as any).user?.id || (req as any).admin?.id;
+
+      if (!userId) {
+        return res.status(401).json({ success: false, error: 'User not authenticated' });
+      }
+
+      const body = req.body || {};
+      const importedPackageId = typeof body.importedPackageId === 'string' ? body.importedPackageId : null;
+      if (!importedPackageId) {
+        return res.status(400).json({ success: false, error: 'importedPackageId is required' });
+      }
+
+      // 校验 session 归属
+      const pool = databaseService.getPool();
+      const ownerCheck = await pool.query(
+        'SELECT user_id FROM aiteam_creation_sessions WHERE id = $1',
+        [sessionId]
+      );
+      if (ownerCheck.rows.length === 0 || ownerCheck.rows[0].user_id !== userId) {
+        return res.status(404).json({ success: false, error: 'Session not found or access denied' });
+      }
+
+      // 构造完整 local_state 对象（含时间戳）
+      const localState = {
+        schemaVersion: body.schemaVersion || '1.0.0',
+        lastSyncedAt: new Date().toISOString(),
+        proclawVersion: body.proclawVersion || null,
+        importedPackageId,
+        teamStatus: body.teamStatus || 'active',
+        agents: Array.isArray(body.agents) ? body.agents : [],
+      };
+
+      // upsert：用 PostgreSQL jsonb_concat 合并旧 local_state（保留非 agents 字段）
+      await pool.query(
+        `UPDATE aiteam_creation_sessions
+            SET local_state = local_state || $1::jsonb,
+                updated_at = CURRENT_TIMESTAMP
+          WHERE id = $2 AND user_id = $3`,
+        [JSON.stringify(localState), sessionId, userId]
+      );
+
+      return res.json({
+        success: true,
+        data: {
+          sessionId,
+          lastSyncedAt: localState.lastSyncedAt,
+          agentsCount: localState.agents.length,
+          teamStatus: localState.teamStatus,
+        },
+      });
+    } catch (error) {
+      console.error('Error in pushLocalState:', error);
+      return res.status(500).json({ success: false, error: 'Failed to push local state' });
+    }
+  }
+
+  /**
+   * 拉取单个会话的本地状态（Sprint 2.15 多设备同步）
+   * GET /api/aiteam-creation/sessions/:id/local-state
+   *
+   * ProClaw 桌面端「立即同步」按钮会调此接口获取 NvWaX 上最新的状态，
+   * 然后与本地 SQLite 进行 last-write-wins 合并。
+   */
+  async getLocalState(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const sessionId = Array.isArray(id) ? id[0] : id;
+      const userId = (req as any).user?.id || (req as any).admin?.id;
+
+      if (!userId) {
+        return res.status(401).json({ success: false, error: 'User not authenticated' });
+      }
+
+      const localState = await aiteamCreationService.getLocalState(sessionId, userId);
+      if (localState === null) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session not found or access denied',
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          sessionId,
+          localState,
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      console.error('Error in getLocalState:', error);
+      return res.status(500).json({ success: false, error: 'Failed to fetch local state' });
     }
   }
 
@@ -1229,6 +1451,254 @@ export class AiTeamCreationController {
         success: false,
         error: 'Failed to publish to marketplace'
       });
+    }
+  }
+
+  /**
+   * 导出创建会话中的团队配置（多壳落地）
+   *
+   * POST /api/aiteam-creation/sessions/:id/export
+   * body: { format?: 'json' | 'yaml' | 'proclaw' | 'crewai' | 'langgraph' }
+   *
+   * 从 aiteam_creation_sessions 的 team_design + ceo_config 组装团队数据，
+   * 通过 team-export-formatters 生成对应格式文件，返回 downloadUrl。
+   *
+   * 注意：创建流程本身不写 aiteams 表（团队保存在 session 里），
+   * 因此这是"创建成功弹窗 → 选择落地方式"的唯一可用导出路径。
+   */
+  async exportTeamFromSession(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const sessionId = Array.isArray(id) ? id[0] : id;
+      const userId = (req as any).user?.id || (req as any).admin?.id;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'User not authenticated'
+        });
+      }
+
+      const { format = 'crewai' } = req.body || {};
+      const allowed = ['json', 'yaml', 'proclaw', 'crewai', 'langgraph'];
+      if (!allowed.includes(format)) {
+        return res.status(400).json({
+          success: false,
+          error: `Unsupported export format: ${format}. Use ${allowed.join(' / ')}`
+        });
+      }
+
+      // 获取会话
+      const session = await aiteamCreationService.getSessionById(sessionId);
+      if (!session) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session not found'
+        });
+      }
+
+      // 校验归属
+      if (session.userId !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Forbidden: not your session'
+        });
+      }
+
+      // 获取原始配置
+      const pool = databaseService.getPool();
+      const result = await pool.query(
+        'SELECT team_design, ceo_config, agent_matches, skill_matches FROM aiteam_creation_sessions WHERE id = $1',
+        [sessionId]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Session data not found'
+        });
+      }
+
+      const rowData = result.rows[0];
+      const teamDesign = rowData.team_design || {};
+      const ceoConfig = rowData.ceo_config || {};
+
+      // 组装归一化团队数据
+      const teamName = ceoConfig.teamType ? `${ceoConfig.teamType}团队` : 'NvwaX AI Team';
+      const raw = {
+        name: teamName,
+        description: ceoConfig.description || `由 NvwaX 创建的${teamName}`,
+        version: '1.0.0',
+        tags: [],
+        category: ceoConfig.industry || ceoConfig.teamType || null,
+        teamDesign, // roles 数组由 normalizeTeamData 消费
+        workflow: {
+          steps: Array.isArray(teamDesign.roles)
+            ? teamDesign.roles.map((r: any, idx: number) => ({
+                name: `step-${idx + 1}`,
+                description: `${r.roleName || r.role} 执行：${r.responsibilities?.join('、') || '任务'}`,
+                agent: r.roleName || r.role || 'Agent'
+              }))
+            : []
+        },
+        metadata: {
+          source: 'nvwax-creation-session',
+          sessionId,
+          createdAt: session.createdAt
+        }
+      };
+
+      const normalized = normalizeTeamData(raw);
+      const { content, extension } = serializeTeamExport(normalized, format);
+
+      // 写文件到 exports 目录
+      const { mkdirSync, writeFileSync } = await import('fs');
+      const { join } = await import('path');
+      const exportDir = join(process.cwd(), 'exports');
+      if (!existsSync(exportDir)) {
+        mkdirSync(exportDir, { recursive: true });
+      }
+      const { v4: uuidv4 } = await import('uuid');
+      const fileName = `${uuidv4()}_${Date.now()}.${extension}`;
+      const filePath = join(exportDir, fileName);
+      writeFileSync(filePath, content, 'utf-8');
+
+      // 生成下载 URL（走静态导出文件服务；若不存在则给相对路径）
+      res.json({
+        success: true,
+        data: {
+          format,
+          fileName: suggestTeamFilename(teamName, format),
+          downloadUrl: `/api/exports/file/${fileName}`,
+          downloadPath: filePath,
+          extension
+        },
+        message: '导出成功，可在支持的运行时中导入'
+      });
+    } catch (error) {
+      console.error('Error exporting team from session:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to export team'
+      });
+    }
+  }
+
+  /**
+   * 列出用户的创建会话（供"从创建会话导入"入口使用）
+   *
+   * GET /api/aiteam-creation/sessions?importable=1
+   * 只返回 completed 状态的会话，标注是否已导入仓库（finalAiteamId）
+   */
+  async listImportableSessions(req: Request, res: Response) {
+    try {
+      const userId = (req as any).user?.id || (req as any).admin?.id;
+      if (!userId) {
+        return res.status(401).json({ success: false, error: 'User not authenticated' });
+      }
+
+      const { importable = '1' } = req.query;
+      const sessions = await aiteamCreationService.getUserSessions(userId, 50, 0);
+
+      // 只返回 completed 且未导入（或全部，由 importable 控制）
+      const filtered = sessions.filter((s) => {
+        const isCompleted = s.status === 'completed';
+        if (importable === '1') {
+          return isCompleted && !s.finalAiteamId;
+        }
+        return isCompleted;
+      });
+
+      res.json({
+        success: true,
+        data: filtered.map((s) => ({
+          sessionId: s.id,
+          status: s.status,
+          finalAiteamId: s.finalAiteamId || null,
+          imported: !!s.finalAiteamId,
+          teamName: s.teamDesign?.teamName
+            || s.teamDesign?.roles?.[0]?.teamName
+            || null,
+          roleCount: s.teamDesign?.roles?.length || 0,
+          createdAt: s.createdAt
+        }))
+      });
+    } catch (error) {
+      console.error('Error listing importable sessions:', error);
+      res.status(500).json({ success: false, error: 'Failed to list sessions' });
+    }
+  }
+
+  /**
+   * 将创建会话导入到 Agent 仓库（"创建即入仓库"的补录入口）
+   *
+   * POST /api/aiteam-creation/sessions/:id/import-to-repository
+   *
+   * 对早期已 completed 但尚未落库 aiteams 表的 session 做补录。
+   * 幂等：若已导入（finalAiteamId 存在）直接返回既有 aiteam。
+   */
+  async importSessionToRepository(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const sessionId = Array.isArray(id) ? id[0] : id;
+      const userId = (req as any).user?.id || (req as any).admin?.id;
+      if (!userId) {
+        return res.status(401).json({ success: false, error: 'User not authenticated' });
+      }
+
+      const session = await aiteamCreationService.getSessionById(sessionId);
+      if (!session) {
+        return res.status(404).json({ success: false, error: 'Session not found' });
+      }
+      if (session.userId !== userId) {
+        return res.status(403).json({ success: false, error: 'Forbidden' });
+      }
+      if (session.status !== 'completed') {
+        return res.status(400).json({ success: false, error: 'Session not completed yet' });
+      }
+
+      const pool = databaseService.getPool();
+      const result = await pool.query(
+        'SELECT team_design, ceo_config FROM aiteam_creation_sessions WHERE id = $1',
+        [sessionId]
+      );
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Session data not found' });
+      }
+
+      const teamDesign = result.rows[0].team_design || {};
+      const ceoConfig = result.rows[0].ceo_config || {};
+      const teamName = ceoConfig.teamType ? `${ceoConfig.teamType}团队` : 'AI团队';
+
+      const teamMembers = Array.isArray(teamDesign?.roles)
+        ? teamDesign.roles.map((r: any) => ({
+            role: r.roleName || r.role || 'Agent',
+            responsibilities: r.responsibilities || [],
+            config: { systemPrompt: r.description || '' },
+            agentName: null
+          }))
+        : [];
+
+      const savedTeam = await aiteamService.createAiTeamFromSession({
+        userId,
+        sessionId,
+        name: teamName,
+        description: ceoConfig.description || `由 NvwaX 创建的${teamName}`,
+        members: teamMembers,
+        workflow: { steps: [] },
+        triggers: {},
+        category: ceoConfig.industry || ceoConfig.teamType || null,
+        tags: []
+      });
+
+      res.json({
+        success: true,
+        data: { aiteamId: savedTeam.id, teamName: savedTeam.name },
+        message: '已导入到 Agent 仓库'
+      });
+    } catch (error) {
+      console.error('Error importing session to repository:', error);
+      res.status(500).json({ success: false, error: 'Failed to import session' });
     }
   }
 }

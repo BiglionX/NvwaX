@@ -17,11 +17,11 @@ export default function CallbackClient() {
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
-      const code = searchParams.get('code') ?? '';
-      const state = searchParams.get('state') ?? '';
-      const returnTo = searchParams.get('return_to') ?? undefined;
-      const error = searchParams.get('error') ?? undefined;
-      const errorDescription = searchParams.get('error_description') ?? undefined;
+      const code = searchParams?.get('code') ?? '';
+      const state = searchParams?.get('state') ?? '';
+      const returnTo = searchParams?.get('return_to') ?? undefined;
+      const error = searchParams?.get('error') ?? undefined;
+      const errorDescription = searchParams?.get('error_description') ?? undefined;
 
       const result = await handleOidcCallback({
         code,

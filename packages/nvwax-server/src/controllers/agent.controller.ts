@@ -440,11 +440,13 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
 
 /**
  * 导出智能体
+ *
+ * 支持格式：json | yaml | proclaw | crewai | langgraph
  */
 export const exportAgent = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
-    
+
     if (!userId) {
       res.status(401).json({
         success: false,
@@ -460,20 +462,21 @@ export const exportAgent = async (req: Request, res: Response): Promise<void> =>
     const agentId = Array.isArray(id) ? id[0] : id;
     const { format = 'json', includeMetadata = true, includeImplementation = false } = req.body;
 
-    // 验证格式
-    if (!['json', 'yaml', 'proclaw'].includes(format)) {
+    // 验证格式（Sprint 多壳落地改造：新增 crewai / langgraph）
+    const allowedFormats = ['json', 'yaml', 'proclaw', 'crewai', 'langgraph'];
+    if (!allowedFormats.includes(format)) {
       res.status(400).json({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: '不支持的导出格式，请使用 json、yaml 或 proclaw'
+          message: '不支持的导出格式，请使用 json / yaml / proclaw / crewai / langgraph'
         }
       });
       return;
     }
 
     const result = await exportService.exportAgent(agentId, userId, {
-      format: format as 'json' | 'yaml' | 'proclaw',
+      format: format as 'json' | 'yaml' | 'proclaw' | 'crewai' | 'langgraph',
       includeMetadata,
       includeImplementation
     });
@@ -485,7 +488,7 @@ export const exportAgent = async (req: Request, res: Response): Promise<void> =>
     });
   } catch (error: any) {
     console.error('Export agent error:', error);
-    
+
     if (error.message.includes('AGENT_NOT_FOUND')) {
       res.status(404).json({
         success: false,

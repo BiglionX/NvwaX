@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import path from 'node:path';
+import { existsSync as fsExistsSync, createReadStream } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { config } from './config/index.js';
 import routes from './routes/index.js';
@@ -18,6 +19,7 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler.middle
 import { createMCPRouter } from './mcp/nvwax-mcp-server.js';
 import { createStandardMCPRouter } from './mcp/standard-mcp-server.js';
 import { initBuiltinSkills } from './services/skill/prompt-skills.bootstrap.js';
+import { leaderSchedulerService } from './services/leader-scheduler.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -107,6 +109,25 @@ app.use(
   }),
 );
 
+// Sprint 多壳落地 — 静态导出文件服务：/api/exports/file/:fileName
+// 供 aiteam-creation session 导出的裸文件（crewai.yaml / langgraph.json 等）下载。
+// 注意：v1 的 /api/v1/exports/:id/download 走 DB 记录（agent_exports），
+// 而这里 /api/exports/file/* 走文件系统（session 导出路径）。
+app.use('/api/exports/file', (req, res) => {
+  const fileName = (req.path || '').replace(/^\/+/, '');
+  if (!fileName || fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+    res.status(400).json({ success: false, error: 'Invalid file name' });
+    return;
+  }
+  const filePath = path.join(process.cwd(), 'exports', fileName);
+  if (!fsExistsSync(filePath)) {
+    res.status(404).json({ success: false, error: 'File not found' });
+    return;
+  }
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
+  createReadStream(filePath).pipe(res);
+});
+
 // Routes
 // Sprint 1 — OIDC IdP 端点（根路径挂载，绕过 /api）
 app.use(oidcRouter);
@@ -116,6 +137,9 @@ app.use('/api/portal', portalRouter);
 app.use('/api/mcp', createMCPRouter());
 // DSH 集成 — 标准 MCP streamable-http 端点（供 DeepSeek Harness 等标准 MCP 客户端调用）
 app.use('/api/mcp/standard', createStandardMCPRouter());
+// Hermes 化 — Leader Skill / Reflection / Trajectory API
+import leaderSkillRouter from './routes/leader-skill.routes.js';
+app.use('/api', leaderSkillRouter);
 app.use('/api', routes);
 
 // Health check
@@ -155,12 +179,17 @@ app.listen(PORT, async () => {
   // 启动定时爬虫任务（每24小时执行一次）
   crawlerSchedulerService.start(24);
   console.log('✓ Crawler scheduler started');
+
+  // Hermes 化：启动 Leader 定时任务（每日反思 + Bundle 同步）
+  leaderSchedulerService.start();
+  console.log('✓ Leader scheduler started (daily reflection + bundle sync)');
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Shutting down gracefully...');
   crawlerSchedulerService.stop();
+  leaderSchedulerService.stop();
   databaseService.close();
   process.exit(0);
 });
@@ -168,6 +197,7 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   console.log('SIGINT received. Shutting down gracefully...');
   crawlerSchedulerService.stop();
+  leaderSchedulerService.stop();
   databaseService.close();
   process.exit(0);
 });

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations, useLocale } from 'next-intl';
 import { adminApi } from '@/lib/api/admin';
+import { useConfirm } from '@/hooks/useConfirm';
 import { 
   RefreshCw, 
   Play, 
@@ -18,6 +19,7 @@ import {
 
 export default function AdminCrawlerPage() {
   const t = useTranslations('admin');
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const [intervalHours, setIntervalHours] = useState(24);
   const [cleanDays, setCleanDays] = useState(90);
@@ -81,22 +83,35 @@ export default function AdminCrawlerPage() {
     }
   });
 
+  const { confirm, ConfirmDialog } = useConfirm();
   const handleTriggerCrawl = () => {
-    if (confirm(t('confirmCrawl'))) {
-      triggerCrawlerMutation.mutate();
-    }
+    confirm({
+      title: '触发爬虫',
+      message: t('confirmCrawl'),
+      variant: 'warning',
+      confirmText: t('confirm'),
+      onConfirm: () => triggerCrawlerMutation.mutate(),
+    });
   };
 
   const handleUpdateConfig = () => {
-    if (confirm(t('confirmConfigUpdate', { hours: intervalHours }))) {
-      updateConfigMutation.mutate(intervalHours);
-    }
+    confirm({
+      title: '更新配置',
+      message: t('confirmConfigUpdate', { hours: intervalHours }),
+      variant: 'warning',
+      confirmText: t('confirm'),
+      onConfirm: () => updateConfigMutation.mutate(intervalHours),
+    });
   };
 
   const handleCleanData = () => {
-    if (confirm(t('confirmCleanData', { days: cleanDays }))) {
-      cleanDataMutation.mutate(cleanDays);
-    }
+    confirm({
+      title: '清理数据',
+      message: t('confirmCleanData', { days: cleanDays }),
+      variant: 'danger',
+      confirmText: t('confirm'),
+      onConfirm: () => cleanDataMutation.mutate(cleanDays),
+    });
   };
 
   if (loadingStatus) {
@@ -371,6 +386,7 @@ export default function AdminCrawlerPage() {
           )}
         </div>
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

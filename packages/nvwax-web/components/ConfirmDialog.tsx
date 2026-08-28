@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type JSX } from 'react';
 import { AlertTriangle, Loader2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: () => void | Promise<void>;
   title: string;
   message: string;
   confirmText?: string;
@@ -24,7 +24,7 @@ export default function ConfirmDialog({
   confirmText,
   cancelText,
   variant = 'danger'
-}: ConfirmDialogProps) {
+}: ConfirmDialogProps): JSX.Element | null {
   const t = useTranslations('confirmDialog');
   const [isConfirming, setIsConfirming] = useState(false);
 
