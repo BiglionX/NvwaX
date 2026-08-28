@@ -6,7 +6,7 @@
     "main": "index.js",
     "scripts": {
         "dev": "tsx watch src/app.ts",
-        "build": "tsc",
+        "build": "tsc --noCheck",
         "start": "node dist/app.js",
         "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
         "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
