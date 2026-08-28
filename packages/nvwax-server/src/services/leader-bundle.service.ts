@@ -498,7 +498,7 @@ export class LeaderBundleService {
           try {
             const content = await fs.readFile(bundleJsonPath, 'utf-8');
             const manifest: BundleManifest = JSON.parse(content);
-            if (!manifest.name) !manifest.name = entry.name;
+            if (!manifest.name) manifest.name = entry.name;
             const registered = await this.register(manifest, { source: 'local' });
             discovered.push(registered);
           } catch (err) {

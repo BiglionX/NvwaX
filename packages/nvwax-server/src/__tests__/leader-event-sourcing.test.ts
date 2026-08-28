@@ -130,7 +130,7 @@ describe('LeaderEventStore', () => {
 // 2. LeaderOrchestrator Saga 测试
 // ============================================================
 
-describe('LeaderOrchestrator', ( + 30000) => {
+describe('LeaderOrchestrator', () => {
   test('成功编排：所有 worker 完成后写入 orchestration.completed', async () => {
     const sessionId = 'test-orch-success-' + Date.now();
 
