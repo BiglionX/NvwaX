@@ -1042,7 +1042,6 @@ export default function MarketplaceClient() {
         onClose={() => setShowAgentWizard(false)}
         initialQuery={debouncedSearch || undefined}
         onSuccess={(agent) => {
-          console.log('✅ Agent 创建成功:', agent);
           setShowAgentWizard(false);
           // 可选：刷新列表或跳转到详情页
         }}
