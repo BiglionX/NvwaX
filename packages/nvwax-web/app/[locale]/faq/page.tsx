@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import FAQClient from "./Client";
-import { alternatesFor } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import { alternatesFor, breadcrumbJsonLd, absoluteUrl } from "@/lib/seo";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -21,7 +22,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function FAQPage() {
+export default async function FAQPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const isEn = locale === "en";
   const t = await getTranslations("faq");
 
   const faqItems = [
@@ -66,6 +69,17 @@ export default async function FAQPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: "Home", url: absoluteUrl("/", locale) },
+              { name: isEn ? "FAQ" : "常见问题", url: absoluteUrl("/faq", locale) },
+            ])
+          ),
+        }}
       />
       <FAQClient />
     </>

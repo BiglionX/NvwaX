@@ -9,9 +9,27 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "legal" });
+  const isEn = locale === "en";
   return {
     title: t("aboutTitle"),
     description: t("aboutMetaDesc"),
+    keywords: [
+      "NvwaX", "About", "About Us", "关于",
+      "AI Agent", "Multi-Agent", "虚拟公司",
+      "开源AI", "Open Source AI",
+    ],
+    openGraph: {
+      title: `${t("aboutTitle")} - NvwaX`,
+      description: t("aboutMetaDesc"),
+      type: "website",
+      siteName: "NvwaX",
+      locale: isEn ? "en_US" : "zh_CN",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${t("aboutTitle")} - NvwaX`,
+      description: t("aboutMetaDesc"),
+    },
     alternates: alternatesFor("/about", locale),
   };
 }

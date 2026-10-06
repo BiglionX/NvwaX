@@ -23,6 +23,8 @@ export default function Footer() {
     resources: [
       { label: 'Docs', href: 'https://github.com/BigLionX/NvwaX#readme', external: true },
       { label: 'FAQ', href: '/faq', external: false },
+      { label: t('nav.blog'), href: '/blog', external: false },
+      { label: 'RSS Feed', href: '/rss.xml', external: false },
       { label: t('common.more'), href: 'https://github.com/BigLionX/NvwaX/tree/main/examples', external: true },
     ],
     community: [

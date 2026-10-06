@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Link } from '@/src/i18n/navigation';
 import { useRouter } from '@/src/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { Home, User, LogIn, LogOut, Menu, X, Award, ClipboardList, Sparkles, Store, Code, Building2 } from 'lucide-react';
+import { Home, User, LogIn, LogOut, Menu, X, Award, ClipboardList, Sparkles, Store, Code, Building2, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAiSearch } from '@/contexts/AiSearchContext';
 import { useState } from 'react';
@@ -18,6 +18,7 @@ const getNavItems = (t: (key: string) => string) => [
   { label: t('nav.buildCompany'), icon: Building2, path: '/nvwa' },
   { label: t('nav.developer'), icon: Code, path: '/developer' },
   { label: t('nav.marketplace'), icon: Store, path: '/marketplace' },
+  { label: t('nav.blog'), icon: BookOpen, path: '/blog' },
   { label: t('nav.bounties'), icon: Award, path: '/bounties' },
 ];
 
